@@ -55,7 +55,7 @@ def serve(
         str | None, typer.Option(help="Path to lovely library")
     ] = None,
     love_path: Annotated[
-        str | None, typer.Option(help="Path to LOVE executable")
+        str | None, typer.Option(help="Path to game launcher executable")
     ] = None,
     platform: Annotated[
         str | None, typer.Option(help="Platform (darwin, linux, windows, native)")

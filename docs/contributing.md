@@ -2,16 +2,6 @@
 
 Guide for contributing to BalatroBot development.
 
-!!! warning "Help Needed: Linux (Proton) Support"
-
-    We currently lack CLI support for **Linux (Proton)**. Contributions to implement this platform are highly welcome!
-
-    Please refer to the existing implementations for guidance:
-
-    - **macOS:** `src/balatrobot/platforms/macos.py`
-    - **Windows:** `src/balatrobot/platforms/windows.py`
-    - **Linux (Native):** `src/balatrobot/platforms/native.py`
-
 ## Prerequisites
 
 - **Balatro** (v1.0.1+) - Purchase from [Steam](https://store.steampowered.com/app/2379780/Balatro/)
