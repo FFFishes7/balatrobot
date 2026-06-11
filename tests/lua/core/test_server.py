@@ -7,10 +7,13 @@ Test classes are organized by functionality:
 - TestHTTPServerJSONRPC: JSON-RPC 2.0 protocol enforcement
 - TestHTTPServerRequestID: Request ID validation
 - TestHTTPServerErrors: HTTP error responses
+- TestHTTPServerConcurrency: Concurrent request handling
 """
 
 import errno
+import json
 import socket
+import threading
 
 import httpx
 import pytest
@@ -491,3 +494,53 @@ class TestHTTPServerSequentialRequests:
             },
         )
         assert response4.status_code == 200
+
+class TestHTTPServerConcurrency:
+    """Tests for concurrent request handling."""
+
+    def test_concurrent_requests_do_not_crash(
+        self, instance: InstanceInfo, balatro_server, client: httpx.Client
+    ) -> None:
+        """Two concurrent requests must not crash the server (#193)."""
+        barrier = threading.Barrier(2)
+        results: dict[str, bytes] = {}
+
+        def raw_post(method: str, rid: int, key: str) -> None:
+            body = json.dumps({"jsonrpc": "2.0", "method": method, "params": {}, "id": rid})
+            req = (
+                f"POST / HTTP/1.1\r\nHost: {instance.host}:{instance.port}\r\n"
+                f"Content-Type: application/json\r\nContent-Length: {len(body)}\r\n\r\n{body}"
+            )
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(10)
+                try:
+                    s.connect((instance.host, instance.port))
+                    barrier.wait(timeout=5)
+                    s.sendall(req.encode())
+                    chunks = b""
+                    while True:
+                        try:
+                            chunk = s.recv(4096)
+                        except socket.timeout:
+                            break
+                        if not chunk:
+                            break
+                        chunks += chunk
+                    results[key] = chunks
+                except OSError as e:
+                    results[key] = str(e).encode()
+
+        t1 = threading.Thread(target=raw_post, args=("menu", 1, "r1"))
+        t2 = threading.Thread(target=raw_post, args=("health", 2, "r2"))
+        t1.start()
+        t2.start()
+        t1.join(timeout=15)
+        t2.join(timeout=15)
+
+        # Both must get HTTP responses, not connection errors
+        for key, raw in results.items():
+            assert raw.startswith(b"HTTP/"), f"{key}: got {raw!r}"
+
+        # Server must still be alive
+        resp = client.post("/", json={"jsonrpc": "2.0", "method": "health", "params": {}, "id": 3})
+        assert resp.json()["result"]["status"] == "ok"

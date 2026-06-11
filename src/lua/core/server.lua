@@ -433,8 +433,10 @@ function BB_SERVER.update(dispatcher)
     return
   end
 
-  -- Try to accept new connections
-  BB_SERVER.accept()
+  -- Try to accept new connections (only when no active client)
+  if not BB_SERVER.client_socket then
+    BB_SERVER.accept()
+  end
 
   -- Handle existing client
   if BB_SERVER.client_socket and BB_SERVER.client_state then
