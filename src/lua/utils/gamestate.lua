@@ -340,8 +340,10 @@ end
 
 ---Extracts a complete Card object from a game card
 ---@param card table The game card object
+---@param opts table|nil Extraction options
 ---@return Card card The Card object
-local function extract_card(card)
+local function extract_card(card, opts)
+  opts = opts or {}
   -- Determine set
   local set = "DEFAULT"
   if card.ability and card.ability.set then
@@ -375,6 +377,14 @@ local function extract_card(card)
     end
   end
 
+  local cost = extract_card_cost(card)
+  if opts.free_pick then
+    cost.original_buy = cost.buy
+    cost.buy = 0
+    cost.free = true
+    cost.reason = "booster_pick"
+  end
+
   return {
     id = card.sort_id or 0,
     key = key,
@@ -383,7 +393,7 @@ local function extract_card(card)
     value = extract_card_value(card),
     modifier = extract_card_modifier(card),
     state = extract_card_state(card),
-    cost = extract_card_cost(card),
+    cost = cost,
   }
 end
 
@@ -393,8 +403,10 @@ end
 
 ---Extracts an Area object from a game area (like G.jokers, G.hand, etc.)
 ---@param area table The game area object
+---@param opts table|nil Extraction options
 ---@return Area? area_data The Area object
-local function extract_area(area)
+local function extract_area(area, opts)
+  opts = opts or {}
   if not area then
     return nil
   end
@@ -402,7 +414,7 @@ local function extract_area(area)
   local cards = {}
   if area.cards then
     for i, card in pairs(area.cards) do
-      cards[i] = extract_card(card)
+      cards[i] = extract_card(card, opts)
     end
   end
 
@@ -826,7 +838,7 @@ function gamestate.get_gamestate()
 
   -- Pack cards area (available during pack opening phases)
   if G.pack_cards and not G.pack_cards.REMOVED then
-    state_data.pack = extract_area(G.pack_cards)
+    state_data.pack = extract_area(G.pack_cards, { free_pick = true })
   end
 
   return state_data

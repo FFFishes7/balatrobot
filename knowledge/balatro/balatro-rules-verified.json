@@ -97,5 +97,15 @@
     "source": [
       "Balatro Wikipedia cards overview: https://en.wikipedia.org/wiki/Balatro"
     ]
+  },
+  "booster_pack_rewards_are_free_picks": {
+    "title": "Booster pack contents are free picks after the pack is opened",
+    "category": "pack",
+    "rule": "After a booster pack is opened, the cards shown in the pack are choices from the already-paid pack reward, not shop offers that require paying their printed buy price again.",
+    "decision": "Do not reject a strong Buffoon/Arcana/Celestial/Spectral/Standard pack choice because its card object has a nominal cost. Treat opened pack choices as free picks; only slot capacity and pack pick count matter.",
+    "source": [
+      "Balatro game rules: booster pack selection flow",
+      "BalatroBot pack endpoint semantics: src/lua/endpoints/pack.lua"
+    ]
   }
 }

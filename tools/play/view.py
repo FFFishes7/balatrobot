@@ -37,8 +37,12 @@ def active_blind(state: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
-def card_cost(card: dict[str, Any]) -> str:
+def card_cost(card: dict[str, Any], show_cost: bool = True) -> str:
+    if not show_cost:
+        return ""
     cost = card.get("cost", {})
+    if isinstance(cost, dict) and cost.get("free"):
+        return " free"
     if isinstance(cost, dict) and "buy" in cost:
         return f" ${cost['buy']}"
     return ""
@@ -89,11 +93,16 @@ def is_playing_card(card: dict[str, Any]) -> bool:
     return suit in SUIT_LABEL and (rank in RANK_LABEL or rank in {str(n) for n in range(2, 10)})
 
 
-def display_name(card: dict[str, Any], include_effect: bool = False, include_card_face: bool = True) -> str:
+def display_name(
+    card: dict[str, Any],
+    include_effect: bool = False,
+    include_card_face: bool = True,
+    show_cost: bool = True,
+) -> str:
     label = card.get('label', card.get('key', '?'))
     if include_card_face and is_playing_card(card):
         label = f"{card_label(card)} {label}"
-    name = f"{label}{card_cost(card)}"
+    name = f"{label}{card_cost(card, show_cost=show_cost)}"
     value = card.get("value") or {}
     if card.get("key") == "c_fool":
         copy_label = value.get("copy_label") or value.get("copy_key")
@@ -109,8 +118,12 @@ def display_name(card: dict[str, Any], include_effect: bool = False, include_car
     return name
 
 
-def named_area(cards: list[dict[str, Any]], include_effect: bool = False) -> list[tuple[int, str]]:
-    return [(i, display_name(c, include_effect=include_effect)) for i, c in enumerate(cards)]
+def named_area(
+    cards: list[dict[str, Any]],
+    include_effect: bool = False,
+    show_cost: bool = True,
+) -> list[tuple[int, str]]:
+    return [(i, display_name(c, include_effect=include_effect, show_cost=show_cost)) for i, c in enumerate(cards)]
 
 
 def print_hint(state_name: str) -> None:
@@ -189,7 +202,7 @@ def print_summary(state: dict[str, Any]) -> None:
             print(f"  [{i}] {card_label(c)} ({c['key']}){extra}{hidden}{debuff}")
     pack = state.get("pack", {}).get("cards", [])
     if pack:
-        print("pack_open:", named_area(pack, include_effect=True))
+        print("pack_open (free pick):", named_area(pack, include_effect=True, show_cost=False))
     leveled = {
         h: (d["level"], d["chips"], d["mult"])
         for h, d in state.get("hands", {}).items()
