@@ -132,6 +132,24 @@ def named_area(
     ]
 
 
+def print_round_start_rules(state: dict[str, Any]) -> None:
+    if state.get("state") != "SELECTING_HAND":
+        return
+    rnd = state.get("round") or {}
+    if rnd.get("chips", 0) != 0:
+        return
+    print("round_rules:")
+    print(
+        "  scoring: "
+        "只有组成当前牌型的计分牌会结算；未计分的踢脚牌通常不触发牌面增强/计分效果。"
+    )
+    print("  order: 计分牌按当前出牌顺序从左到右触发；小丑按小丑栏从左到右触发。")
+    print(
+        "  order_tools: "
+        "可先用 rearrange hand/jokers 或 sort rank/suit 调整顺序，再出牌或使用 Death。"
+    )
+
+
 def print_hint(state_name: str) -> None:
     hints = {
         "MENU": "hint: python act.py start RED WHITE",
@@ -224,4 +242,5 @@ def print_summary(state: dict[str, Any]) -> None:
     }
     if leveled:
         print("leveled_hands:", leveled)
+    print_round_start_rules(state)
     print_hint(state_name)

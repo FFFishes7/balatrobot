@@ -262,10 +262,13 @@ return {
           else
             -- Pack closes - wait for return to a stable state. Shop-bought packs
             -- return to SHOP, while packs opened by skip tags return to BLIND_SELECT.
-            local pack_closed = not G.pack_cards or G.pack_cards.REMOVED
-            local back_to_stable_state = G.STATE == G.STATES.SHOP or G.STATE == G.STATES.BLIND_SELECT
+            -- Some booster flows leave G.pack_cards around briefly after the
+            -- screen has already returned to SHOP/BLIND_SELECT, so the stable
+            -- state is the authoritative completion signal here.
+            local back_to_stable_state = G.STATE_COMPLETE
+              and (G.STATE == G.STATES.SHOP or G.STATE == G.STATES.BLIND_SELECT)
 
-            if pack_closed and back_to_stable_state then
+            if back_to_stable_state then
               sendDebugMessage("Return pack() after selection", "BB.ENDPOINTS")
               send_response(BB_GAMESTATE.get_gamestate())
               return true
@@ -290,10 +293,13 @@ return {
         trigger = "condition",
         blocking = false,
         func = function()
-          local pack_closed = not G.pack_cards or G.pack_cards.REMOVED
-          local back_to_stable_state = G.STATE == G.STATES.SHOP or G.STATE == G.STATES.BLIND_SELECT
+          -- The screen can reach SHOP/BLIND_SELECT before G.pack_cards is
+          -- marked removed. Returning on the stable game state avoids hanging
+          -- when skipping the rest of a tag-opened booster pack.
+          local back_to_stable_state = G.STATE_COMPLETE
+            and (G.STATE == G.STATES.SHOP or G.STATE == G.STATES.BLIND_SELECT)
 
-          if pack_closed and back_to_stable_state then
+          if back_to_stable_state then
             sendDebugMessage("Return pack() after skip", "BB.ENDPOINTS")
             send_response(BB_GAMESTATE.get_gamestate())
             return true
