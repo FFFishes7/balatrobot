@@ -202,6 +202,19 @@ return {
       end
     end
 
+    -- Refresh CardArea positions so the visual order matches the API order.
+    local area = nil
+    if rearrange_type == "hand" then
+      area = G.hand
+    elseif rearrange_type == "jokers" then
+      area = G.jokers
+    else -- consumables
+      area = G.consumeables
+    end
+    if area and area.align_cards then
+      area:align_cards()
+    end
+
     -- Wait for completion: state should remain stable after rearranging
     G.E_MANAGER:add_event(Event({
       trigger = "condition",

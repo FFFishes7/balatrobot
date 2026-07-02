@@ -39,21 +39,33 @@ return {
       return count
     end
 
-    -- Wait for SHOP state after state transition completes
+    -- Wait for SHOP state after state transition completes. Some skip tags
+    -- (for example Holographic/Foil/Polychrome/Negative tags) mutate the next
+    -- shop Joker shortly after the buy button appears, so require a few stable
+    -- frames before snapshotting gamestate.
+    local shop_ready_ticks = 0
     G.E_MANAGER:add_event(Event({
       trigger = "condition",
       blocking = false,
       func = function()
-        local done = false
+        local has_shop_items = false
         if G.STATE == G.STATES.SHOP and G.STATE_COMPLETE then
-          done = num_items(G.shop_booster) > 0 or num_items(G.shop_jokers) > 0 or num_items(G.shop_vouchers) > 0
-          if done then
-            sendDebugMessage("Return cash_out() - reached SHOP state", "BB.ENDPOINTS")
-            send_response(BB_GAMESTATE.get_gamestate())
-            return done
-          end
+          has_shop_items = num_items(G.shop_booster) > 0 or num_items(G.shop_jokers) > 0 or num_items(G.shop_vouchers) > 0
         end
-        return done
+
+        if has_shop_items then
+          shop_ready_ticks = shop_ready_ticks + 1
+        else
+          shop_ready_ticks = 0
+        end
+
+        if shop_ready_ticks >= 10 then
+          sendDebugMessage("Return cash_out() - reached settled SHOP state", "BB.ENDPOINTS")
+          send_response(BB_GAMESTATE.get_gamestate())
+          return true
+        end
+
+        return false
       end,
     }))
   end,

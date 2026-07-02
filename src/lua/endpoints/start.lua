@@ -113,7 +113,9 @@ return {
         if deck_data.name == deck_name then
           sendDebugMessage("Setting deck to: " .. deck_data.name .. " (from enum: " .. args.deck .. ")", "BB.ENDPOINTS")
           G.GAME.selected_back:change_to(deck_data)
-          G.GAME.viewed_back:change_to(deck_data)
+          if G.GAME.viewed_back then
+            G.GAME.viewed_back:change_to(deck_data)
+          end
           deck_found = true
           break
         end

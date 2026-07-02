@@ -36,6 +36,7 @@ BB_ENDPOINTS = {
   "src/lua/endpoints/pack.lua",
   -- Rearrange endpoint
   "src/lua/endpoints/rearrange.lua",
+  "src/lua/endpoints/sort.lua",
   -- Sell endpoint
   "src/lua/endpoints/sell.lua",
   -- Use consumable endpoint

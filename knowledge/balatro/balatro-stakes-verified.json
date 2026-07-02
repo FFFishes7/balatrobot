@@ -1,0 +1,35 @@
+{
+  "WHITE": {
+    "effect": "基础难度，无额外 modifier。",
+    "wiki": "https://balatrowiki.org/w/Stakes#White_Stake"
+  },
+  "RED": {
+    "effect": "Small Blind 打赢不给钱（Big/Boss 仍给）。",
+    "implication": "值钱 Tag → skip 更重要；打小 Blind 只有练手/任务价值。",
+    "wiki": "https://balatrowiki.org/w/Stakes#Red_Stake"
+  },
+  "GREEN": {
+    "effect": "需求分随 Ante 涨得更快（叠在 Red 上）。",
+    "wiki": "https://balatrowiki.org/w/Stakes#Green_Stake"
+  },
+  "BLACK": {
+    "effect": "商店 30% Eternal 贴纸（不可卖/毁）。",
+    "wiki": "https://balatrowiki.org/w/Stakes#Black_Stake"
+  },
+  "BLUE": {
+    "effect": "-1 discard（叠在前序 stake 上）。",
+    "wiki": "https://balatrowiki.org/w/Stakes#Blue_Stake"
+  },
+  "PURPLE": {
+    "effect": "需求分涨得更快（叠在前序 stake 上）。",
+    "wiki": "https://balatrowiki.org/w/Stakes#Purple_Stake"
+  },
+  "ORANGE": {
+    "effect": "商店可出现 Perishable 小丑（N 回合后自毁）。",
+    "wiki": "https://balatrowiki.org/w/Stakes#Orange_Stake"
+  },
+  "GOLD": {
+    "effect": "商店可出现 Rental 小丑（每回合 -$1）。",
+    "wiki": "https://balatrowiki.org/w/Stakes#Gold_Stake"
+  }
+}

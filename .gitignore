@@ -7,7 +7,8 @@
 __MACOSX/
 .AppleDouble
 .LSOverride
-Icon[]
+Icon[
+]
 
 # Thumbnails
 ._*
@@ -331,3 +332,41 @@ balatrobot_oldish.lua
 
 balatro_oldish.sh
 balatro.sh
+
+################################################################################
+# Local BalatroBot play-helper state
+################################################################################
+
+# Local machine launchers and transient captures
+tools/play/serve.ps1
+serve.ps1
+gs*.json
+gui-server-*.log
+gui-server-*.out.log
+gui-server-*.err.log
+
+# Runtime state
+saves/
+*.jkr
+
+# Local agent/app state
+.codex/
+.claude/
+.agents/
+.mux/
+
+# Legacy local knowledge dir after migration
+游戏/
+
+
+# Keep the repository knowledge library even though generic Balatro runtime dirs are ignored
+!knowledge/
+!knowledge/balatro/
+!knowledge/balatro/**
+
+# Keep local agent instructions private unless intentionally authored for the repo
+/AGENTS.md
+
+# Re-ignore generated Python caches inside the explicitly unignored knowledge tree
+knowledge/balatro/__pycache__/
+knowledge/balatro/**/*.py[codz]

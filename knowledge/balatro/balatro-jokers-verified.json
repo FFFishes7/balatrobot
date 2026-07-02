@@ -1,0 +1,770 @@
+{
+  "8 Ball": {
+    "key": "j_8_ball",
+    "effect": "1 in 4 chance for each played 8 to create a Tarot card when scored",
+    "wiki": "https://balatrowiki.org/w/8_Ball"
+  },
+  "Abstract Joker": {
+    "key": "j_abstract",
+    "effect": "+3 Mult for each Joker card",
+    "wiki": "https://balatrowiki.org/w/Abstract_Joker"
+  },
+  "Acrobat": {
+    "key": "j_acrobat",
+    "effect": "X3 Mult on final hand of round",
+    "wiki": "https://balatrowiki.org/w/Acrobat"
+  },
+  "Ancient Joker": {
+    "key": "j_ancient",
+    "effect": "Each played card with specific suit gives X1.5 Mult, suit changes at end of round",
+    "wiki": "https://balatrowiki.org/w/Ancient_Joker"
+  },
+  "Arrowhead": {
+    "key": "j_arrowhead",
+    "effect": "Played Spade cards give +50 Chips when scored",
+    "wiki": "https://balatrowiki.org/w/Arrowhead"
+  },
+  "Astronomer": {
+    "key": "j_astronomer",
+    "effect": "All Planet cards and Celestial Packs in the shop are free",
+    "wiki": "https://balatrowiki.org/w/Astronomer"
+  },
+  "Banner": {
+    "key": "j_banner",
+    "effect": "+30 Chips for each remaining discard",
+    "wiki": "https://balatrowiki.org/w/Banner"
+  },
+  "Baron": {
+    "key": "j_baron",
+    "effect": "Each King held in hand gives X1.5 Mult",
+    "wiki": "https://balatrowiki.org/w/Baron"
+  },
+  "Baseball Card": {
+    "key": "j_baseball",
+    "effect": "Uncommon Jokers each give X1.5 Mult",
+    "wiki": "https://balatrowiki.org/w/Baseball_Card"
+  },
+  "Blackboard": {
+    "key": "j_blackboard",
+    "effect": "X3 Mult if all cards held in hand are Spades or Clubs",
+    "wiki": "https://balatrowiki.org/w/Blackboard"
+  },
+  "Bloodstone": {
+    "key": "j_bloodstone",
+    "effect": "1 in 2 chance for played Heart cards to give X1.5 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Bloodstone"
+  },
+  "Blue Joker": {
+    "key": "j_blue_joker",
+    "effect": "+2 Chips for each remaining card in deck",
+    "wiki": "https://balatrowiki.org/w/Blue_Joker"
+  },
+  "Blueprint": {
+    "key": "j_blueprint",
+    "effect": "Copies ability of Joker to the right",
+    "wiki": "https://balatrowiki.org/w/Blueprint",
+    "notes": "复制右侧小丑；Oops 与 Blueprint/Brainstorm 不兼容。"
+  },
+  "Bootstraps": {
+    "key": "j_bootstraps",
+    "effect": "+2 Mult for every $5 you have",
+    "wiki": "https://balatrowiki.org/w/Bootstraps"
+  },
+  "Brainstorm": {
+    "key": "j_brainstorm",
+    "effect": "Copies the ability of leftmost Joker",
+    "wiki": "https://balatrowiki.org/w/Brainstorm",
+    "notes": "复制最左小丑；Oops 与 Blueprint/Brainstorm 不兼容。"
+  },
+  "Bull": {
+    "key": "j_bull",
+    "effect": "+2 Chips for each $1 you have",
+    "wiki": "https://balatrowiki.org/w/Bull"
+  },
+  "Burglar": {
+    "key": "j_burglar",
+    "effect": "When Blind is selected, gain +3 Hands and lose all discards",
+    "wiki": "https://balatrowiki.org/w/Burglar"
+  },
+  "Burnt Joker": {
+    "key": "j_burnt",
+    "effect": "Upgrade the level of the first discarded poker hand each round",
+    "wiki": "https://balatrowiki.org/w/Burnt_Joker"
+  },
+  "Business Card": {
+    "key": "j_business",
+    "effect": "Played face cards have a 1 in 2 chance to give $2 when scored",
+    "wiki": "https://balatrowiki.org/w/Business_Card"
+  },
+  "Canio": {
+    "key": "j_caino",
+    "effect": "Gains X1 Mult when a face card is destroyed",
+    "wiki": "https://balatrowiki.org/w/Canio"
+  },
+  "Campfire": {
+    "key": "j_campfire",
+    "effect": "Gains X0.25 Mult for each card sold, resets when Boss Blind is defeated",
+    "wiki": "https://balatrowiki.org/w/Campfire"
+  },
+  "Card Sharp": {
+    "key": "j_card_sharp",
+    "effect": "X3 Mult if played poker hand has already been played this round",
+    "wiki": "https://balatrowiki.org/w/Card_Sharp"
+  },
+  "Cartomancer": {
+    "key": "j_cartomancer",
+    "effect": "Create a Tarot card when Blind is selected",
+    "wiki": "https://balatrowiki.org/w/Cartomancer"
+  },
+  "Castle": {
+    "key": "j_castle",
+    "effect": "Gains +3 Chips per discarded card of specific suit, changes every round",
+    "wiki": "https://balatrowiki.org/w/Castle"
+  },
+  "Cavendish": {
+    "key": "j_cavendish",
+    "effect": "X3 Mult, 1 in 1000 chance this card is destroyed at end of round",
+    "wiki": "https://balatrowiki.org/w/Cavendish"
+  },
+  "Ceremonial Dagger": {
+    "key": "j_ceremonial",
+    "effect": "When Blind is selected, destroy Joker to the right and add double its sell value to Mult",
+    "wiki": "https://balatrowiki.org/w/Ceremonial_Dagger"
+  },
+  "Certificate": {
+    "key": "j_certificate",
+    "effect": "When round begins, add a random playing card with a random seal to hand",
+    "wiki": "https://balatrowiki.org/w/Certificate"
+  },
+  "Chaos the Clown": {
+    "key": "j_chaos",
+    "effect": "1 free Reroll per shop",
+    "wiki": "https://balatrowiki.org/w/Chaos_the_Clown"
+  },
+  "Chicot": {
+    "key": "j_chicot",
+    "effect": "Disables effect of every Boss Blind",
+    "wiki": "https://balatrowiki.org/w/Chicot"
+  },
+  "Clever Joker": {
+    "key": "j_clever",
+    "effect": "+80 Chips if played hand contains a Two Pair",
+    "wiki": "https://balatrowiki.org/w/Clever_Joker"
+  },
+  "Cloud 9": {
+    "key": "j_cloud_9",
+    "effect": "Earn $1 for each 9 in your full deck at end of round",
+    "wiki": "https://balatrowiki.org/w/Cloud_9"
+  },
+  "Constellation": {
+    "key": "j_constellation",
+    "effect": "Gains X0.1 Mult every time a Planet card is used",
+    "wiki": "https://balatrowiki.org/w/Constellation"
+  },
+  "Crafty Joker": {
+    "key": "j_crafty",
+    "effect": "+80 Chips if played hand contains a Flush",
+    "wiki": "https://balatrowiki.org/w/Crafty_Joker"
+  },
+  "Crazy Joker": {
+    "key": "j_crazy",
+    "effect": "+12 Mult if played hand contains a Straight",
+    "wiki": "https://balatrowiki.org/w/Crazy_Joker"
+  },
+  "Credit Card": {
+    "key": "j_credit_card",
+    "effect": "Go up to -$20 in debt",
+    "wiki": "https://balatrowiki.org/w/Credit_Card"
+  },
+  "Delayed Gratification": {
+    "key": "j_delayed_grat",
+    "effect": "Earn $2 per discard if no discards are used by end of the round",
+    "wiki": "https://balatrowiki.org/w/Delayed_Gratification"
+  },
+  "Devious Joker": {
+    "key": "j_devious",
+    "effect": "+100 Chips if played hand contains a Straight",
+    "wiki": "https://balatrowiki.org/w/Devious_Joker"
+  },
+  "Diet Cola": {
+    "key": "j_diet_cola",
+    "effect": "Sell this card to create a free Double Tag",
+    "wiki": "https://balatrowiki.org/w/Diet_Cola"
+  },
+  "DNA": {
+    "key": "j_dna",
+    "effect": "If first hand of round has only 1 card, add a permanent copy to deck",
+    "wiki": "https://balatrowiki.org/w/DNA"
+  },
+  "Driver's License": {
+    "key": "j_drivers_license",
+    "effect": "X3 Mult if you have at least 16 Enhanced cards in your full deck",
+    "wiki": "https://balatrowiki.org/w/Driver%27s_License"
+  },
+  "Droll Joker": {
+    "key": "j_droll",
+    "effect": "+10 Mult if played hand contains a Flush",
+    "wiki": "https://balatrowiki.org/w/Droll_Joker"
+  },
+  "Drunkard": {
+    "key": "j_drunkard",
+    "effect": "+1 discard each round",
+    "wiki": "https://balatrowiki.org/w/Drunkard"
+  },
+  "The Duo": {
+    "key": "j_duo",
+    "effect": "X2 Mult if played hand contains a Pair",
+    "wiki": "https://balatrowiki.org/w/The_Duo"
+  },
+  "Dusk": {
+    "key": "j_dusk",
+    "effect": "本盲注最后一手：所有打出的牌额外重触发 2 次（牌的 chips/增强/版本，非整手 joker mult 再乘）。",
+    "wiki": "https://balatrowiki.org/w/Dusk",
+    "misconception": "不是整手分数×3；Needle 仅 1 hand 时该手即为最后一手。"
+  },
+  "Egg": {
+    "key": "j_egg",
+    "effect": "Gains $3 of sell value at end of round",
+    "wiki": "https://balatrowiki.org/w/Egg"
+  },
+  "Erosion": {
+    "key": "j_erosion",
+    "effect": "+4 Mult for each card below deck's starting size",
+    "wiki": "https://balatrowiki.org/w/Erosion"
+  },
+  "Even Steven": {
+    "key": "j_even_steven",
+    "effect": "Played cards with even rank give +4 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Even_Steven"
+  },
+  "Faceless Joker": {
+    "key": "j_faceless",
+    "effect": "Earn $5 if 3 or more face cards are discarded at the same time",
+    "wiki": "https://balatrowiki.org/w/Faceless_Joker"
+  },
+  "The Family": {
+    "key": "j_family",
+    "effect": "X4 Mult if played hand contains a Four of a Kind",
+    "wiki": "https://balatrowiki.org/w/The_Family"
+  },
+  "Fibonacci": {
+    "key": "j_fibonacci",
+    "effect": "Each played Ace, 2, 3, 5, or 8 gives +8 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Fibonacci"
+  },
+  "Flash Card": {
+    "key": "j_flash",
+    "effect": "Gains +2 Mult per reroll in the shop",
+    "wiki": "https://balatrowiki.org/w/Flash_Card"
+  },
+  "Flower Pot": {
+    "key": "j_flower_pot",
+    "effect": "X3 Mult if poker hand contains a Diamond, Club, Heart, and Spade card",
+    "wiki": "https://balatrowiki.org/w/Flower_Pot"
+  },
+  "Fortune Teller": {
+    "key": "j_fortune_teller",
+    "effect": "+1 Mult per Tarot card used this run",
+    "wiki": "https://balatrowiki.org/w/Fortune_Teller"
+  },
+  "Four Fingers": {
+    "key": "j_four_fingers",
+    "effect": "All Flushes and Straights can be made with 4 cards",
+    "wiki": "https://balatrowiki.org/w/Four_Fingers"
+  },
+  "Gift Card": {
+    "key": "j_gift",
+    "effect": "Add $1 of sell value to every Joker and Consumable at end of round",
+    "wiki": "https://balatrowiki.org/w/Gift_Card"
+  },
+  "Glass Joker": {
+    "key": "j_glass",
+    "effect": "Gains X0.75 Mult for every Glass Card that is destroyed",
+    "wiki": "https://balatrowiki.org/w/Glass_Joker"
+  },
+  "Gluttonous Joker": {
+    "key": "j_gluttenous_joker",
+    "effect": "Played Club cards give +3 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Gluttonous_Joker"
+  },
+  "Golden Joker": {
+    "key": "j_golden",
+    "effect": "Earn $4 at end of round",
+    "wiki": "https://balatrowiki.org/w/Golden_Joker"
+  },
+  "Greedy Joker": {
+    "key": "j_greedy_joker",
+    "effect": "Played Diamond cards give +3 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Greedy_Joker"
+  },
+  "Green Joker": {
+    "key": "j_green_joker",
+    "effect": "+1 Mult per hand played, -1 Mult per discard",
+    "wiki": "https://balatrowiki.org/w/Green_Joker"
+  },
+  "Gros Michel": {
+    "key": "j_gros_michel",
+    "effect": "+15 Mult, 1 in 6 chance this is destroyed at end of round",
+    "wiki": "https://balatrowiki.org/w/Gros_Michel"
+  },
+  "Hack": {
+    "key": "j_hack",
+    "effect": "Retrigger each played 2, 3, 4, or 5",
+    "wiki": "https://balatrowiki.org/w/Hack"
+  },
+  "Half Joker": {
+    "key": "j_half",
+    "effect": "+20 Mult if played hand contains 3 or fewer cards",
+    "wiki": "https://balatrowiki.org/w/Half_Joker"
+  },
+  "Hallucination": {
+    "key": "j_hallucination",
+    "effect": "1 in 2 chance to create a Tarot card when any Booster Pack is opened",
+    "wiki": "https://balatrowiki.org/w/Hallucination"
+  },
+  "Hanging Chad": {
+    "key": "j_hanging_chad",
+    "effect": "Retrigger first played card used in scoring 2 additional times",
+    "wiki": "https://balatrowiki.org/w/Hanging_Chad"
+  },
+  "Hiker": {
+    "key": "j_hiker",
+    "effect": "Every played card permanently gains +5 Chips when scored",
+    "wiki": "https://balatrowiki.org/w/Hiker"
+  },
+  "Hit the Road": {
+    "key": "j_hit_the_road",
+    "effect": "Gains X0.5 Mult for every Jack discarded this round",
+    "wiki": "https://balatrowiki.org/w/Hit_the_Road"
+  },
+  "Hologram": {
+    "key": "j_hologram",
+    "effect": "Gains X0.25 Mult every time a playing card is added to your deck",
+    "wiki": "https://balatrowiki.org/w/Hologram"
+  },
+  "Ice Cream": {
+    "key": "j_ice_cream",
+    "effect": "+100 Chips, -5 Chips for every hand played",
+    "wiki": "https://balatrowiki.org/w/Ice_Cream"
+  },
+  "The Idol": {
+    "key": "j_idol",
+    "effect": "Each played card of specific rank and suit gives X2 Mult, changes every round",
+    "wiki": "https://balatrowiki.org/w/The_Idol"
+  },
+  "Invisible Joker": {
+    "key": "j_invisible",
+    "effect": "After 2 rounds, sell this card to Duplicate a random Joker",
+    "wiki": "https://balatrowiki.org/w/Invisible_Joker"
+  },
+  "Joker": {
+    "key": "j_joker",
+    "effect": "+4 Mult",
+    "wiki": "https://balatrowiki.org/w/Joker"
+  },
+  "Jolly Joker": {
+    "key": "j_jolly",
+    "effect": "+8 Mult if played hand contains a Pair",
+    "wiki": "https://balatrowiki.org/w/Jolly_Joker"
+  },
+  "Juggler": {
+    "key": "j_juggler",
+    "effect": "+1 hand size",
+    "wiki": "https://balatrowiki.org/w/Juggler"
+  },
+  "Loyalty Card": {
+    "key": "j_loyalty_card",
+    "effect": "X4 Mult every 6 hands played",
+    "wiki": "https://balatrowiki.org/w/Loyalty_Card"
+  },
+  "Luchador": {
+    "key": "j_luchador",
+    "effect": "Sell this card to disable the current Boss Blind",
+    "wiki": "https://balatrowiki.org/w/Luchador"
+  },
+  "Lucky Cat": {
+    "key": "j_lucky_cat",
+    "effect": "Gains X0.25 Mult every time a Lucky card successfully triggers",
+    "wiki": "https://balatrowiki.org/w/Lucky_Cat"
+  },
+  "Lusty Joker": {
+    "key": "j_lusty_joker",
+    "effect": "Played Heart cards give +3 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Lusty_Joker"
+  },
+  "Mad Joker": {
+    "key": "j_mad",
+    "effect": "+10 Mult if played hand contains a Two Pair",
+    "wiki": "https://balatrowiki.org/w/Mad_Joker"
+  },
+  "Madness": {
+    "key": "j_madness",
+    "effect": "When Small/Big Blind is selected, gain X0.5 Mult and destroy a random Joker",
+    "wiki": "https://balatrowiki.org/w/Madness"
+  },
+  "Mail-In Rebate": {
+    "key": "j_mail",
+    "effect": "Earn $5 for each discarded card of a specific rank, changes every round",
+    "wiki": "https://balatrowiki.org/w/Mail-In_Rebate"
+  },
+  "Marble Joker": {
+    "key": "j_marble",
+    "effect": "Adds one Stone card to the deck when Blind is selected",
+    "wiki": "https://balatrowiki.org/w/Marble_Joker"
+  },
+  "Matador": {
+    "key": "j_matador",
+    "effect": "Earn $8 if played hand triggers the Boss Blind ability",
+    "wiki": "https://balatrowiki.org/w/Matador"
+  },
+  "Merry Andy": {
+    "key": "j_merry_andy",
+    "effect": "+3 discards each round, -1 hand size",
+    "wiki": "https://balatrowiki.org/w/Merry_Andy"
+  },
+  "Midas Mask": {
+    "key": "j_midas_mask",
+    "effect": "All played face cards become Gold cards when scored",
+    "wiki": "https://balatrowiki.org/w/Midas_Mask"
+  },
+  "Mime": {
+    "key": "j_mime",
+    "effect": "Retrigger all cards held in hand abilities",
+    "wiki": "https://balatrowiki.org/w/Mime"
+  },
+  "Misprint": {
+    "key": "j_misprint",
+    "effect": "每手随机 +0~+23 flat Mult（均匀分布，期望约 +11.5）。",
+    "wiki": "https://balatrowiki.org/w/Misprint",
+    "misconception": "不是固定 mult；低 roll 会翻车。",
+    "synergy": "前期过渡；多份 Misprint/Blueprint 独立 roll 降方差。",
+    "anti": "Needle 单 hand 低 roll 即死；后期应换专用 mult 小丑。"
+  },
+  "Mr. Bones": {
+    "key": "j_mr_bones",
+    "effect": "Prevents Death if chips scored are at least 25% of required, self destructs",
+    "wiki": "https://balatrowiki.org/w/Mr._Bones"
+  },
+  "Mystic Summit": {
+    "key": "j_mystic_summit",
+    "effect": "+15 Mult when 0 discards remaining",
+    "wiki": "https://balatrowiki.org/w/Mystic_Summit"
+  },
+  "Obelisk": {
+    "key": "j_obelisk",
+    "effect": "Gains X0.2 Mult per consecutive hand without playing most played hand",
+    "wiki": "https://balatrowiki.org/w/Obelisk"
+  },
+  "Odd Todd": {
+    "key": "j_odd_todd",
+    "effect": "Played cards with odd rank give +31 Chips when scored",
+    "wiki": "https://balatrowiki.org/w/Odd_Todd"
+  },
+  "Onyx Agate": {
+    "key": "j_onyx_agate",
+    "effect": "Played Club cards give +7 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Onyx_Agate"
+  },
+  "Oops! All 6s": {
+    "key": "j_oops",
+    "effect": "所有绿色字样的「X in Y」概率翻倍（例 1/3→2/3，1/5→2/5）。含负面：玻璃碎、Gros Michel 灭绝、Wheel 暗牌、Wheel of Fortune 等。",
+    "wiki": "https://balatrowiki.org/w/Oops%21_All_6s",
+    "misconception": "不是把牌变成 6 点；名字是梗。",
+    "synergy": "Bloodstone、Lucky 牌、Space Joker、8 Ball、Hallucination 等概率效果。",
+    "anti": "玻璃牌组、依赖低概率存活的小丑；与 Blueprint/Brainstorm 不兼容。"
+  },
+  "The Order": {
+    "key": "j_order",
+    "effect": "X3 Mult if played hand contains a Straight",
+    "wiki": "https://balatrowiki.org/w/The_Order"
+  },
+  "Pareidolia": {
+    "key": "j_pareidolia",
+    "effect": "All cards are considered face cards",
+    "wiki": "https://balatrowiki.org/w/Pareidolia"
+  },
+  "Perkeo": {
+    "key": "j_perkeo",
+    "effect": "Creates a Negative copy of 1 random consumable at the end of the shop",
+    "wiki": "https://balatrowiki.org/w/Perkeo"
+  },
+  "Photograph": {
+    "key": "j_photograph",
+    "effect": "First played face card gives X2 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Photograph"
+  },
+  "Popcorn": {
+    "key": "j_popcorn",
+    "effect": "+20 Mult, -4 Mult per round played",
+    "wiki": "https://balatrowiki.org/w/Popcorn"
+  },
+  "Raised Fist": {
+    "key": "j_raised_fist",
+    "effect": "Adds double the rank of lowest ranked card held in hand to Mult",
+    "wiki": "https://balatrowiki.org/w/Raised_Fist"
+  },
+  "Ramen": {
+    "key": "j_ramen",
+    "effect": "X2 Mult, loses X0.01 Mult per card discarded",
+    "wiki": "https://balatrowiki.org/w/Ramen"
+  },
+  "Red Card": {
+    "key": "j_red_card",
+    "effect": "Gains +3 Mult when any Booster Pack is skipped",
+    "wiki": "https://balatrowiki.org/w/Red_Card"
+  },
+  "Reserved Parking": {
+    "key": "j_reserved_parking",
+    "effect": "Each face card held in hand has a 1 in 2 chance to give $1",
+    "wiki": "https://balatrowiki.org/w/Reserved_Parking"
+  },
+  "Ride the Bus": {
+    "key": "j_ride_the_bus",
+    "effect": "Gains +1 Mult per consecutive hand played without a scoring face card",
+    "wiki": "https://balatrowiki.org/w/Ride_the_Bus"
+  },
+  "Riff-Raff": {
+    "key": "j_riff_raff",
+    "effect": "When Blind is selected, create 2 Common Jokers",
+    "wiki": "https://balatrowiki.org/w/Riff-Raff"
+  },
+  "Showman": {
+    "key": "j_ring_master",
+    "effect": "Joker, Tarot, Planet, and Spectral cards may appear multiple times",
+    "wiki": "https://balatrowiki.org/w/Showman"
+  },
+  "Rocket": {
+    "key": "j_rocket",
+    "effect": "Earn $1 at end of round, payout increases by $2 when Boss Blind is defeated",
+    "wiki": "https://balatrowiki.org/w/Rocket"
+  },
+  "Rough Gem": {
+    "key": "j_rough_gem",
+    "effect": "Played Diamond cards earn $1 when scored",
+    "wiki": "https://balatrowiki.org/w/Rough_Gem"
+  },
+  "Runner": {
+    "key": "j_runner",
+    "effect": "Gains +15 Chips if played hand contains a Straight",
+    "wiki": "https://balatrowiki.org/w/Runner"
+  },
+  "Satellite": {
+    "key": "j_satellite",
+    "effect": "Earn $1 at end of round per unique Planet card used this run",
+    "wiki": "https://balatrowiki.org/w/Satellite"
+  },
+  "Scary Face": {
+    "key": "j_scary_face",
+    "effect": "Played face cards give +30 Chips when scored",
+    "wiki": "https://balatrowiki.org/w/Scary_Face"
+  },
+  "Scholar": {
+    "key": "j_scholar",
+    "effect": "Played Aces give +20 Chips and +4 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Scholar"
+  },
+  "Séance": {
+    "key": "j_seance",
+    "effect": "If poker hand is a Straight Flush, create a random Spectral card",
+    "wiki": "https://balatrowiki.org/w/Séance"
+  },
+  "Seeing Double": {
+    "key": "j_seeing_double",
+    "effect": "X2 Mult if played hand has a scoring Club and a card of any other suit",
+    "wiki": "https://balatrowiki.org/w/Seeing_Double"
+  },
+  "Seltzer": {
+    "key": "j_selzer",
+    "effect": "Retrigger all cards played for the next 10 hands",
+    "wiki": "https://balatrowiki.org/w/Seltzer"
+  },
+  "Shoot the Moon": {
+    "key": "j_shoot_the_moon",
+    "effect": "Each Queen held in hand gives +13 Mult",
+    "wiki": "https://balatrowiki.org/w/Shoot_the_Moon"
+  },
+  "Shortcut": {
+    "key": "j_shortcut",
+    "effect": "Allows Straights to be made with gaps of 1 rank",
+    "wiki": "https://balatrowiki.org/w/Shortcut"
+  },
+  "Sixth Sense": {
+    "key": "j_sixth_sense",
+    "effect": "If first hand of round is a single 6, destroy it and create a Spectral card",
+    "wiki": "https://balatrowiki.org/w/Sixth_Sense"
+  },
+  "Sly Joker": {
+    "key": "j_sly",
+    "effect": "+50 Chips if played hand contains a Pair",
+    "wiki": "https://balatrowiki.org/w/Sly_Joker"
+  },
+  "Smeared Joker": {
+    "key": "j_smeared",
+    "effect": "Hearts/Diamonds count as same suit, Spades/Clubs count as same suit",
+    "wiki": "https://balatrowiki.org/w/Smeared_Joker"
+  },
+  "Smiley Face": {
+    "key": "j_smiley",
+    "effect": "Played face cards give +5 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Smiley_Face"
+  },
+  "Sock and Buskin": {
+    "key": "j_sock_and_buskin",
+    "effect": "Retrigger all played face cards",
+    "wiki": "https://balatrowiki.org/w/Sock_and_Buskin"
+  },
+  "Space Joker": {
+    "key": "j_space",
+    "effect": "1 in 4 chance to upgrade level of played poker hand",
+    "wiki": "https://balatrowiki.org/w/Space_Joker"
+  },
+  "Splash": {
+    "key": "j_splash",
+    "effect": "Every played card counts in scoring",
+    "wiki": "https://balatrowiki.org/w/Splash"
+  },
+  "Square Joker": {
+    "key": "j_square",
+    "effect": "Gains +4 Chips if played hand has exactly 4 cards",
+    "wiki": "https://balatrowiki.org/w/Square_Joker"
+  },
+  "Steel Joker": {
+    "key": "j_steel_joker",
+    "effect": "Gives X0.2 Mult for each Steel Card in your full deck",
+    "wiki": "https://balatrowiki.org/w/Steel_Joker"
+  },
+  "Joker Stencil": {
+    "key": "j_stencil",
+    "effect": "每个空小丑槽 X1 Mult，含自身（5 槽仅 Stencil = X5；2 张占槽 + Stencil + 3 空 = Stencil 侧 X4）。多张 Stencil 相乘极猛。",
+    "wiki": "https://balatrowiki.org/w/Joker_Stencil",
+    "misconception": "不是 +1 flat mult；是 XMult 乘区。",
+    "synergy": "Negative 不占槽、Antimatter +槽、少买占槽小丑、星球升主牌型。",
+    "anti": "Riff-Raff、乱买第三张普通小丑。"
+  },
+  "Stone Joker": {
+    "key": "j_stone",
+    "effect": "Gives +25 Chips for each Stone Card in your full deck",
+    "wiki": "https://balatrowiki.org/w/Stone_Joker"
+  },
+  "Stuntman": {
+    "key": "j_stuntman",
+    "effect": "+250 Chips, -2 hand size",
+    "wiki": "https://balatrowiki.org/w/Stuntman"
+  },
+  "Supernova": {
+    "key": "j_supernova",
+    "effect": "Adds the number of times poker hand has been played this run to Mult",
+    "wiki": "https://balatrowiki.org/w/Supernova"
+  },
+  "Superposition": {
+    "key": "j_superposition",
+    "effect": "Create a Tarot card if poker hand contains an Ace and a Straight",
+    "wiki": "https://balatrowiki.org/w/Superposition"
+  },
+  "Swashbuckler": {
+    "key": "j_swashbuckler",
+    "effect": "Adds the sell value of all other owned Jokers to Mult",
+    "wiki": "https://balatrowiki.org/w/Swashbuckler"
+  },
+  "Throwback": {
+    "key": "j_throwback",
+    "effect": "X0.25 Mult for each Blind skipped this run",
+    "wiki": "https://balatrowiki.org/w/Throwback"
+  },
+  "Golden Ticket": {
+    "key": "j_ticket",
+    "effect": "Played Gold cards earn $4 when scored",
+    "wiki": "https://balatrowiki.org/w/Golden_Ticket"
+  },
+  "To the Moon": {
+    "key": "j_to_the_moon",
+    "effect": "Earn an extra $1 of interest for every $5 at end of round",
+    "wiki": "https://balatrowiki.org/w/To_the_Moon"
+  },
+  "To Do List": {
+    "key": "j_todo_list",
+    "effect": "每回合随机指定一种牌型；打出该牌型计分时 +$4；回合结束换目标。必须是该牌型本身，不能子集（葫芦不算两对）。",
+    "wiki": "https://balatrowiki.org/w/To_Do_List",
+    "misconception": "不是 +mult；是经济小丑。多份独立随机目标。",
+    "synergy": "Burglar、+hand 券、Four Fingers、Blueprint 复制。",
+    "anti": "固定牌型构筑（Runner、Obelisk）；Black/金针 deck 手数少。"
+  },
+  "Trading Card": {
+    "key": "j_trading",
+    "effect": "If first discard of round has only 1 card, destroy it and earn $3",
+    "wiki": "https://balatrowiki.org/w/Trading_Card"
+  },
+  "The Tribe": {
+    "key": "j_tribe",
+    "effect": "X2 Mult if played hand contains a Flush",
+    "wiki": "https://balatrowiki.org/w/The_Tribe"
+  },
+  "Triboulet": {
+    "key": "j_triboulet",
+    "effect": "Played Kings and Queens each give X2 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Triboulet"
+  },
+  "The Trio": {
+    "key": "j_trio",
+    "effect": "X3 Mult if played hand contains a Three of a Kind",
+    "wiki": "https://balatrowiki.org/w/The_Trio"
+  },
+  "Troubadour": {
+    "key": "j_troubadour",
+    "effect": "+2 hand size, -1 hand each round",
+    "wiki": "https://balatrowiki.org/w/Troubadour"
+  },
+  "Spare Trousers": {
+    "key": "j_trousers",
+    "effect": "Gains +2 Mult if played hand contains a Two Pair",
+    "wiki": "https://balatrowiki.org/w/Spare_Trousers"
+  },
+  "Turtle Bean": {
+    "key": "j_turtle_bean",
+    "effect": "+5 hand size, reduces by 1 each round",
+    "wiki": "https://balatrowiki.org/w/Turtle_Bean"
+  },
+  "Vagabond": {
+    "key": "j_vagabond",
+    "effect": "Create a Tarot card if hand is played with $4 or less",
+    "wiki": "https://balatrowiki.org/w/Vagabond"
+  },
+  "Vampire": {
+    "key": "j_vampire",
+    "effect": "Gains X0.1 Mult per scoring Enhanced card played, removes Enhancement",
+    "wiki": "https://balatrowiki.org/w/Vampire"
+  },
+  "Walkie Talkie": {
+    "key": "j_walkie_talkie",
+    "effect": "Each played 10 or 4 gives +10 Chips and +4 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Walkie_Talkie"
+  },
+  "Wee Joker": {
+    "key": "j_wee",
+    "effect": "起始 +0 Chips；每次计分牌里的 2 被计分时，永久 +8 Chips。重触发（Hack、Dusk、Red Seal 等）每次计分再 +8。",
+    "wiki": "https://balatrowiki.org/w/Wee_Joker",
+    "misconception": "不是「每张小丑 +筹码」；必须打出并计分的 2 才成长。",
+    "synergy": "Hack、Hanging Chad、Dusk、Pareidolia、满手 2 的牌组改造。",
+    "anti": "很难打到 2 的构筑；前期几乎无贡献。"
+  },
+  "Wily Joker": {
+    "key": "j_wily",
+    "effect": "+100 Chips if played hand contains a Three of a Kind",
+    "wiki": "https://balatrowiki.org/w/Wily_Joker"
+  },
+  "Wrathful Joker": {
+    "key": "j_wrathful_joker",
+    "effect": "Played Spade cards give +3 Mult when scored",
+    "wiki": "https://balatrowiki.org/w/Wrathful_Joker"
+  },
+  "Yorick": {
+    "key": "j_yorick",
+    "effect": "Gains X1 Mult every 23 cards discarded",
+    "wiki": "https://balatrowiki.org/w/Yorick"
+  },
+  "Zany Joker": {
+    "key": "j_zany",
+    "effect": "+12 Mult if played hand contains a Three of a Kind",
+    "wiki": "https://balatrowiki.org/w/Zany_Joker"
+  }
+}

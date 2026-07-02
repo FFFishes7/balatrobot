@@ -279,6 +279,24 @@ local function extract_card_value(card)
   -- Effect description (for all cards)
   value.effect = get_card_ui_description(card)
 
+  -- The Fool previews the last used Tarot/Planet it will copy. Balatro stores
+  -- this in G.GAME.last_tarot_planet and the in-game UI shows it on the card.
+  if card.config and card.config.center_key == "c_fool" then
+    local copy_key = G.GAME and G.GAME.last_tarot_planet or nil
+    value.copy_key = copy_key or ""
+    if copy_key and G.P_CENTERS and G.P_CENTERS[copy_key] then
+      local center = G.P_CENTERS[copy_key]
+      value.copy_set = center.set or ""
+      value.copy_label = center.name or ""
+      if localize then
+        local ok, localized = pcall(localize, { type = "name_text", key = copy_key, set = center.set })
+        if ok and localized then
+          value.copy_label = localized
+        end
+      end
+    end
+  end
+
   return value
 end
 

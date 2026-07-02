@@ -1,0 +1,162 @@
+{
+  "Antimatter": {
+    "key": "v_antimatter",
+    "effect": "+1 Joker slot",
+    "wiki": "https://balatrowiki.org/w/Antimatter"
+  },
+  "Blank": {
+    "key": "v_blank",
+    "effect": "Does nothing?",
+    "wiki": "https://balatrowiki.org/w/Blank"
+  },
+  "Clearance Sale": {
+    "key": "v_clearance_sale",
+    "effect": "All cards and packs in shop are 25% off",
+    "wiki": "https://balatrowiki.org/w/Clearance_Sale"
+  },
+  "Crystal Ball": {
+    "key": "v_crystal_ball",
+    "effect": "+1 consumable slot",
+    "wiki": "https://balatrowiki.org/w/Crystal_Ball"
+  },
+  "Director's Cut": {
+    "key": "v_directors_cut",
+    "effect": "Reroll Boss Blind 1 time per Ante, $10 per roll",
+    "wiki": "https://balatrowiki.org/w/Director%27s_Cut"
+  },
+  "Glow Up": {
+    "key": "v_glow_up",
+    "effect": "Foil, Holographic, and Polychrome cards appear 4X more often",
+    "wiki": "https://balatrowiki.org/w/Glow_Up"
+  },
+  "Grabber": {
+    "key": "v_grabber",
+    "effect": "Permanently gain +1 hand per round",
+    "wiki": "https://balatrowiki.org/w/Grabber"
+  },
+  "Hieroglyph": {
+    "key": "v_hieroglyph",
+    "effect": "-1 Ante, -1 hand each round",
+    "wiki": "https://balatrowiki.org/w/Hieroglyph"
+  },
+  "Hone": {
+    "key": "v_hone",
+    "effect": "Foil, Holographic, and Polychrome cards appear 2X more often",
+    "wiki": "https://balatrowiki.org/w/Hone"
+  },
+  "Illusion": {
+    "key": "v_illusion",
+    "effect": "Playing cards in shop may have an Enhancement, Edition, and/or a Seal",
+    "wiki": "https://balatrowiki.org/w/Illusion"
+  },
+  "Liquidation": {
+    "key": "v_liquidation",
+    "effect": "All cards and packs in shop are 50% off",
+    "wiki": "https://balatrowiki.org/w/Liquidation"
+  },
+  "Magic Trick": {
+    "key": "v_magic_trick",
+    "effect": "Playing cards can be purchased from the shop",
+    "wiki": "https://balatrowiki.org/w/Magic_Trick"
+  },
+  "Money Tree": {
+    "key": "v_money_tree",
+    "effect": "Raise the cap on interest earned in each round to $20",
+    "wiki": "https://balatrowiki.org/w/Money_Tree"
+  },
+  "Nacho Tong": {
+    "key": "v_nacho_tong",
+    "effect": "Permanently gain an additional +1 hand per round",
+    "wiki": "https://balatrowiki.org/w/Nacho_Tong"
+  },
+  "Observatory": {
+    "key": "v_observatory",
+    "effect": "Planet cards in consumable area give X1.5 Mult for their poker hand",
+    "wiki": "https://balatrowiki.org/w/Observatory"
+  },
+  "Omen Globe": {
+    "key": "v_omen_globe",
+    "effect": "Spectral cards may appear in any of the Arcana Packs",
+    "wiki": "https://balatrowiki.org/w/Omen_Globe"
+  },
+  "Overstock": {
+    "key": "v_overstock_norm",
+    "effect": "+1 card slot available in shop (to 3 slots)",
+    "wiki": "https://balatrowiki.org/w/Overstock"
+  },
+  "Overstock Plus": {
+    "key": "v_overstock_plus",
+    "effect": "+1 card slot available in shop (to 4 slots)",
+    "wiki": "https://balatrowiki.org/w/Overstock_Plus"
+  },
+  "Paint Brush": {
+    "key": "v_paint_brush",
+    "effect": "+1 hand size",
+    "wiki": "https://balatrowiki.org/w/Paint_Brush"
+  },
+  "Palette": {
+    "key": "v_palette",
+    "effect": "+1 hand size again",
+    "wiki": "https://balatrowiki.org/w/Palette"
+  },
+  "Petroglyph": {
+    "key": "v_petroglyph",
+    "effect": "-1 Ante again, -1 discard each round",
+    "wiki": "https://balatrowiki.org/w/Petroglyph"
+  },
+  "Planet Merchant": {
+    "key": "v_planet_merchant",
+    "effect": "Planet cards appear 2X more frequently in the shop",
+    "wiki": "https://balatrowiki.org/w/Planet_Merchant"
+  },
+  "Planet Tycoon": {
+    "key": "v_planet_tycoon",
+    "effect": "Planet cards appear 4X more frequently in the shop",
+    "wiki": "https://balatrowiki.org/w/Planet_Tycoon"
+  },
+  "Recyclomancy": {
+    "key": "v_recyclomancy",
+    "effect": "Permanently gain an additional +1 discard each round",
+    "wiki": "https://balatrowiki.org/w/Recyclomancy"
+  },
+  "Reroll Glut": {
+    "key": "v_reroll_glut",
+    "effect": "Rerolls cost an additional $2 less",
+    "wiki": "https://balatrowiki.org/w/Reroll_Glut"
+  },
+  "Reroll Surplus": {
+    "key": "v_reroll_surplus",
+    "effect": "Rerolls cost $2 less",
+    "wiki": "https://balatrowiki.org/w/Reroll_Surplus"
+  },
+  "Retcon": {
+    "key": "v_retcon",
+    "effect": "Reroll Boss Blind unlimited times, $10 per roll",
+    "wiki": "https://balatrowiki.org/w/Retcon"
+  },
+  "Seed Money": {
+    "key": "v_seed_money",
+    "effect": "Raise the cap on interest earned in each round to $10",
+    "wiki": "https://balatrowiki.org/w/Seed_Money"
+  },
+  "Tarot Merchant": {
+    "key": "v_tarot_merchant",
+    "effect": "Tarot cards appear 2X more frequently in the shop",
+    "wiki": "https://balatrowiki.org/w/Tarot_Merchant"
+  },
+  "Tarot Tycoon": {
+    "key": "v_tarot_tycoon",
+    "effect": "Tarot cards appear 4X more frequently in the shop",
+    "wiki": "https://balatrowiki.org/w/Tarot_Tycoon"
+  },
+  "Telescope": {
+    "key": "v_telescope",
+    "effect": "Celestial Packs always contain the Planet card for your most played poker hand",
+    "wiki": "https://balatrowiki.org/w/Telescope"
+  },
+  "Wasteful": {
+    "key": "v_wasteful",
+    "effect": "Permanently gain +1 discard each round",
+    "wiki": "https://balatrowiki.org/w/Wasteful"
+  }
+}

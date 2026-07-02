@@ -16,6 +16,23 @@
 
 BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing game state and controls for external program interaction. The API provides endpoints for complete game control, including card selection, shop transactions, blind selection, and state management. External clients connect via HTTP POST to execute game actions programmatically.
 
+
+## Local Play Helpers and Knowledge Library
+
+This fork includes an optional helper layer for manual/LLM-assisted Balatro play:
+
+- `tools/play/`: command wrappers, compact state display, and JSON-RPC helper scripts.
+- `knowledge/balatro/`: verified Balatro lookup tables and strategy notes used by `tools/play/know.py`.
+
+Example:
+
+```powershell
+.\tools\play\bot.ps1 state
+.\tools\play\bot.ps1 know preflight
+```
+
+To launch a local GUI session, copy `tools/play/serve.example.ps1` to `tools/play/serve.ps1`, adjust the Balatro install path, then run it from the repository root or via the script path.
+
 ## 📚 Documentation
 
 https://coder.github.io/balatrobot/

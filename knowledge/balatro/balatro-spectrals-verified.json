@@ -1,0 +1,92 @@
+{
+  "Ankh": {
+    "key": "c_ankh",
+    "effect": "Create a copy of a random Joker, destroy all other Jokers",
+    "wiki": "https://balatrowiki.org/w/Ankh"
+  },
+  "Aura": {
+    "key": "c_aura",
+    "effect": "Add Foil, Holographic, or Polychrome effect to 1 selected card",
+    "wiki": "https://balatrowiki.org/w/Aura"
+  },
+  "Black Hole": {
+    "key": "c_black_hole",
+    "effect": "Upgrade every poker hand by 1 level",
+    "wiki": "https://balatrowiki.org/w/Black_Hole"
+  },
+  "Cryptid": {
+    "key": "c_cryptid",
+    "effect": "Create 2 copies of 1 selected card",
+    "wiki": "https://balatrowiki.org/w/Cryptid"
+  },
+  "Deja Vu": {
+    "key": "c_deja_vu",
+    "effect": "Add a Red Seal to 1 selected card",
+    "wiki": "https://balatrowiki.org/w/Deja_Vu"
+  },
+  "Ectoplasm": {
+    "key": "c_ectoplasm",
+    "effect": "Add Negative to a random Joker, -1 hand size",
+    "wiki": "https://balatrowiki.org/w/Ectoplasm"
+  },
+  "Familiar": {
+    "key": "c_familiar",
+    "effect": "Destroy 1 random card in hand, add 3 random Enhanced face cards",
+    "wiki": "https://balatrowiki.org/w/Familiar"
+  },
+  "Grim": {
+    "key": "c_grim",
+    "effect": "Destroy 1 random card in hand, add 2 random Enhanced Aces",
+    "wiki": "https://balatrowiki.org/w/Grim"
+  },
+  "Hex": {
+    "key": "c_hex",
+    "effect": "Add Polychrome to a random Joker, destroy all other Jokers",
+    "wiki": "https://balatrowiki.org/w/Hex"
+  },
+  "Immolate": {
+    "key": "c_immolate",
+    "effect": "Destroys 5 random cards in hand, gain $20",
+    "wiki": "https://balatrowiki.org/w/Immolate"
+  },
+  "Incantation": {
+    "key": "c_incantation",
+    "effect": "Destroy 1 random card in hand, add 4 random Enhanced numbered cards",
+    "wiki": "https://balatrowiki.org/w/Incantation"
+  },
+  "Medium": {
+    "key": "c_medium",
+    "effect": "Add a Purple Seal to 1 selected card",
+    "wiki": "https://balatrowiki.org/w/Medium"
+  },
+  "Ouija": {
+    "key": "c_ouija",
+    "effect": "Converts all cards in hand to a single random rank (-1 hand size)",
+    "wiki": "https://balatrowiki.org/w/Ouija"
+  },
+  "Sigil": {
+    "key": "c_sigil",
+    "effect": "Converts all cards in hand to a single random suit",
+    "wiki": "https://balatrowiki.org/w/Sigil"
+  },
+  "The Soul": {
+    "key": "c_soul",
+    "effect": "Creates a Legendary Joker (Must have room)",
+    "wiki": "https://balatrowiki.org/w/The_Soul"
+  },
+  "Talisman": {
+    "key": "c_talisman",
+    "effect": "Add a Gold Seal to 1 selected card",
+    "wiki": "https://balatrowiki.org/w/Talisman"
+  },
+  "Trance": {
+    "key": "c_trance",
+    "effect": "Add a Blue Seal to 1 selected card",
+    "wiki": "https://balatrowiki.org/w/Trance"
+  },
+  "Wraith": {
+    "key": "c_wraith",
+    "effect": "Creates a random Rare Joker, sets money to $0",
+    "wiki": "https://balatrowiki.org/w/Wraith"
+  }
+}

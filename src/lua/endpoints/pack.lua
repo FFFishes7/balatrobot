@@ -260,11 +260,12 @@ return {
               return true
             end
           else
-            -- Pack closes - wait for return to shop
+            -- Pack closes - wait for return to a stable state. Shop-bought packs
+            -- return to SHOP, while packs opened by skip tags return to BLIND_SELECT.
             local pack_closed = not G.pack_cards or G.pack_cards.REMOVED
-            local back_to_shop = G.STATE == G.STATES.SHOP
+            local back_to_stable_state = G.STATE == G.STATES.SHOP or G.STATE == G.STATES.BLIND_SELECT
 
-            if pack_closed and back_to_shop then
+            if pack_closed and back_to_stable_state then
               sendDebugMessage("Return pack() after selection", "BB.ENDPOINTS")
               send_response(BB_GAMESTATE.get_gamestate())
               return true
@@ -283,15 +284,16 @@ return {
       sendDebugMessage(string.format("Pack: skipping (%d cards remaining)", pack_count), "BB.ENDPOINTS")
       G.FUNCS.skip_booster({})
 
-      -- Wait for pack to close and return to shop
+      -- Wait for pack to close and return to a stable state. Shop-bought packs
+      -- return to SHOP, while packs opened by skip tags return to BLIND_SELECT.
       G.E_MANAGER:add_event(Event({
         trigger = "condition",
         blocking = false,
         func = function()
           local pack_closed = not G.pack_cards or G.pack_cards.REMOVED
-          local back_to_shop = G.STATE == G.STATES.SHOP
+          local back_to_stable_state = G.STATE == G.STATES.SHOP or G.STATE == G.STATES.BLIND_SELECT
 
-          if pack_closed and back_to_shop then
+          if pack_closed and back_to_stable_state then
             sendDebugMessage("Return pack() after skip", "BB.ENDPOINTS")
             send_response(BB_GAMESTATE.get_gamestate())
             return true

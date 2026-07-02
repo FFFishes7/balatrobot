@@ -1,0 +1,112 @@
+{
+  "The Chariot": {
+    "key": "c_chariot",
+    "effect": "Enhances 1 selected card into a Steel Card",
+    "wiki": "https://balatrowiki.org/w/The_Chariot"
+  },
+  "Death": {
+    "key": "c_death",
+    "effect": "Select 2 cards, convert the left card into the right card",
+    "wiki": "https://balatrowiki.org/w/Death"
+  },
+  "The Devil": {
+    "key": "c_devil",
+    "effect": "Enhances 1 selected card into a Gold Card",
+    "wiki": "https://balatrowiki.org/w/The_Devil"
+  },
+  "The Emperor": {
+    "key": "c_emperor",
+    "effect": "Creates up to 2 random Tarot cards (Must have room)",
+    "wiki": "https://balatrowiki.org/w/The_Emperor"
+  },
+  "The Empress": {
+    "key": "c_empress",
+    "effect": "Enhances 2 selected cards to Mult Cards",
+    "wiki": "https://balatrowiki.org/w/The_Empress"
+  },
+  "The Fool": {
+    "key": "c_fool",
+    "effect": "Creates the last Tarot or Planet card used during this run (The Fool excluded)",
+    "wiki": "https://balatrowiki.org/w/The_Fool"
+  },
+  "The Hanged Man": {
+    "key": "c_hanged_man",
+    "effect": "Destroys up to 2 selected cards",
+    "wiki": "https://balatrowiki.org/w/The_Hanged_Man"
+  },
+  "The Hierophant": {
+    "key": "c_heirophant",
+    "effect": "Enhances 2 selected cards to Bonus Cards",
+    "wiki": "https://balatrowiki.org/w/The_Hierophant"
+  },
+  "The Hermit": {
+    "key": "c_hermit",
+    "effect": "Doubles money (Max of $20)",
+    "wiki": "https://balatrowiki.org/w/The_Hermit"
+  },
+  "The High Priestess": {
+    "key": "c_high_priestess",
+    "effect": "Creates up to 2 random Planet cards (Must have room)",
+    "wiki": "https://balatrowiki.org/w/The_High_Priestess"
+  },
+  "Judgement": {
+    "key": "c_judgement",
+    "effect": "Creates a random Joker card (Must have room)",
+    "wiki": "https://balatrowiki.org/w/Judgement"
+  },
+  "Justice": {
+    "key": "c_justice",
+    "effect": "Enhances 1 selected card into a Glass Card",
+    "wiki": "https://balatrowiki.org/w/Justice"
+  },
+  "The Lovers": {
+    "key": "c_lovers",
+    "effect": "Enhances 1 selected card into a Wild Card",
+    "wiki": "https://balatrowiki.org/w/The_Lovers"
+  },
+  "The Magician": {
+    "key": "c_magician",
+    "effect": "Enhances 2 selected cards to Lucky Cards",
+    "wiki": "https://balatrowiki.org/w/The_Magician"
+  },
+  "The Moon": {
+    "key": "c_moon",
+    "effect": "Converts up to 3 selected cards to Clubs",
+    "wiki": "https://balatrowiki.org/w/The_Moon"
+  },
+  "The Star": {
+    "key": "c_star",
+    "effect": "Converts up to 3 selected cards to Diamonds",
+    "wiki": "https://balatrowiki.org/w/The_Star"
+  },
+  "Strength": {
+    "key": "c_strength",
+    "effect": "Increases rank of up to 2 selected cards by 1",
+    "wiki": "https://balatrowiki.org/w/Strength"
+  },
+  "The Sun": {
+    "key": "c_sun",
+    "effect": "Converts up to 3 selected cards to Hearts",
+    "wiki": "https://balatrowiki.org/w/The_Sun"
+  },
+  "Temperance": {
+    "key": "c_temperance",
+    "effect": "Gives the total sell value of all current Jokers (Max of $50)",
+    "wiki": "https://balatrowiki.org/w/Temperance"
+  },
+  "The Tower": {
+    "key": "c_tower",
+    "effect": "Enhances 1 selected card into a Stone Card",
+    "wiki": "https://balatrowiki.org/w/The_Tower"
+  },
+  "The Wheel of Fortune": {
+    "key": "c_wheel_of_fortune",
+    "effect": "1 in 4 chance to add Foil, Holographic, or Polychrome edition to a random Joker",
+    "wiki": "https://balatrowiki.org/w/The_Wheel_of_Fortune"
+  },
+  "The World": {
+    "key": "c_world",
+    "effect": "Converts up to 3 selected cards to Spades",
+    "wiki": "https://balatrowiki.org/w/The_World"
+  }
+}

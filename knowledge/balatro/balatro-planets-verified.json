@@ -1,0 +1,63 @@
+{
+  "Ceres": {
+    "key": "c_ceres",
+    "effect": "Increases Flush House hand value by +4 Mult and +40 Chips",
+    "wiki": "https://balatrowiki.org/w/Ceres"
+  },
+  "Earth": {
+    "key": "c_earth",
+    "effect": "Increases Full House hand value by +2 Mult and +25 Chips",
+    "wiki": "https://balatrowiki.org/w/Earth"
+  },
+  "Eris": {
+    "key": "c_eris",
+    "effect": "Increases Flush Five hand value by +3 Mult and +50 Chips",
+    "wiki": "https://balatrowiki.org/w/Eris"
+  },
+  "Jupiter": {
+    "key": "c_jupiter",
+    "effect": "Increases Flush hand value by +2 Mult and +15 Chips",
+    "wiki": "https://balatrowiki.org/w/Jupiter"
+  },
+  "Mars": {
+    "key": "c_mars",
+    "effect": "Increases Four of a Kind hand value by +3 Mult and +30 Chips",
+    "wiki": "https://balatrowiki.org/w/Mars",
+    "misconception": "升 Four of a Kind，不是 Three of a Kind。"
+  },
+  "Mercury": {
+    "key": "c_mercury",
+    "effect": "Increases Pair hand value by +1 Mult and +15 Chips",
+    "wiki": "https://balatrowiki.org/w/Mercury"
+  },
+  "Neptune": {
+    "key": "c_neptune",
+    "effect": "Increases Straight Flush hand value by +4 Mult and +40 Chips",
+    "wiki": "https://balatrowiki.org/w/Neptune"
+  },
+  "Planet X": {
+    "key": "c_planet_x",
+    "effect": "Increases Five of a Kind hand value by +3 Mult and +35 Chips",
+    "wiki": "https://balatrowiki.org/w/Planet_X"
+  },
+  "Pluto": {
+    "key": "c_pluto",
+    "effect": "Increases High Card hand value by +1 Mult and +10 Chips",
+    "wiki": "https://balatrowiki.org/w/Pluto"
+  },
+  "Saturn": {
+    "key": "c_saturn",
+    "effect": "Increases Straight hand value by +3 Mult and +30 Chips",
+    "wiki": "https://balatrowiki.org/w/Saturn"
+  },
+  "Uranus": {
+    "key": "c_uranus",
+    "effect": "Increases Two Pair hand value by +1 Mult and +20 Chips",
+    "wiki": "https://balatrowiki.org/w/Uranus"
+  },
+  "Venus": {
+    "key": "c_venus",
+    "effect": "Increases Three of a Kind hand value by +2 Mult and +20 Chips",
+    "wiki": "https://balatrowiki.org/w/Venus"
+  }
+}
