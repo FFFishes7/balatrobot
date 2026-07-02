@@ -29,6 +29,30 @@ def card_debuffed(card: dict[str, Any]) -> bool:
     return False
 
 
+def base_chips(card: dict[str, Any]) -> int | None:
+    """Base chip value of a playing card from its rank, with no edition or
+    enhancement bonuses baked in. 2-9 = face value, T/J/Q/K = 10, A = 11.
+
+    Returns None for cards without a rank (e.g. Stone), so the caller can
+    fall back to the raw effect text.
+    """
+    val = card.get("value") or {}
+    rank = str(val.get("rank") or "")
+    mapping = {"T": 10, "J": 10, "Q": 10, "K": 10, "A": 11}
+    if rank.isdigit():
+        return int(rank)
+    if rank in mapping:
+        return mapping[rank]
+    key = card.get("key", "")
+    if "_" in key:
+        _, r = key.split("_", 1)
+        if r.isdigit():
+            return int(r)
+        if r in mapping:
+            return mapping[r]
+    return None
+
+
 def active_blind(state: dict[str, Any]) -> dict[str, Any] | None:
     if state.get("blind"):
         return state["blind"]
@@ -50,11 +74,29 @@ def card_cost(card: dict[str, Any], show_cost: bool = True) -> str:
 
 
 EDITION_LABEL = {
-    "FOIL": "FOIL +50c",
-    "HOLO": "HOLO +10m",
-    "HOLOGRAPHIC": "HOLO +10m",
-    "POLYCHROME": "POLY x1.5",
-    "NEGATIVE": "NEG +slot",
+    "FOIL": "箔片:+50筹码",
+    "HOLO": "全息:+10倍率",
+    "HOLOGRAPHIC": "全息:+10倍率",
+    "POLYCHROME": "多彩:×1.5",
+    "NEGATIVE": "负片:+槽位",
+}
+
+ENHANCEMENT_LABEL = {
+    "BONUS": "奖励:+30筹码",
+    "MULT": "倍率:+4倍率",
+    "GLASS": "玻璃:×2倍率 1/4碎裂",
+    "STEEL": "钢铁:留在手牌×1.5",
+    "GOLD": "金币:留在手牌+$3",
+    "LUCKY": "幸运:1/5 +20倍率 1/15 +$20",
+    "STONE": "石头:+50筹码 无花色点数",
+    "WILD": "万能:任意花色点数",
+}
+
+SEAL_LABEL = {
+    "RED": "红色蜡封:计分时再次触发",
+    "BLUE": "蓝色蜡封:留至回合末生成星球牌",
+    "PURPLE": "紫色蜡封:弃牌时生成随机塔罗牌",
+    "GOLD": "金色蜡封:计分时+$3",
 }
 
 
@@ -66,21 +108,64 @@ def card_tags(card: dict[str, Any]) -> list[str]:
         tags.append(EDITION_LABEL.get(str(edition), str(edition)))
     enhancement = modifier.get("enhancement")
     if enhancement and card.get("set") in ("DEFAULT", "ENHANCED"):
-        tags.append(str(enhancement))
-    if modifier.get("seal"):
-        tags.append(f"{modifier['seal']} SEAL")
+        tags.append(ENHANCEMENT_LABEL.get(str(enhancement), str(enhancement)))
+    seal = modifier.get("seal")
+    if seal:
+        tags.append(SEAL_LABEL.get(str(seal), f"{seal}蜡封"))
     if modifier.get("eternal"):
-        tags.append("ETERNAL")
+        tags.append("永恒")
     if modifier.get("rental"):
-        tags.append("RENTAL")
+        tags.append("租赁")
     if modifier.get("perishable"):
-        tags.append(f"PERISH {modifier['perishable']}")
+        tags.append(f"消逝{modifier['perishable']}")
     return tags
 
 
 def compact_effect(card: dict[str, Any]) -> str:
     effect = ((card.get("value") or {}).get("effect") or "").strip()
     return " ".join(effect.split())
+
+
+# Fallback descriptions when a card's value.effect is empty. Keyed by tokens
+# that appear in the card label, so it works regardless of exact card key.
+STATIC_EFFECT_TOKENS: list[tuple[str, str]] = [
+    ("Buffoon", "补充包内含小丑牌"),
+    ("Arcana", "补充包内含塔罗牌"),
+    ("Celestial", "补充包内含星球牌"),
+    ("Spectral", "补充包内含幻灵牌"),
+    ("Standard", "补充包内含增强手牌"),
+]
+
+
+def static_effect(card: dict[str, Any]) -> str:
+    label = card.get("label", "") or ""
+    for token, desc in STATIC_EFFECT_TOKENS:
+        if token in label:
+            return desc
+    return ""
+
+
+SET_LABEL: dict[str, str] = {
+    "JOKER": "小丑",
+    "TAROT": "塔罗",
+    "PLANET": "星球",
+    "SPECTRAL": "幻灵",
+    "VOUCHER": "凭证",
+    "DEFAULT": "手牌",
+    "ENHANCED": "手牌",
+    "BOOSTER": "补充包",
+}
+
+
+def type_tag(card: dict[str, Any]) -> str:
+    """Short Chinese label for the card's set, e.g. 小丑/塔罗/星球.
+
+    Falls back to the raw uppercased set so an unknown set still surfaces.
+    """
+    s = str(card.get("set") or "").strip().upper()
+    if not s:
+        return ""
+    return SET_LABEL.get(s, s)
 
 
 def is_playing_card(card: dict[str, Any]) -> bool:
@@ -101,6 +186,7 @@ def display_name(
     include_effect: bool = False,
     include_card_face: bool = True,
     show_cost: bool = True,
+    include_type: bool = False,
 ) -> str:
     label = card.get("label", card.get("key", "?"))
     if include_card_face and is_playing_card(card):
@@ -112,12 +198,27 @@ def display_name(
         if copy_label and copy_label != "c_fool":
             name += f" -> {copy_label}"
     tags = card_tags(card)
+    if include_type:
+        t = type_tag(card)
+        if t:
+            tags.insert(0, t)
     if tags:
         name += " [" + ", ".join(tags) + "]"
     if include_effect:
-        effect = compact_effect(card)
-        if effect:
-            name += f" — {effect}"
+        if is_playing_card(card):
+            # Playing cards: show only base-rank chips here. Edition and
+            # enhancement bonuses are already conveyed by card_tags, so
+            # reusing the baked-in effect string would double-count (e.g.
+            # "++60筹码" next to "[箔片:+50筹码]").
+            bc = base_chips(card)
+            if bc is not None:
+                name += f" — ++{bc}筹码"
+        else:
+            effect = compact_effect(card)
+            if not effect:
+                effect = static_effect(card)
+            if effect:
+                name += f" — {effect}"
     return name
 
 
@@ -125,9 +226,18 @@ def named_area(
     cards: list[dict[str, Any]],
     include_effect: bool = False,
     show_cost: bool = True,
+    include_type: bool = False,
 ) -> list[tuple[int, str]]:
     return [
-        (i, display_name(c, include_effect=include_effect, show_cost=show_cost))
+        (
+            i,
+            display_name(
+                c,
+                include_effect=include_effect,
+                show_cost=show_cost,
+                include_type=include_type,
+            ),
+        )
         for i, c in enumerate(cards)
     ]
 
@@ -154,7 +264,13 @@ def print_round_start_rules(state: dict[str, Any]) -> None:
     if state.get("state") != "SELECTING_HAND":
         return
     rnd = state.get("round") or {}
+    # Only show at the very start of the round: no chips banked and no action
+    # (play or discard) taken yet, so it doesn't repeat after every discard.
     if rnd.get("chips", 0) != 0:
+        return
+    if (rnd.get("hands_played") or 0) != 0:
+        return
+    if (rnd.get("discards_used") or 0) != 0:
         return
     print("round_rules:")
     print(
@@ -169,13 +285,16 @@ def print_round_start_rules(state: dict[str, Any]) -> None:
 
 
 def print_hint(state_name: str) -> None:
+    # Concise, high-signal cues for the primary actions of each state. Niche
+    # commands (sell / rearrange / death / all sort modes) live in `help` --
+    # the pointer below already directs there -- so the hint stays readable.
     hints = {
         "MENU": "hint: python act.py start RED WHITE",
-        "BLIND_SELECT": "hint: python act.py select  |  python act.py skip",
-        "SELECTING_HAND": "hint: python act.py play 0 1 2 3 4  |  python act.py discard 0 1",
+        "BLIND_SELECT": "hint: python act.py select  |  python act.py skip  (skip 拿上方 tag=)",
+        "SELECTING_HAND": "hint: python act.py play 0 1 2 3 4  |  discard 0 1  |  use 0 [cards...]  |  sort rank|suit",
         "ROUND_EVAL": "hint: python act.py cash_out",
-        "SHOP": "hint: python act.py buy card 0  |  python act.py buy pack 0  |  python act.py reroll  |  python act.py next_round",
-        "SMODS_BOOSTER_OPENED": "hint: python act.py pack 0 [target...]  |  python act.py pack skip",
+        "SHOP": "hint: python act.py buy card 0  |  buy pack 0  |  buy voucher 0  |  reroll  |  next_round  |  use 0",
+        "SMODS_BOOSTER_OPENED": "hint: python act.py pack 0 [targets...]  |  pack skip",
         "GAME_OVER": "hint: python act.py menu",
     }
     if state_name in hints:
@@ -213,47 +332,66 @@ def print_summary(state: dict[str, Any]) -> None:
             print(f"  (+{empty} empty slots)")
     consumables = state.get("consumables", {}).get("cards", [])
     if consumables:
-        print("consumables:", named_area(consumables))
+        print("consumables:")
+        for i, desc in named_area(consumables, include_effect=True, include_type=True):
+            print(f"  [{i}] {desc}")
     if state_name == "SHOP":
-        print("shop:", named_area(state.get("shop", {}).get("cards", [])))
-        print("packs:", named_area(state.get("packs", {}).get("cards", [])))
-        print("vouchers:", named_area(state.get("vouchers", {}).get("cards", [])))
+        shop_cards = state.get("shop", {}).get("cards", [])
+        if shop_cards:
+            print("shop:")
+            for i, desc in named_area(shop_cards, include_effect=True, include_type=True):
+                print(f"  [{i}] {desc}")
+        pack_cards = state.get("packs", {}).get("cards", [])
+        if pack_cards:
+            print("packs:")
+            for i, desc in named_area(pack_cards, include_effect=True, include_type=True):
+                print(f"  [{i}] {desc}")
+        voucher_cards = state.get("vouchers", {}).get("cards", [])
+        if voucher_cards:
+            print("vouchers:")
+            for i, desc in named_area(voucher_cards, include_effect=True, include_type=True):
+                print(f"  [{i}] {desc}")
         print(
             "blinds:",
             {
-                k: (
-                    v["name"],
-                    v.get("tag_name", ""),
-                    v.get("tag_effect", ""),
-                    v["score"],
-                )
+                k: (v["name"], v.get("tag_name", ""), v["score"])
                 for k, v in state.get("blinds", {}).items()
             },
         )
     if state_name == "BLIND_SELECT":
-        print(
-            "blinds:",
-            {
-                k: (v["name"], v.get("tag_name", ""), v["status"])
-                for k, v in state.get("blinds", {}).items()
-            },
-        )
+        print("blinds:")
+        for k, v in state.get("blinds", {}).items():
+            line = f"  {k}: {v['name']} [{v['status']}] target={v['score']}"
+            if v.get("effect"):
+                line += f" effect={v['effect']}"
+            if v.get("tag_name"):
+                line += f" tag={v['tag_name']}"
+            if v.get("tag_effect"):
+                line += f" ({v['tag_effect']})"
+            print(line)
     hand = state.get("hand", {}).get("cards", [])
     if hand:
         print("hand:")
         for i, c in enumerate(hand):
             state_info = c.get("state") if isinstance(c.get("state"), dict) else {}
-            hidden = " HIDDEN" if state_info.get("hidden") else ""
+            if state_info.get("hidden"):
+                print(f"  [{i}] ?? HIDDEN")
+                continue
             debuff = " DEBUFF" if card_debuffed(c) else ""
-            mod = c.get("value", {}).get("effect", "")
-            extra = f" +{mod}" if mod else ""
-            print(f"  [{i}] {card_label(c)} ({c['key']}){extra}{hidden}{debuff}")
+            bc = base_chips(c)
+            extra = f" ++{bc}筹码" if bc is not None else ""
+            tags = card_tags(c)
+            tag_str = f" [{', '.join(tags)}]" if tags else ""
+            print(f"  [{i}] {card_label(c)} ({c['key']}){extra}{tag_str}{debuff}")
     pack = state.get("pack", {}).get("cards", [])
     if pack:
         print(
             "pack_open (free pick):",
-            named_area(pack, include_effect=True, show_cost=False),
+            named_area(
+                pack, include_effect=True, show_cost=False, include_type=True
+            ),
         )
-    print_hand_levels(state)
+    if state_name in ("SELECTING_HAND", "ROUND_EVAL"):
+        print_hand_levels(state)
     print_round_start_rules(state)
     print_hint(state_name)

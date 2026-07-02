@@ -344,6 +344,12 @@ end
 ---@return Card card The Card object
 local function extract_card(card, opts)
   opts = opts or {}
+  -- Hidden (face-down) cards must not reveal their identity to the client.
+  -- Otherwise boss blinds like The Wheel / The Mark / The Psychic are cheated,
+  -- since the bot can read the real rank/suit/enhancement of every back-facing
+  -- card. Mask everything except position (id), cost, and the hidden flag.
+  local hidden = card.facing == "back"
+
   -- Determine set
   local set = "DEFAULT"
   if card.ability and card.ability.set then
@@ -383,6 +389,23 @@ local function extract_card(card, opts)
     cost.buy = 0
     cost.free = true
     cost.reason = "booster_pick"
+  end
+
+  if hidden then
+    local state = { hidden = true }
+    if card.highlighted then
+      state.highlight = true
+    end
+    return {
+      id = card.sort_id or 0,
+      key = "",
+      set = "DEFAULT",
+      label = "",
+      value = { effect = "" },
+      modifier = {},
+      state = state,
+      cost = cost,
+    }
   end
 
   return {
