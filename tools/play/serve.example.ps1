@@ -1,5 +1,6 @@
-# Example GUI launcher for BalatroBot.
-# Copy this file to serve.ps1, adjust $BalatroDir for your machine, and keep serve.ps1 untracked.
+# Example GUI launcher for BalatroBot (Windows).
+# Copy to serve.ps1, set $BalatroDir (or BALATROBOT_GAME_DIR), keep serve.ps1 untracked.
+# Sets BALATROBOT_BALATRO_PATH / LOVE_PATH / LOVELY_PATH for this session, then runs balatrobot serve.
 param(
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ServeArgs
@@ -13,6 +14,7 @@ if (-not $BalatroDir) {
     $BalatroDir = 'C:\Program Files (x86)\Steam\steamapps\common\Balatro'
 }
 
+$env:BALATROBOT_BALATRO_PATH = $BalatroDir
 $env:BALATROBOT_LOVE_PATH = Join-Path $BalatroDir 'Balatro.exe'
 $env:BALATROBOT_LOVELY_PATH = Join-Path $BalatroDir 'version.dll'
 

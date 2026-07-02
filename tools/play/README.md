@@ -1,8 +1,16 @@
 # Play Helpers
 
-These scripts are a convenience layer on top of the BalatroBot JSON-RPC API. They are not required by the core BalatroBot package; they make manual/LLM-assisted play easier.
+Convenience scripts on top of the BalatroBot JSON-RPC API. Not required by the core package — they make manual and LLM-assisted play easier.
 
-## Main entry point
+## Workflow
+
+1. **One-time:** install Lovely + Steamodded, link this repo into `%AppData%\Balatro\Mods\balatrobot\`, run `make install`, copy `serve.example.ps1` → `serve.ps1`.
+2. **Launch:** `.\tools\play\serve.ps1` — starts Balatro with the mod and the API on port 12346.
+3. **Play:** in another terminal, use `.\tools\play\bot.ps1 ...`.
+
+See the root [README](../../README.md#local-play) for the full setup.
+
+## Commands
 
 ```powershell
 .\tools\play\bot.ps1 state
@@ -14,11 +22,9 @@ These scripts are a convenience layer on top of the BalatroBot JSON-RPC API. The
 
 ## Files
 
-- `bot.ps1`: PowerShell wrapper for the helper scripts.
-- `act.py`: action dispatcher for play/discard/shop/pack/use/rearrange/sort helpers.
-- `view.py`: compact human-readable gamestate display.
-- `know.py`: lookup/preflight checks against `knowledge/balatro`.
-- `bot_client.py` and `rpc.py`: thin JSON-RPC client helpers.
-- `serve.example.ps1`: copy to `serve.ps1` and adjust your local Balatro install path.
-
-`serve.ps1` is intentionally ignored because it usually contains machine-specific paths.
+- `bot.ps1` — PowerShell entry point for helper commands
+- `act.py` — play / discard / shop / pack / use / rearrange / sort
+- `view.py` — compact gamestate display
+- `know.py` — lookups against `knowledge/balatro`
+- `bot_client.py`, `rpc.py` — JSON-RPC client
+- `serve.example.ps1` — copy to `serve.ps1` and set your Balatro Steam path (`serve.ps1` is gitignored)
