@@ -10,8 +10,11 @@ Test classes are organized by validation tier:
 """
 
 import httpx
+import pytest
 
 from tests.lua.conftest import api
+
+pytestmark = pytest.mark.debug
 
 # Request ID counter for malformed request tests only
 _test_request_id = 0

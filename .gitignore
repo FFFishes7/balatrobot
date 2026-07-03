@@ -311,6 +311,7 @@ dump
 # balatro
 balatro
 *.jkr
+!tests/fixtures/**/*.jkr
 
 # balatrobot
 runs/*.jsonl
@@ -350,6 +351,7 @@ gui-server-*.err.log
 # Runtime state
 saves/
 *.jkr
+!tests/fixtures/**/*.jkr
 
 # Local agent/app state
 .codex/

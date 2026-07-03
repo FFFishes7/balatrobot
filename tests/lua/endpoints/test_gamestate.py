@@ -3,6 +3,7 @@
 import re
 
 import httpx
+import pytest
 
 from tests.lua.conftest import api, assert_gamestate_response, load_fixture
 
@@ -32,6 +33,76 @@ class TestGamestateEndpoint:
             deck="RED",
             stake="WHITE",
         )
+
+
+class TestGamestateRunSummary:
+    """Test run_summary extraction on GAME_OVER."""
+
+    def test_run_summary_on_GAME_OVER(self, client: httpx.Client) -> None:
+        """Test that GAME_OVER includes run_summary with a result line."""
+        gamestate = load_fixture(
+            client, "play", "state-SELECTING_HAND--round.hands_left-1"
+        )
+        response = api(client, "play", {"cards": [0]}, timeout=60)
+        gamestate = assert_gamestate_response(response, state="GAME_OVER")
+        assert gamestate.get("won") is False
+        assert "run_summary" in gamestate
+        summary = gamestate["run_summary"]
+        assert isinstance(summary["result"], str)
+        assert len(summary["result"]) > 0
+        assert isinstance(summary["best_hand"], int)
+        assert summary["best_hand"] >= 0
+        assert isinstance(summary["cards_played"], int)
+        assert summary["cards_played"] >= 0
+        assert isinstance(summary["cards_discarded"], int)
+        assert summary["cards_discarded"] >= 0
+        assert isinstance(summary["cards_purchased"], int)
+        assert summary["cards_purchased"] >= 0
+        if "most_played_hand" in summary:
+            assert isinstance(summary["most_played_hand"]["name"], str)
+            assert isinstance(summary["most_played_hand"]["count"], int)
+
+    def test_run_summary_victory_fields(self, client: httpx.Client) -> None:
+        """Test that a won run includes a victory result line."""
+        gamestate = load_fixture(
+            client,
+            "play",
+            "state-SELECTING_HAND--ante_num-8--blinds.boss.status-CURRENT--round.chips-1000000",
+        )
+        response = api(client, "play", {"cards": [0, 3, 4, 5, 6]}, timeout=60)
+        gamestate = assert_gamestate_response(response, won=True)
+        summary = gamestate["run_summary"]
+        assert summary["result"] == "Victory"
+        assert isinstance(summary["best_hand"], int)
+
+    def test_fool_copy_fields_after_planet_use(self, client: httpx.Client) -> None:
+        """Test The Fool exposes copy metadata for the last Tarot/Planet used."""
+        load_fixture(
+            client,
+            "use",
+            "state-SELECTING_HAND--consumables.cards[0].key-c_pluto--consumables.cards[1].key-c_magician",
+        )
+        api(client, "use", {"consumable": 0})
+        response = api(client, "add", {"key": "c_fool"})
+        gamestate = assert_gamestate_response(response)
+        fool = next(
+            card
+            for card in gamestate["consumables"]["cards"]
+            if card["key"] == "c_fool"
+        )
+        assert fool["value"]["copy_key"] == "c_pluto"
+        assert fool["value"]["copy_set"] == "Planet"
+        assert fool["value"]["copy_label"] != ""
+
+    def test_run_summary_absent_during_run(self, client: httpx.Client) -> None:
+        """Test that run_summary is not present outside GAME_OVER."""
+        gamestate = load_fixture(
+            client,
+            "gamestate",
+            "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE",
+        )
+        assert gamestate["state"] == "BLIND_SELECT"
+        assert "run_summary" not in gamestate
 
 
 class TestGamestateTopLevel:
@@ -138,40 +209,37 @@ class TestGamestateBlinds:
     """Test gamestate blind extraction."""
 
     def test_blinds_structure_extraction(self, client: httpx.Client) -> None:
-        """Test blind extraction structure."""
+        """Test blind extraction structure and ante-1 chip targets."""
         fixture_name = "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE"
         gamestate = load_fixture(client, "gamestate", fixture_name)
-        expected_blinds = {
-            "small": {
-                "type": "SMALL",
-                "name": "Small Blind",
-                "effect": "",
-                "score": 300,
-                "tag_effect": "Next base edition shop Joker is free and becomes Polychrome",
-                "tag_name": "Polychrome Tag",
-            },
-            "big": {
-                "effect": "",
-                "name": "Big Blind",
-                "score": 450,
-                "tag_effect": "After defeating the Boss Blind, gain $25",
-                "tag_name": "Investment Tag",
-                "type": "BIG",
-            },
-            "boss": {
-                "effect": "-1 Hand Size",
-                "name": "The Manacle",
-                "score": 600,
-                "tag_effect": "",
-                "tag_name": "",
-                "type": "BOSS",
-            },
-        }
-        actual_blinds = {
-            blind_key: {k: v for k, v in blind_data.items() if k != "status"}
-            for blind_key, blind_data in gamestate["blinds"].items()
-        }
-        assert actual_blinds == expected_blinds
+        blinds = gamestate["blinds"]
+
+        assert set(blinds.keys()) == {"small", "big", "boss"}
+
+        for key, blind_type in (
+            ("small", "SMALL"),
+            ("big", "BIG"),
+            ("boss", "BOSS"),
+        ):
+            blind = blinds[key]
+            assert blind["type"] == blind_type
+            assert isinstance(blind["name"], str) and blind["name"]
+            assert isinstance(blind["effect"], str)
+            assert isinstance(blind["score"], int) and blind["score"] > 0
+            assert isinstance(blind["tag_name"], str)
+            assert isinstance(blind["tag_effect"], str)
+            assert isinstance(blind["status"], str)
+
+        # Fixed ante-1 chip requirements; boss/tag content is seed-dependent
+        assert blinds["small"]["score"] == 300
+        assert blinds["big"]["score"] == 450
+        assert blinds["boss"]["score"] == 600
+        assert blinds["small"]["effect"] == ""
+        assert blinds["big"]["effect"] == ""
+        assert blinds["boss"]["tag_name"] == ""
+        assert blinds["boss"]["tag_effect"] == ""
+        assert blinds["small"]["tag_name"]
+        assert blinds["big"]["tag_name"]
 
     def test_blinds_zero_skip_extraction(self, client: httpx.Client) -> None:
         """Test initial blind extraction."""
@@ -861,7 +929,38 @@ class TestGamestateCardStates:
     class TestGamestateCardStateHidden:
         """Test gamestate card state hidden."""
 
-        # TODO: add later
+        def test_hidden_card_masks_identity(self, client: httpx.Client) -> None:
+            """Test face-down hand cards hide rank, suit, key, and label."""
+            gamestate = load_fixture(client, "gamestate", "state-SELECTING_HAND")
+
+            def is_hidden(card: dict) -> bool:
+                state = card.get("state")
+                return isinstance(state, dict) and bool(state.get("hidden"))
+
+            hidden_cards = [
+                card for card in gamestate["hand"]["cards"] if is_hidden(card)
+            ]
+            if not hidden_cards:
+                gamestate = load_fixture(
+                    client,
+                    "gamestate",
+                    "state-SELECTING_HAND--round_num-8--blinds.boss.status-CURRENT--round.chips-1000000",
+                )
+                hidden_cards = [
+                    card for card in gamestate["hand"]["cards"] if is_hidden(card)
+                ]
+            if not hidden_cards:
+                pytest.skip("Fixture seed has no face-down hand cards")
+
+            for card in hidden_cards:
+                assert card["key"] == ""
+                assert card["label"] == ""
+                assert card["value"]["effect"] == ""
+                assert card["modifier"] == []
+                assert card["value"].get("rank") is None
+                assert card["value"].get("suit") is None
+                assert card["state"]["hidden"] is True
+                assert isinstance(card["id"], int)
 
     class TestGamestateCardStateHighlight:
         """Test gamestate card state highlight."""

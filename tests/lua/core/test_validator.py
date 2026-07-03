@@ -8,12 +8,15 @@
 # - Error codes and messages
 
 import httpx
+import pytest
 
 from tests.lua.conftest import (
     api,
     assert_error_response,
     assert_test_response,
 )
+
+pytestmark = pytest.mark.debug
 
 # ============================================================================
 # Test: Type Validation

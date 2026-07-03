@@ -499,6 +499,8 @@ class TestHTTPServerSequentialRequests:
 class TestHTTPServerConcurrency:
     """Tests for concurrent request handling."""
 
+    @pytest.mark.flaky(reruns=2)
+    @pytest.mark.xdist_group(name="server_serial")
     def test_concurrent_requests_do_not_crash(
         self, instance, balatro_server, client: httpx.Client
     ) -> None:

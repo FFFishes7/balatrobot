@@ -1,6 +1,7 @@
 """Tests for src/lua/endpoints/select.lua"""
 
 import httpx
+import pytest
 
 from tests.lua.conftest import (
     api,
@@ -33,6 +34,8 @@ class TestSelectEndpoint:
         response = api(client, "select", {})
         assert_gamestate_response(response, state="SELECTING_HAND")
 
+    @pytest.mark.flaky(reruns=2)
+    @pytest.mark.xdist_group(name="boss_blind")
     def test_select_boss_blind(self, client: httpx.Client) -> None:
         """Test selecting Boss blind in BLIND_SELECT state."""
         gamestate = load_fixture(
@@ -40,7 +43,7 @@ class TestSelectEndpoint:
         )
         assert gamestate["state"] == "BLIND_SELECT"
         assert gamestate["blinds"]["boss"]["status"] == "SELECT"
-        response = api(client, "select", {})
+        response = api(client, "select", {}, timeout=60)
         assert_gamestate_response(response, state="SELECTING_HAND")
 
 

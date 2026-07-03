@@ -6,6 +6,7 @@ import os
 import random
 import tempfile
 import uuid
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, AsyncGenerator, Generator
 
@@ -28,6 +29,8 @@ _request_id_counter: int = 0
 
 # Default cache behavior for load_fixture
 _USE_CACHE_DEFAULT: bool = True
+# When False, missing fixtures raise instead of generating at test time
+_ALLOW_FIXTURE_GENERATION: bool = False
 
 
 def _check_health(host: str, port: int, timeout: float = 2.0) -> bool:
@@ -51,13 +54,25 @@ def pytest_addoption(parser):
         default=False,
         help="Disable fixture caching and force regeneration.",
     )
+    parser.addoption(
+        "--generate-fixtures",
+        action="store_true",
+        default=False,
+        help="Allow load_fixture to generate missing .jkr files from fixtures.json.",
+    )
 
 
 def pytest_configure(config):
     """Configure pytest and start Balatro instances."""
-    global _USE_CACHE_DEFAULT
+    global _USE_CACHE_DEFAULT, _ALLOW_FIXTURE_GENERATION
     if config.getoption("--no-caches", default=False):
         _USE_CACHE_DEFAULT = False
+        _ALLOW_FIXTURE_GENERATION = True
+    if config.getoption("--generate-fixtures", default=False):
+        _ALLOW_FIXTURE_GENERATION = True
+
+    if not _ALLOW_FIXTURE_GENERATION:
+        _verify_committed_fixtures()
 
     # Skip if running as xdist worker (master handles startup)
     worker_id = os.environ.get("PYTEST_XDIST_WORKER")
@@ -78,15 +93,26 @@ def pytest_configure(config):
     config._balatro_ports = ports
     config._balatro_parallel = parallel
 
-    # Start instances
-    base_config = Config.from_env()
+    # Integration tests need debug (test endpoints) and fast (speed) modes
+    os.environ["BALATROBOT_DEBUG"] = "1"
+    os.environ["BALATROBOT_FAST"] = "1"
+    os.environ["BALATROBOT_FORCE_ENGLISH"] = "1"
+
+    test_config = replace(
+        Config.from_env(),
+        debug=True,
+        fast=True,
+    )
     instances: list[BalatroInstance] = []
 
     async def start_all():
         for port in ports:
-            instances.append(BalatroInstance(base_config, port=port))
+            instances.append(BalatroInstance(test_config, port=port))
         await asyncio.gather(*[inst.start() for inst in instances])
-        print(f"All {parallel} Balatro instance(s) started on ports: {ports}")
+        print(
+            f"All {parallel} Balatro instance(s) started on ports: {ports} "
+            f"(debug={test_config.debug}, fast={test_config.fast})"
+        )
 
     try:
         asyncio.run(start_all())
@@ -133,6 +159,20 @@ def pytest_collection_modifyitems(items):
 def host() -> str:
     """Return the default Balatro server host."""
     return HOST
+
+
+class _BalatroInstance:
+    """Minimal host/port handle for raw-socket server tests."""
+
+    def __init__(self, host: str, port: int) -> None:
+        self.host = host
+        self.port = port
+
+
+@pytest.fixture(scope="session")
+def instance(host: str, port: int) -> _BalatroInstance:
+    """Expose the worker's Balatro server address for concurrency tests."""
+    return _BalatroInstance(host, port)
 
 
 @pytest.fixture(scope="session")
@@ -267,6 +307,39 @@ def get_fixture_path(endpoint: str, fixture_name: str) -> Path:
     return fixtures_dir / endpoint / f"{fixture_name}.jkr"
 
 
+def iter_expected_fixture_paths() -> list[Path]:
+    """Return all .jkr paths declared in fixtures.json plus corrupted.jkr."""
+    fixtures_json_path = Path(__file__).parent.parent / "fixtures" / "fixtures.json"
+    with open(fixtures_json_path) as f:
+        fixtures_data = json.load(f)
+
+    paths: list[Path] = []
+    for endpoint, fixtures in fixtures_data.items():
+        if endpoint == "$schema":
+            continue
+        for fixture_name in fixtures:
+            paths.append(get_fixture_path(endpoint, fixture_name))
+
+    paths.append(get_fixture_path("load", "corrupted"))
+    return paths
+
+
+def _verify_committed_fixtures() -> None:
+    """Fail fast when pre-generated fixtures are missing (read-only mode)."""
+    missing = [path for path in iter_expected_fixture_paths() if not path.exists()]
+    if not missing:
+        return
+
+    sample = "\n".join(f"  - {path.relative_to(Path(__file__).parent.parent)}" for path in missing[:5])
+    extra = f"\n  ... and {len(missing) - 5} more" if len(missing) > 5 else ""
+    raise pytest.UsageError(
+        f"{len(missing)} committed fixture(s) missing.\n"
+        f"{sample}{extra}\n"
+        "Generate with: balatrobot serve --fast --debug  then  python tests/fixtures/generate.py\n"
+        "Or run pytest with --generate-fixtures to create them during the test session."
+    )
+
+
 def create_temp_save_path() -> Path:
     """Create a temporary path for save files.
 
@@ -286,21 +359,33 @@ def load_fixture(
     """Load a fixture file and return the resulting gamestate.
 
     This helper function consolidates the common pattern of:
-    1. Loading a fixture file (or generating it if missing)
+    1. Loading a pre-generated fixture file
     2. Asserting the load succeeded
     3. Getting the current gamestate
 
-    If the fixture file doesn't exist or cache=False, it will be automatically
-    generated using the setup steps defined in fixtures.json.
+    By default fixtures must exist on disk (committed under tests/fixtures/).
+    Use pytest --generate-fixtures or --no-caches to regenerate from fixtures.json.
     """
-    global _USE_CACHE_DEFAULT
+    global _USE_CACHE_DEFAULT, _ALLOW_FIXTURE_GENERATION
     if cache is None:
         cache = _USE_CACHE_DEFAULT
 
     fixture_path = get_fixture_path(endpoint, fixture_name)
+    needs_generation = not fixture_path.exists() or not cache
+
+    if needs_generation and not _ALLOW_FIXTURE_GENERATION:
+        if not fixture_path.exists():
+            raise FileNotFoundError(
+                f"Fixture not found: {fixture_path}. "
+                "Run 'python tests/fixtures/generate.py' or pytest --generate-fixtures."
+            )
+        raise RuntimeError(
+            f"Fixture regeneration disabled for {fixture_path}. "
+            "Use pytest --no-caches or --generate-fixtures."
+        )
 
     # Generate fixture if it doesn't exist or cache=False
-    if not fixture_path.exists() or not cache:
+    if needs_generation:
         fixtures_json_path = Path(__file__).parent.parent / "fixtures" / "fixtures.json"
         with open(fixtures_json_path) as f:
             fixtures_data = json.load(f)
@@ -329,11 +414,11 @@ def load_fixture(
 
         # Save the fixture
         fixture_path.parent.mkdir(parents=True, exist_ok=True)
-        save_response = api(client, "save", {"path": str(fixture_path)})
+        save_response = api(client, "save", {"path": str(fixture_path)}, timeout=120)
         assert_path_response(save_response)
 
     # Load the fixture
-    load_response = api(client, "load", {"path": str(fixture_path)})
+    load_response = api(client, "load", {"path": str(fixture_path)}, timeout=120)
     assert_path_response(load_response)
     gamestate_response = api(client, "gamestate", {})
     return gamestate_response["result"]

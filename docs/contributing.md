@@ -204,7 +204,37 @@ make all       # Run quality checks + tests
 
 !!! note "Test Fixtures"
 
-    The `make fixtures` command is only required if you need to explicitly generate fixtures. When running tests, missing fixtures are automatically generated if required.
+    Pre-generated `.jkr` files under `tests/fixtures/` are committed to the repository.
+    Tests load them read-only by default; they are **not** regenerated during `pytest`.
+
+    To regenerate after changing `fixtures.json` or game-state Lua:
+
+    ```bash
+    # Terminal 1
+    balatrobot serve --fast --debug
+
+    # Terminal 2
+    python tests/fixtures/generate.py
+    ```
+
+    Verify all fixtures exist without starting Balatro:
+
+    ```bash
+    python tests/fixtures/verify.py
+    ```
+
+    To allow on-the-fly generation during a test run (slower):
+
+    ```bash
+    pytest tests/lua --generate-fixtures
+    ```
+
+    Debug-only core tests (`test_validator`, `test_dispatcher`) are marked `@pytest.mark.debug`
+    and excluded from the default run. Run them with:
+
+    ```bash
+    pytest tests/lua -m debug
+    ```
 
 ## Code Structure
 

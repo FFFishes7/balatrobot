@@ -139,6 +139,31 @@ class TestSellEndpoint:
         assert after["consumables"]["count"] == 0
         assert before["money"] < after["money"]
 
+    def test_sell_joker_exact_money_delta(self, client: httpx.Client) -> None:
+        """Test selling a joker increases money by the card sell cost."""
+        before = load_fixture(
+            client, "sell", "state-SHOP--jokers.count-1--consumables.count-1"
+        )
+        sell_cost = before["jokers"]["cards"][0]["cost"]["sell"]
+        response = api(client, "sell", {"joker": 0})
+        after = assert_gamestate_response(response)
+        assert after["money"] == before["money"] + sell_cost
+
+    def test_sell_from_SMODS_BOOSTER_OPENED(self, client: httpx.Client) -> None:
+        """Test selling a joker while a booster pack is open."""
+        before = load_fixture(
+            client,
+            "pack",
+            "state-SMODS_BOOSTER_OPENED--pack.type-buffoon--jokers.count-4",
+        )
+        assert before["state"] == "SMODS_BOOSTER_OPENED"
+        assert before["jokers"]["count"] >= 1
+        sell_cost = before["jokers"]["cards"][0]["cost"]["sell"]
+        response = api(client, "sell", {"joker": 0})
+        after = assert_gamestate_response(response, state="SMODS_BOOSTER_OPENED")
+        assert after["jokers"]["count"] == before["jokers"]["count"] - 1
+        assert after["money"] == before["money"] + sell_cost
+
 
 class TestSellEndpointValidation:
     """Test sell endpoint parameter validation."""
@@ -174,21 +199,50 @@ class TestSellEndpointStateRequirements:
     """Test sell endpoint state requirements."""
 
     def test_sell_from_BLIND_SELECT(self, client: httpx.Client) -> None:
-        """Test that sell fails from BLIND_SELECT state."""
-        gamestate = load_fixture(client, "sell", "state-BLIND_SELECT")
-        assert gamestate["state"] == "BLIND_SELECT"
-        assert_error_response(
-            api(client, "sell", {}),
-            "INVALID_STATE",
-            "Method 'sell' requires one of these states: SELECTING_HAND, SHOP",
+        """Test selling a joker from BLIND_SELECT state."""
+        before = load_fixture(
+            client,
+            "sell",
+            "state-BLIND_SELECT--jokers.count-1--consumables.count-0",
         )
+        assert before["state"] == "BLIND_SELECT"
+        response = api(client, "sell", {"joker": 0})
+        after = assert_gamestate_response(response, state="BLIND_SELECT")
+        assert after["jokers"]["count"] == 0
+        assert before["money"] < after["money"]
 
     def test_sell_from_ROUND_EVAL(self, client: httpx.Client) -> None:
-        """Test that sell fails from ROUND_EVAL state."""
-        gamestate = load_fixture(client, "sell", "state-ROUND_EVAL")
-        assert gamestate["state"] == "ROUND_EVAL"
+        """Test selling a joker from ROUND_EVAL state."""
+        before = load_fixture(
+            client,
+            "sell",
+            "state-ROUND_EVAL--jokers.count-1--consumables.count-0",
+        )
+        assert before["state"] == "ROUND_EVAL"
+        response = api(client, "sell", {"joker": 0})
+        after = assert_gamestate_response(response, state="ROUND_EVAL")
+        assert after["jokers"]["count"] == 0
+        assert before["money"] < after["money"]
+
+    def test_sell_from_MENU(self, client: httpx.Client) -> None:
+        """Test that sell fails from the main menu."""
+        api(client, "menu", {})
         assert_error_response(
-            api(client, "sell", {}),
+            api(client, "sell", {"joker": 0}),
             "INVALID_STATE",
-            "Method 'sell' requires one of these states: SELECTING_HAND, SHOP",
+            "Method 'sell' requires one of these states:",
+        )
+
+    def test_sell_eternal_joker(self, client: httpx.Client) -> None:
+        """Test that eternal jokers cannot be sold."""
+        load_fixture(
+            client, "sell", "state-SELECTING_HAND--jokers.count-0--consumables.count-0"
+        )
+        response = api(client, "add", {"key": "j_joker", "eternal": True})
+        gamestate = assert_gamestate_response(response)
+        assert gamestate["jokers"]["cards"][0]["modifier"]["eternal"] is True
+        assert_error_response(
+            api(client, "sell", {"joker": 0}),
+            "NOT_ALLOWED",
+            "Cannot sell eternal joker",
         )

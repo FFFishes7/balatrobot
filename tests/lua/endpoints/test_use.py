@@ -1,6 +1,7 @@
 """Tests for src/lua/endpoints/use.lua"""
 
 import httpx
+import pytest
 
 from tests.lua.conftest import (
     api,
@@ -38,6 +39,90 @@ class TestUseEndpoint:
         assert gamestate["consumables"]["cards"][0]["key"] == "c_hermit"
         response = api(client, "use", {"consumable": 0})
         assert_gamestate_response(response, money=24)
+
+    def test_use_hermit_consumable_count_decrements(self, client: httpx.Client) -> None:
+        """Test that using a consumable decreases consumables count."""
+        before = load_fixture(
+            client,
+            "use",
+            "state-SHOP--money-12--consumables.cards[0]-key-c_hermit",
+        )
+        response = api(client, "use", {"consumable": 0})
+        after = assert_gamestate_response(response, money=24)
+        assert after["consumables"]["count"] == before["consumables"]["count"] - 1
+
+    def test_use_death_success(self, client: httpx.Client) -> None:
+        """Test using Death with exactly 2 cards transforms the hand."""
+        before = load_fixture(
+            client,
+            "use",
+            "state-SELECTING_HAND--consumables.cards[0].key-c_death",
+        )
+        before_keys = [card["key"] for card in before["hand"]["cards"]]
+        response = api(client, "use", {"consumable": 0, "cards": [0, 1]})
+        after = assert_gamestate_response(response)
+        assert after["consumables"]["count"] == before["consumables"]["count"] - 1
+        after_keys = [card["key"] for card in after["hand"]["cards"]]
+        assert after_keys != before_keys
+
+    def test_use_from_SMODS_BOOSTER_OPENED_arcana(self, client: httpx.Client) -> None:
+        """Test using a hand-targeting consumable while an Arcana pack is open."""
+        gamestate = load_fixture(
+            client,
+            "use",
+            "state-SHOP--consumables.cards[0].key-c_magician",
+        )
+        assert gamestate["state"] == "SHOP"
+        pack_index = next(
+            (
+                index
+                for index, card in enumerate(gamestate["packs"]["cards"])
+                if "arcana" in card["key"]
+            ),
+            None,
+        )
+        if pack_index is None:
+            response = api(client, "reroll", {})
+            gamestate = assert_gamestate_response(response, state="SHOP")
+            pack_index = next(
+                (
+                    index
+                    for index, card in enumerate(gamestate["packs"]["cards"])
+                    if "arcana" in card["key"]
+                ),
+                None,
+            )
+        if pack_index is None:
+            pytest.skip("Shop did not offer an Arcana pack to open")
+        response = api(client, "buy", {"pack": pack_index})
+        before = assert_gamestate_response(response, state="SMODS_BOOSTER_OPENED")
+        if before["hand"]["count"] == 0:
+            pytest.skip("Arcana pack opened without a visible hand in this setup")
+        response = api(client, "use", {"consumable": 0, "cards": [0]})
+        after = assert_gamestate_response(response, state="SMODS_BOOSTER_OPENED")
+        assert after["consumables"]["count"] == before["consumables"]["count"] - 1
+        assert after["hand"]["cards"][0]["modifier"]["enhancement"] == "LUCKY"
+
+    def test_use_insufficient_space(self, client: httpx.Client) -> None:
+        """Test that Judgement is blocked when joker slots are full."""
+        load_fixture(
+            client,
+            "use",
+            "state-SELECTING_HAND--jokers.count-0--consumables.count-0",
+        )
+        for _ in range(5):
+            response = api(client, "add", {"key": "j_joker"})
+            assert_gamestate_response(response)
+        response = api(client, "add", {"key": "c_judgement"})
+        gamestate = assert_gamestate_response(response)
+        consumable_index = gamestate["consumables"]["count"] - 1
+        assert gamestate["consumables"]["cards"][consumable_index]["key"] == "c_judgement"
+        assert gamestate["jokers"]["count"] == 5
+        assert_error_response(
+            api(client, "use", {"consumable": consumable_index}),
+            "NOT_ALLOWED",
+            "cannot be used at this time",
+        )
 
     def test_use_temperance_no_cards(self, client: httpx.Client) -> None:
         """Test using Temperance (no card selection)."""
@@ -301,35 +386,35 @@ class TestUseEndpointStateRequirements:
     """Test use endpoint state requirements."""
 
     def test_use_from_BLIND_SELECT(self, client: httpx.Client) -> None:
-        """Test that use fails from BLIND_SELECT state."""
+        """Hand-target consumables fail from BLIND_SELECT when no hand is visible."""
         gamestate = load_fixture(
             client,
             "use",
-            "state-BLIND_SELECT",
+            "state-BLIND_SELECT--consumables.cards[0].key-c_magician",
         )
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "use", {"consumable": 0, "cards": [0]}),
             "INVALID_STATE",
-            "Method 'use' requires one of these states: SELECTING_HAND, SHOP",
+            "Consumable 'The Magician' requires card selection and a visible hand",
         )
 
     def test_use_from_ROUND_EVAL(self, client: httpx.Client) -> None:
-        """Test that use fails from ROUND_EVAL state."""
+        """Hand-target consumables fail from ROUND_EVAL when no hand is visible."""
         gamestate = load_fixture(
             client,
             "use",
-            "state-ROUND_EVAL",
+            "state-ROUND_EVAL--consumables.cards[0].key-c_magician",
         )
         assert gamestate["state"] == "ROUND_EVAL"
         assert_error_response(
             api(client, "use", {"consumable": 0, "cards": [0]}),
             "INVALID_STATE",
-            "Method 'use' requires one of these states: SELECTING_HAND, SHOP",
+            "Consumable 'The Magician' requires card selection and a visible hand",
         )
 
     def test_use_magician_from_SHOP(self, client: httpx.Client) -> None:
-        """Test that using The Magician fails from SHOP (needs SELECTING_HAND)."""
+        """Test that The Magician fails from SHOP when no hand is visible."""
         gamestate = load_fixture(
             client,
             "use",
@@ -340,11 +425,11 @@ class TestUseEndpointStateRequirements:
         assert_error_response(
             api(client, "use", {"consumable": 0, "cards": [0]}),
             "INVALID_STATE",
-            "Consumable 'The Magician' requires card selection and can only be used in SELECTING_HAND state",
+            "Consumable 'The Magician' requires card selection and a visible hand",
         )
 
     def test_use_familiar_from_SHOP(self, client: httpx.Client) -> None:
-        """Test that using The Magician fails from SHOP (needs SELECTING_HAND)."""
+        """Test that The Familiar fails from SHOP when no hand is visible."""
         gamestate = load_fixture(
             client,
             "use",

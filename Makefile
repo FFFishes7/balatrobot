@@ -67,18 +67,21 @@ typecheck: ## Run type checkers (Python and Lua)
 quality: lint typecheck format ## Run all code quality checks
 	@$(PRINT) "$(GREEN)✓ All checks completed$(RESET)"
 
-fixtures: ## Generate fixtures
+fixtures: ## Generate and verify test fixtures
 	@$(PRINT) "$(YELLOW)Checking Balatro is running...$(RESET)"
 	@balatrobot api health || (echo ''; echo '  Start Balatro in another terminal:'; echo '    balatrobot serve --fast --debug'; echo ''; exit 1)
 	@$(PRINT) "$(GREEN)  Connected!$(RESET)"
 	@$(PRINT) "$(YELLOW)Generating all fixtures...$(RESET)"
 	python tests/fixtures/generate.py
+	python tests/fixtures/verify.py
 
 test: ## Run all tests
 	@$(PRINT) "$(YELLOW)Running tests/cli with 2 workers...$(RESET)"
 	pytest -n 2 tests/cli
-	@$(PRINT) "$(YELLOW)Running tests/lua with $(XDIST_WORKERS) workers...$(RESET)"
-	pytest -n $(XDIST_WORKERS) tests/lua
+	@$(PRINT) "$(YELLOW)Running production tests/lua with $(XDIST_WORKERS) workers...$(RESET)"
+	pytest -n $(XDIST_WORKERS) tests/lua -m "not debug"
+	@$(PRINT) "$(YELLOW)Running debug tests/lua...$(RESET)"
+	pytest -n 1 tests/lua -m debug
 
 
 all: lint format typecheck test ## Run all code quality checks and tests

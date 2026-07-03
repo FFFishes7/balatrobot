@@ -34,10 +34,12 @@ lint.task-tags = ["FIX", "TODO", "HACK", "WARN", "PERF", "NOTE", "TEST"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
-addopts = "--dist loadscope"
+addopts = "--dist loadscope -m \"not debug\""
 markers = [
   "dev: marks tests that are currently developed",
   "integration: marks integration tests that actually start Balatro (deselect with '-m \"not integration\"')",
+  "debug: marks tests that require debug-only API endpoints (deselect with '-m \"not debug\"')",
+  "flaky: marks tests that may fail intermittently (use with pytest-rerunfailures)",
 ]
 
 [tool.commitizen]

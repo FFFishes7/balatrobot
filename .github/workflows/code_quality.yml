@@ -49,6 +49,10 @@ jobs:
         run: |
           source .venv/bin/activate
           mdformat --check .
+      - name: Verify test fixtures
+        run: |
+          source .venv/bin/activate
+          python tests/fixtures/verify.py
       - name: Run ty
         run: |
           source .venv/bin/activate
