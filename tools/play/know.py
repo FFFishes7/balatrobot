@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import json
 import sys
-from difflib import get_close_matches
-from pathlib import Path
 
 from bot_client import APIError, rpc
 from envelope import KNOW_FORMAT, build_error_envelope, build_know_envelope

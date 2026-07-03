@@ -57,7 +57,7 @@ This is the workflow I use on Windows. Two parts: get the mod into Balatro once,
 
    `serve.ps1` stays untracked (machine-specific). You can also set the user env var `BALATROBOT_GAME_DIR` instead of editing the file.
 
-More detail: [Installation](docs/installation.md).
+For platform-specific paths (macOS / Linux Proton / native Love) and CLI flags, see the [CLI Reference](docs/cli.md).
 
 ### 2. Launch Balatro (GUI + API)
 

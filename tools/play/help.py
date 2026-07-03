@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import json
-import sys
 
-from envelope import HELP_FORMAT, build_help_envelope
+from envelope import build_help_envelope
 from start_options import build_decks, build_stakes
 
 

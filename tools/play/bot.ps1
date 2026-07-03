@@ -1,9 +1,18 @@
-# Convenience wrapper for BalatroBot Play Helper (JSON only).
-# Examples:
-#   .\bot.ps1 state
-#   .\bot.ps1 query deck
-#   .\bot.ps1 know preflight
-#   .\bot.ps1 exec '{"command":"play","params":{"cards":[0,1,2,3,4]}}'
+# Convenience wrapper for BalatroBot Play Helper.
+# Friendly action subcommands (no JSON quoting needed):
+#   .\bot.ps1 glance                      # compact state summary
+#   .\bot.ps1 start RED WHITE             # start a run
+#   .\bot.ps1 select                      # select current blind
+#   .\bot.ps1 play 0 1 2 3 4              # play cards at hand indices
+#   .\bot.ps1 discard 0 1                 # discard cards
+#   .\bot.ps1 buy card 0                  # buy shop card / voucher / pack
+#   .\bot.ps1 pack 0                      # take pack card (or: pack skip)
+#   .\bot.ps1 cash_out / next_round / reroll / menu / sort rank / sell joker 0
+# JSON / advanced:
+#   .\bot.ps1 state                       # full JSON envelope
+#   .\bot.ps1 query deck                  # Layer-2 query
+#   .\bot.ps1 know preflight              # verified facts
+#   .\bot.ps1 exec '{\"command\":\"play\",\"params\":{\"cards\":[0,1,2,3,4]}}'
 #   .\bot.ps1 help
 param(
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -21,11 +30,11 @@ if (-not (Test-Path $Python)) {
 
 if ($BotArgs.Count -eq 0) {
     Write-Host 'Usage:'
-    Write-Host '  .\bot.ps1 state'
-    Write-Host '  .\bot.ps1 query deck'
-    Write-Host '  .\bot.ps1 know preflight'
-    Write-Host '  .\bot.ps1 exec ''{"command":"play","params":{"cards":[0,1,2,3,4]}}'''
-    Write-Host '  .\bot.ps1 help'
+    Write-Host '  .\bot.ps1 glance                      (compact state summary)'
+    Write-Host '  .\bot.ps1 start RED WHITE             (friendly action subcommands)'
+    Write-Host '  .\bot.ps1 play 0 1 2 3 4'
+    Write-Host '  .\bot.ps1 buy card 0'
+    Write-Host '  .\bot.ps1 state | query | know | exec | help   (JSON / advanced)'
     exit 2
 }
 
@@ -36,13 +45,11 @@ if ($BotArgs.Count -gt 1) {
 }
 
 switch ($cmd) {
-    'state' { & $Python (Join-Path $ToolRoot 'state.py') @rest; exit $LASTEXITCODE }
-    'query' { & $Python (Join-Path $ToolRoot 'query.py') @rest; exit $LASTEXITCODE }
-    'know'  { & $Python (Join-Path $ToolRoot 'know.py') @rest; exit $LASTEXITCODE }
-    'exec'  { & $Python (Join-Path $ToolRoot 'exec.py') @rest; exit $LASTEXITCODE }
-    'help'  { & $Python (Join-Path $ToolRoot 'help.py') @rest; exit $LASTEXITCODE }
-    default {
-        Write-Error "Unknown command: $cmd (use state|query|know|exec|help)"
-        exit 2
-    }
+    'state'  { & $Python (Join-Path $ToolRoot 'state.py') @rest; exit $LASTEXITCODE }
+    'query'  { & $Python (Join-Path $ToolRoot 'query.py') @rest; exit $LASTEXITCODE }
+    'know'   { & $Python (Join-Path $ToolRoot 'know.py') @rest; exit $LASTEXITCODE }
+    'exec'   { & $Python (Join-Path $ToolRoot 'exec.py') @rest; exit $LASTEXITCODE }
+    'help'   { & $Python (Join-Path $ToolRoot 'help.py') @rest; exit $LASTEXITCODE }
+    'glance' { & $Python (Join-Path $ToolRoot 'view.py') @rest; exit $LASTEXITCODE }
+    default  { & $Python (Join-Path $ToolRoot 'act.py') @BotArgs; exit $LASTEXITCODE }
 }

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sys
 
 from actions import build_actions
 from bot_client import APIError, rpc
