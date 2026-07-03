@@ -348,6 +348,9 @@ gui-server-*.log
 gui-server-*.out.log
 gui-server-*.err.log
 
+# pytest-lua timing captures
+.pytest-lua*-timing.txt
+
 # Runtime state
 saves/
 *.jkr
