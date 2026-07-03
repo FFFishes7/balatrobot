@@ -83,10 +83,10 @@ In a **second terminal**, with the game still running:
 
 ```powershell
 .\tools\play\bot.ps1 state
+.\tools\play\bot.ps1 query deck
 .\tools\play\bot.ps1 know preflight
-.\tools\play\bot.ps1 play 0 1 2 3 4
-.\tools\play\bot.ps1 pack skip
-.\tools\play\bot.ps1 sort rank
+.\tools\play\bot.ps1 exec '{"command":"play","params":{"cards":[0,1,2,3,4]}}'
+.\tools\play\bot.ps1 help
 ```
 
 `bot.ps1` calls the running API through `.venv\Scripts\python.exe`. If you see connection errors, check that `serve.ps1` is still running and the game finished loading.
