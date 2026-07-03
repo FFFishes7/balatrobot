@@ -1,6 +1,7 @@
 # Convenience wrapper for BalatroBot Play Helper.
 # Friendly action subcommands (no JSON quoting needed):
 #   .\bot.ps1 glance                      # compact state summary
+#   .\bot.ps1 estimate                    # top playable hands + score estimate
 #   .\bot.ps1 start RED WHITE             # start a run
 #   .\bot.ps1 select                      # select current blind
 #   .\bot.ps1 play 0 1 2 3 4              # play cards at hand indices
@@ -31,6 +32,7 @@ if (-not (Test-Path $Python)) {
 if ($BotArgs.Count -eq 0) {
     Write-Host 'Usage:'
     Write-Host '  .\bot.ps1 glance                      (compact state summary)'
+    Write-Host '  .\bot.ps1 estimate                    (top playable hands + score estimate)'
     Write-Host '  .\bot.ps1 start RED WHITE             (friendly action subcommands)'
     Write-Host '  .\bot.ps1 play 0 1 2 3 4'
     Write-Host '  .\bot.ps1 buy card 0'
@@ -51,5 +53,6 @@ switch ($cmd) {
     'exec'   { & $Python (Join-Path $ToolRoot 'exec.py') @rest; exit $LASTEXITCODE }
     'help'   { & $Python (Join-Path $ToolRoot 'help.py') @rest; exit $LASTEXITCODE }
     'glance' { & $Python (Join-Path $ToolRoot 'view.py') @rest; exit $LASTEXITCODE }
+    'estimate' { & $Python (Join-Path $ToolRoot 'estimate.py') @rest; exit $LASTEXITCODE }
     default  { & $Python (Join-Path $ToolRoot 'act.py') @BotArgs; exit $LASTEXITCODE }
 }

@@ -9,19 +9,75 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from actions import build_actions
+from actions import _consumable_needs_hand, build_actions
 from bot_client import APIError
 from envelope import build_error_envelope, build_play_envelope
 from state import fetch_stable_gamestate
 
 SUIT_SYMBOL = {"S": "♠", "H": "♥", "D": "♦", "C": "♣"}
 
+# Modifier tag maps. The Lua layer emits these uppercased codes from
+# src/lua/utils/gamestate.lua (extract_card_modifier). Tags use a one-letter
+# category prefix so they never collide: e:* enhancement, d:* edition, s:* seal.
+ENHANCEMENT_TAGS = {
+    "MULT": "e:Mult",
+    "BONUS": "e:Bonus",
+    "GLASS": "e:Glass",
+    "STONE": "e:Stone",
+    "WILD": "e:Wild",
+    "LUCKY": "e:Lucky",
+    "GOLD": "e:Gold",
+    "STEEL": "e:Steel",
+}
+EDITION_TAGS = {
+    "FOIL": "d:Foil",
+    "HOLO": "d:Holo",
+    "HOLOGRAPHIC": "d:Holo",
+    "POLYCHROME": "d:Poly",
+    "NEGATIVE": "d:Neg",
+}
+SEAL_TAGS = {
+    "RED": "s:Red",
+    "BLUE": "s:Blue",
+    "GOLD": "s:Gold",
+    "PURPLE": "s:Purple",
+}
+
+
+def _modifier_tags(card: dict[str, Any]) -> list[str]:
+    """Build ordered modifier tags [enhancement, edition, seal] for a card."""
+    mod = card.get("modifier") or {}
+    if not isinstance(mod, dict):
+        return []
+    tags: list[str] = []
+    enh = mod.get("enhancement")
+    if isinstance(enh, str) and enh in ENHANCEMENT_TAGS:
+        tags.append(ENHANCEMENT_TAGS[enh])
+    elif isinstance(enh, str) and enh:
+        tags.append(f"e:{enh}")
+    ed = mod.get("edition")
+    if isinstance(ed, str) and ed in EDITION_TAGS:
+        tags.append(EDITION_TAGS[ed])
+    elif isinstance(ed, str) and ed:
+        tags.append(f"d:{ed}")
+    seal = mod.get("seal")
+    if isinstance(seal, str) and seal in SEAL_TAGS:
+        tags.append(SEAL_TAGS[seal])
+    elif isinstance(seal, str) and seal:
+        tags.append(f"s:{seal}")
+    if mod.get("eternal"):
+        tags.append("eternal")
+    return tags
+
 
 def card_label(card: dict[str, Any]) -> str:
     """Format a playing card as e.g. ``K♠`` / ``T♥`` / ``A♦``.
 
     Hidden cards (boss blinds) return ``??``. Cards missing rank/suit
-    (jokers, consumables) fall back to their ``label`` field.
+    (jokers, consumables) fall back to their ``label`` field. When the card
+    carries an enhancement/edition/seal, a bracketed tag list is appended
+    (e.g. ``4♦[e:Mult,s:Red]``) so the AI can see buffs without a separate
+    query. Debuffed cards are wrapped in parentheses.
     """
     if card.get("state", {}).get("hidden"):
         return "??"
@@ -30,21 +86,39 @@ def card_label(card: dict[str, Any]) -> str:
     suit = value.get("suit")
     if not rank or not suit:
         return str(card.get("label") or "?")
-    return f"{rank}{SUIT_SYMBOL.get(suit, suit)}"
+    base = f"{rank}{SUIT_SYMBOL.get(suit, suit)}"
+    tags = _modifier_tags(card)
+    if tags:
+        base += "[" + ",".join(tags) + "]"
+    if card.get("state", {}).get("debuff"):
+        base = f"({base})"
+    return base
+
+
+JOKER_EDITION_LABEL = {
+    "FOIL": "+50 chips",
+    "HOLO": "+10 mult",
+    "HOLOGRAPHIC": "+10 mult",
+    "POLYCHROME": "x1.5 mult",
+    "NEGATIVE": "+1 slot",
+}
 
 
 def _joker_line(idx: int, card: dict[str, Any]) -> str:
     name = card.get("label") or "?"
     effect = (card.get("value") or {}).get("effect") or ""
-    seal_etc = []
-    modifier = card.get("modifier") or {}
-    if isinstance(modifier, dict) and modifier.get("edition"):
-        seal_etc.append(str(modifier["edition"]))
-    if isinstance(modifier, dict) and modifier.get("enhancement"):
-        seal_etc.append(str(modifier["enhancement"]))
     prefix = f"[{idx}]"
-    if seal_etc:
-        prefix = f"[{idx}] {','.join(seal_etc)}"
+    mod = card.get("modifier") or {}
+    if isinstance(mod, dict):
+        # Editions add real score value not in the effect text — show decoded.
+        ed = mod.get("edition")
+        if isinstance(ed, str):
+            prefix += f" ({JOKER_EDITION_LABEL.get(ed, ed)})"
+        if mod.get("eternal"):
+            prefix += " (eternal)"
+        # Joker-internal enhancement codes (e.g. "SUIT MULT", "DISCARD DOLLARS")
+        # are categories already conveyed by the effect text — dropped to avoid
+        # leaking raw enum keys.
     return f"{prefix} {name} — {effect}" if effect else f"{prefix} {name}"
 
 
@@ -64,9 +138,48 @@ def _blind_line(blind: dict[str, Any]) -> str:
     return line
 
 
+def _blinds_block(state: dict[str, Any]) -> str:
+    """Compact one-line-per-blind summary for BLIND_SELECT.
+
+    Shows all three blinds (small/big/boss) with target, status, effect, and
+    any skip-reward tag, marking the selectable one as ``(current)``. Replaces
+    the need to call ``query blinds`` for planning.
+    """
+    blinds = state.get("blinds") or {}
+    order = [("small", "Small"), ("big", "Big"), ("boss", "Boss")]
+    lines: list[str] = []
+    for key, label in order:
+        blind = blinds.get(key)
+        if not blind:
+            continue
+        name = blind.get("name") or f"{label} Blind"
+        score = blind.get("score")
+        status = blind.get("status") or "?"
+        effect = blind.get("effect") or ""
+        tag_name = blind.get("tag_name") or ""
+        tag_effect = blind.get("tag_effect") or ""
+        parts = [f"{label.lower()}: {name}"]
+        if score is not None:
+            parts.append(f"target={score}")
+        if status in ("CURRENT", "SELECT"):
+            parts.append("(current, select)")
+        else:
+            parts.append(f"[{status.lower()}]")
+        if effect:
+            parts.append(f"— {effect}")
+        line = " ".join(parts)
+        if tag_name or tag_effect:
+            line += f" [skip reward: {tag_name}"
+            if tag_effect:
+                line += f" — {tag_effect}"
+            line += "]"
+        lines.append(line)
+    return "\n".join(lines) if lines else "blinds: (none)"
+
+
 def _current_blind(state: dict[str, Any]) -> dict[str, Any] | None:
     for blind in (state.get("blinds") or {}).values():
-        if blind.get("status") == "CURRENT":
+        if blind.get("status") in ("CURRENT", "SELECT"):
             return blind
     return None
 
@@ -91,7 +204,34 @@ def _round_line(state: dict[str, Any], target: int | None = None) -> str:
     hands = r.get("hands_left", 0)
     discards = r.get("discards_left", 0)
     score_part = f"score={chips}/{target}" if target is not None else f"score={chips}"
-    return f"round: hands={hands} discards={discards} {score_part}"
+    return f"round: hands_left={hands} discards_left={discards} {score_part}"
+
+
+INTEREST_CAP_DEFAULT = 5
+INTEREST_PER = 5  # $1 per $5 held, capped
+
+
+def _economy_line(state: dict[str, Any]) -> str | None:
+    """Pending interest + Delayed Gratification bonus, if any info to show."""
+    parts: list[str] = []
+    money = state.get("money", 0)
+    # Interest: $1 per $5 held, default cap $5. Vouchers (e.g. Grabber/Seed
+    # Money) can raise the cap; we only model the default cap here and note the
+    # raw amount so the AI isn't misled.
+    if money > 0:
+        interest = min(money // INTEREST_PER, INTEREST_CAP_DEFAULT)
+        if interest > 0:
+            parts.append(f"interest=+${interest} (cap ${INTEREST_CAP_DEFAULT})")
+    # Delayed Gratification: $2 per remaining discard if 0 used at round end.
+    jokers = (state.get("jokers") or {}).get("cards") or []
+    has_dg = any((j.get("key") or "") == "j_delayed_grat" for j in jokers)
+    if has_dg:
+        r = state.get("round") or {}
+        discards_left = r.get("discards_left", 0)
+        discards_used_total = r.get("discards_used", 0)
+        if discards_used_total == 0 and discards_left > 0:
+            parts.append(f"delayed_grat=+${2 * discards_left} if 0 discards used")
+    return "economy: " + " ".join(parts) if parts else None
 
 
 def _hand_line(state: dict[str, Any]) -> str:
@@ -124,9 +264,7 @@ def print_summary(envelope: dict[str, Any]) -> None:
     if name == "MENU":
         lines.append("→ start RED WHITE  (or: start RED WHITE SEED)")
     elif name == "BLIND_SELECT":
-        blind = _current_blind(state)
-        if blind:
-            lines.append(_blind_line(blind))
+        lines.append(_blinds_block(state))
         lines.extend(_joker_lines(state))
         lines.append(_actions_line(envelope))
     elif name == "SELECTING_HAND":
@@ -137,6 +275,9 @@ def print_summary(envelope: dict[str, Any]) -> None:
             lines.append(_blind_line(blind))
         lines.extend(_joker_lines(state))
         lines.append(_hand_line(state))
+        econ = _economy_line(state)
+        if econ:
+            lines.append(econ)
         lines.append(_actions_line(envelope))
     elif name == "ROUND_EVAL":
         r = state.get("round") or {}
@@ -169,14 +310,29 @@ def print_summary(envelope: dict[str, Any]) -> None:
 
 
 def _joker_lines(state: dict[str, Any]) -> list[str]:
-    jokers = (state.get("jokers") or {}).get("cards") or []
+    jokers_area = state.get("jokers") or {}
+    jokers = jokers_area.get("cards") or []
     if not jokers:
         return []
-    out = ["jokers: " + "  ".join(_joker_line(i, c) for i, c in enumerate(jokers))]
-    consumables = (state.get("consumables") or {}).get("cards") or []
+    jcount = jokers_area.get("count", len(jokers))
+    jlimit = jokers_area.get("limit")
+    slot = f" ({jcount}/{jlimit})" if jlimit is not None else ""
+    out = [
+        "jokers"
+        + slot
+        + ": "
+        + "  ".join(_joker_line(i, c) for i, c in enumerate(jokers))
+    ]
+    cons_area = state.get("consumables") or {}
+    consumables = cons_area.get("cards") or []
     if consumables:
+        ccount = cons_area.get("count", len(consumables))
+        climit = cons_area.get("limit")
+        cslot = f" ({ccount}/{climit})" if climit is not None else ""
         out.append(
-            "consumables: "
+            "consumables"
+            + cslot
+            + ": "
             + "  ".join(_joker_line(i, c) for i, c in enumerate(consumables))
         )
     return out
@@ -209,7 +365,12 @@ def _shop_block(state: dict[str, Any]) -> str:
 
 def _pack_block(state: dict[str, Any]) -> str:
     cards = (state.get("pack") or {}).get("cards") or []
-    parts = [f"  pack[{i}] {c.get('label','?')} — {(c.get('value') or {}).get('effect','')}" for i, c in enumerate(cards)]
+    parts: list[str] = []
+    for i, c in enumerate(cards):
+        label = c.get("label", "?")
+        effect = (c.get("value") or {}).get("effect", "")
+        hint = " (needs hand targets)" if _consumable_needs_hand(c) else ""
+        parts.append(f"  pack[{i}] {label} — {effect}{hint}")
     return "pack:\n" + "\n".join(parts) if parts else "pack: (empty)"
 
 

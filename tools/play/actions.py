@@ -137,7 +137,9 @@ def _shop_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
     if reroll_cost > money:
         reroll["affordable"] = False
     actions.append(reroll)
-    actions.append(_action("next_round", "Leave shop for blind select", example_params={}))
+    actions.append(
+        _action("next_round", "Leave shop for blind select", example_params={})
+    )
     actions.extend(_use_actions(state))
     return actions
 
@@ -156,8 +158,14 @@ def _pack_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _selecting_hand_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
     actions = [
-        _action("play", "Play selected hand cards", example_params={"cards": [0, 1, 2, 3, 4]}),
-        _action("discard", "Discard selected hand cards", example_params={"cards": [0, 1]}),
+        _action(
+            "play",
+            "Play selected hand cards",
+            example_params={"cards": [0, 1, 2, 3, 4]},
+        ),
+        _action(
+            "discard", "Discard selected hand cards", example_params={"cards": [0, 1]}
+        ),
         _action("sort", "Sort hand by rank", example_params={"mode": "rank"}),
     ]
     actions.extend(_use_actions(state))
@@ -201,7 +209,7 @@ def build_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
         ]
         current = None
         for blind in state.get("blinds", {}).values():
-            if blind.get("status") == "CURRENT":
+            if blind.get("status") in ("CURRENT", "SELECT"):
                 current = blind
                 break
         if current and current.get("type") in ("SMALL", "BIG"):
