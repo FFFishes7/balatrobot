@@ -6,9 +6,11 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from tests.lua.endpoints.estimate_live_recipes import (
+    FIVE_WILD_KINGS,
     PAIR_5,
     PAIR_J,
     STRAIGHT_5,
+    WILD_DEBUFF_FLUSH,
     CardAdd,
     JokerAdd,
 )
@@ -29,6 +31,7 @@ class ScenarioLine:
     joker_keys: tuple[str, ...] | None = None
     jokers: tuple[JokerAdd, ...] | None = None
     set_state: dict[str, Any] = field(default_factory=dict)
+    debuff: tuple[CardAdd, ...] = ()
     expect_lower_than_optimal: bool = False
 
 
@@ -41,6 +44,7 @@ class ScenarioRecipe:
     jokers: tuple[JokerAdd, ...] = ()
     cards: tuple[CardAdd, ...] = ()
     set_state: dict[str, Any] = field(default_factory=dict)
+    debuff: tuple[CardAdd, ...] = ()
     lines: tuple[ScenarioLine, ...] = ()
     check_unmodeled: bool = True
 
@@ -97,6 +101,7 @@ def _line(
     joker_keys: tuple[str, ...] | None = None,
     jokers: tuple[JokerAdd, ...] | None = None,
     set_state: dict[str, Any] | None = None,
+    debuff: tuple[CardAdd, ...] = (),
     expect_lower: bool = False,
 ) -> ScenarioLine:
     return ScenarioLine(
@@ -105,6 +110,7 @@ def _line(
         pick=pick,
         joker_order=joker_order,
         hand_order=hand_order,
+        debuff=debuff,
         cards=cards,
         joker_keys=joker_keys,
         jokers=jokers,
@@ -745,6 +751,23 @@ def build_scenarios() -> list[ScenarioRecipe]:
                     expect_lower=True,
                 ),
             ),
+        ),
+        ScenarioRecipe(
+            scenario_id="S34",
+            description="Five Wild Kings classify as Flush Five",
+            category="wild",
+            cards=FIVE_WILD_KINGS,
+            lines=(_line("optimal", pick="play_added"),),
+            check_unmodeled=False,
+        ),
+        ScenarioRecipe(
+            scenario_id="S35",
+            description="Debuffed Wild reverts to printed suit (no diamond flush)",
+            category="wild",
+            cards=WILD_DEBUFF_FLUSH,
+            debuff=(CardAdd("H_K", enhancement="WILD"),),
+            lines=(_line("optimal", pick="play_added"),),
+            check_unmodeled=False,
         ),
     ]
 

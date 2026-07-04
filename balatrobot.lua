@@ -18,6 +18,7 @@ BB_ENDPOINTS = {
   -- Game control endpoints
   "src/lua/endpoints/set.lua",
   "src/lua/endpoints/add.lua",
+  "src/lua/endpoints/debuff.lua",
   -- Gameplay endpoints
   "src/lua/endpoints/menu.lua",
   "src/lua/endpoints/start.lua",

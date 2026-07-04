@@ -36,6 +36,12 @@ def hidden_actions() -> list[dict]:
             "example": {"command": "set", "params": {"hands": 1, "chips": 0}},
         },
         {
+            "command": "debuff",
+            "description": "Debuff/clear hand cards by index (debug; requires BALATROBOT_ALLOW_CHEATS=1)",
+            "params": {},
+            "example": {"command": "debuff", "params": {"cards": [0], "debuff": True}},
+        },
+        {
             "command": "screenshot",
             "description": "Save a screenshot to disk",
             "params": {"path": {"type": "string", "required": True}},

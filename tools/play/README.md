@@ -98,6 +98,8 @@ $env:BALATROBOT_ALLOW_CHEATS = "1"
 .\tools\play\bot.ps1 add card D_4 enhancement=MULT seal=RED
 .\tools\play\bot.ps1 add consumable c_fool
 .\tools\play\bot.ps1 set hands 1 discards 0 chips 0
+.\tools\play\bot.ps1 debuff 0          # debuff hand card at index 0
+.\tools\play\bot.ps1 debuff clear 0    # clear debuff
 ```
 
 Restrictions:
@@ -106,6 +108,7 @@ Restrictions:
 - **`add card`**: only in `SELECTING_HAND` (API rule); key format `D_4`, `H_A`, …
 - Optional flags: `enhancement=`, `seal=`, `edition=`, `eternal=`, `perishable=`, `rental=`
 - **`set`**: `hands`, `discards`, `chips` only (aliases: `hands_left`, `discards_left`, `score`)
+- **`debuff`**: `SELECTING_HAND` only; 0-based hand indices; `debuff clear IDX …` to undo
 
 Typical estimate lab: `select` → `add`/`set` → `estimate` → `play` → compare score.
 
@@ -179,7 +182,7 @@ payloads for each.
 - `exec.py` — raw JSON-RPC action, returns envelope
 - `know.py` — knowledge base lookups (preflight table by default; `--json` for raw)
 - `commands.py` — friendly-command → RPC params parser
-- `cheats.py` — gated `add`/`set` parsers (requires `BALATROBOT_ALLOW_CHEATS=1`)
+- `cheats.py` — gated `add`/`set`/`debuff` parsers (requires `BALATROBOT_ALLOW_CHEATS=1`)
 - `actions.py` — state-aware action list builder
 - `layers.py`, `envelope.py`, `start_options.py`, `bot_client.py` — core logic
 - `serve.example.ps1` — copy to `serve.ps1` and set your Balatro Steam path (`serve.ps1` is gitignored)

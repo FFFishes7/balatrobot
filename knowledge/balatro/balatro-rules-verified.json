@@ -152,10 +152,20 @@
   "enhancement_scoring": {
     "title": "Playing-card enhancements and when they trigger (Bonus/Mult/Glass/Steel/Stone/Gold/Lucky/Wild)",
     "category": "enhancement",
-    "rule": "There are 8 playing-card enhancements: Bonus = +30 Chips when scored; Mult = +4 Mult when scored; Glass = X2 Mult when scored (1-in-4 chance to destroy itself after scoring); Steel = X1.5 Mult while HELD in hand — do NOT play Steel cards, they score as a normal card and lose the Steel bonus; Stone = +50 Chips when scored, has no rank/suit but always scores; Gold = +$3 if held in hand at end of round (do NOT need to be played); Lucky = when scored, a 1-in-5 chance for +20 Mult and a separate 1-in-15 chance for +$20 (both can trigger the same score); Wild = counts as every suit simultaneously for poker hands. On-score enhancements only apply to cards in the scoring hand (see kickers_do_not_score); Steel and Gold are the exceptions, applying to held cards instead.",
+    "rule": "There are 8 playing-card enhancements: Bonus = +30 Chips when scored; Mult = +4 Mult when scored; Glass = X2 Mult when scored (1-in-4 chance to destroy itself after scoring); Steel = X1.5 Mult while HELD in hand — do NOT play Steel cards, they score as a normal card and lose the Steel bonus; Stone = +50 Chips when scored, has no rank/suit but always scores; Gold = +$3 if held in hand at end of round (do NOT need to be played); Lucky = when scored, a 1-in-5 chance for +20 Mult and a separate 1-in-15 chance for +$20 (both can trigger the same score); Wild = all suits simultaneously, rank unchanged (see wild_card_enhancement). On-score enhancements only apply to cards in the scoring hand (see kickers_do_not_score); Steel and Gold are the exceptions, applying to held cards instead.",
     "source": [
       "Balatro Wiki — Card modifiers#Enhancements (8 enhancements and exact values): https://balatrowiki.org/w/Card_modifiers#Enhancements",
       "Balatro Wiki — Guide: Activation Sequence: https://balatrowiki.org/w/Guide:_Activation_Sequence"
+    ]
+  },
+  "wild_card_enhancement": {
+    "title": "Wild Card enhancement: all suits, rank unchanged",
+    "category": "enhancement",
+    "rule": "Wild (The Lovers, packs, Illusion shop) keeps the card's printed rank — it is NOT a wildcard rank. A Queen Wild cannot pair with an Ace; only with another Queen (or rank-changing effects like Strength). For suits: Wild counts as Spades, Hearts, Clubs, and Diamonds simultaneously — helping Flushes, Straights, Straight Flushes, and most suit-based Jokers (Sinful, Rough Gem, Ancient, etc.). Exception: logic that needs one card per suit (Flower Pot, Seeing Double) assigns each Wild to exactly ONE suit at a time — a single Wild cannot satisfy multiple suit slots alone. When debuffed, Wild loses the enhancement and reverts to its original suit only. Unlike Stone (no rank/suit), Wild has normal rank chip value. Multiple Wilds in one play can upgrade hand tier (e.g. five Wilds → Flush Five over Five of a Kind). Wild cards do not count toward deck unlock tallies like \"30 Diamonds in deck\".",
+    "source": [
+      "Balatro Wiki — Wild cards: https://balatrowiki.org/w/Wild_cards",
+      "Balatro Wiki — Card modifiers#Enhancements: https://balatrowiki.org/w/Card_modifiers#Enhancements",
+      "Balatro Wiki — Card Suits: https://balatrowiki.org/w/Card_Suits"
     ]
   },
   "seal_effects": {

@@ -115,6 +115,11 @@ def _add_cards(client: httpx.Client, gs: dict, cards: tuple[CardAdd, ...]) -> di
     return gs
 
 
+def _debuff_cards(client: httpx.Client, gs: dict, cards: tuple[CardAdd, ...]) -> dict:
+    indices = _indices_for_cards(gs, cards)
+    return api(client, "debuff", {"cards": indices, "debuff": True})["result"]
+
+
 def setup_recipe(client: httpx.Client, recipe: LiveRecipe) -> dict:
     gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
     if recipe.jokers:
@@ -126,6 +131,8 @@ def setup_recipe(client: httpx.Client, recipe: LiveRecipe) -> dict:
     gs = _add_cards(client, gs, recipe.cards)
     if recipe.set_state:
         gs = api(client, "set", recipe.set_state)["result"]
+    if recipe.debuff:
+        gs = _debuff_cards(client, gs, recipe.debuff)
     if recipe.require_loyalty_active:
         loyalty_ok = False
         for j in (gs.get("jokers") or {}).get("cards") or []:
@@ -416,6 +423,9 @@ def setup_scenario(
     merged_set = {**recipe.set_state, **line.set_state}
     if merged_set:
         gs = api(client, "set", merged_set)["result"]
+    debuff = line.debuff if line.debuff else recipe.debuff
+    if debuff:
+        gs = _debuff_cards(client, gs, debuff)
     if line.joker_order is not None:
         gs = _rearrange_jokers(client, line.joker_order)
     gs = _apply_hand_order(client, gs, line.hand_order)
@@ -438,6 +448,8 @@ def resolve_line_play_indices(
     if pick == "pair_j":
         return _indices_for_rank(gs, "J", 2)
     if pick == "straight_5":
+        return _indices_for_cards(gs, cards)
+    if pick == "play_added":
         return _indices_for_cards(gs, cards)
     if pick == "play_all":
         return list(range(_hand_count(gs)))

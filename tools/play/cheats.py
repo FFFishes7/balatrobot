@@ -1,4 +1,4 @@
-"""Gated debug helpers for add/set (estimate testing only)."""
+"""Gated debug helpers for add/set/debuff (estimate testing only)."""
 
 from __future__ import annotations
 
@@ -163,3 +163,17 @@ def build_set_params(args: list[str]) -> dict:
             )
         params[field] = int(args[i + 1])
     return params
+
+
+def build_debuff_params(args: list[str]) -> dict:
+    """debuff 0 [1 2] | debuff clear 0 [1 2]"""
+    require_cheats("debuff")
+    if not args:
+        raise ValueError("debuff needs card indices, e.g. debuff 0 | debuff clear 0 1")
+    clear = False
+    if args[0].lower() in ("clear", "off", "false"):
+        clear = True
+        args = args[1:]
+    if not args:
+        raise ValueError("debuff needs card indices after clear, e.g. debuff clear 0")
+    return {"cards": [int(x) for x in args], "debuff": not clear}

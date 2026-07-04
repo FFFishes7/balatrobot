@@ -244,10 +244,35 @@ PER_CARD_JOKERS = {
 
 _RED_SUITS = frozenset({"H", "D"})
 _BLACK_SUITS = frozenset({"S", "C"})
+_ALL_SUITS = ("H", "D", "S", "C")
+
+
+def _card_is_wild(card: dict) -> bool:
+    """True when Wild enhancement is active (debuffed Wild reverts to original suit)."""
+    if card.get("debuff"):
+        return False
+    return card.get("enhancement") == "WILD"
+
+
+def _card_suit_options(card: dict, ctx: dict) -> list[str]:
+    """Suits a card may be assigned to (one at a time for multi-suit logic)."""
+    if _card_is_wild(card):
+        return list(_ALL_SUITS)
+    cs = card.get("suit")
+    if not cs:
+        return []
+    if ctx.get("smeared"):
+        if cs in _RED_SUITS:
+            return list(_RED_SUITS)
+        if cs in _BLACK_SUITS:
+            return list(_BLACK_SUITS)
+    return [cs]
 
 
 def _card_is_suit(card: dict, suit: str, ctx: dict) -> bool:
-    """Mirror ``Card:is_suit`` including Smeared Joker (Hearts≈Diamonds, Spades≈Clubs)."""
+    """Mirror ``Card:is_suit`` including Wild and Smeared Joker."""
+    if _card_is_wild(card):
+        return True
     cs = card.get("suit")
     if not cs:
         return False
@@ -258,6 +283,20 @@ def _card_is_suit(card: dict, suit: str, ctx: dict) -> bool:
     if suit in _RED_SUITS and cs in _RED_SUITS:
         return True
     return suit in _BLACK_SUITS and cs in _BLACK_SUITS
+
+
+def _suit_assignment_possible(cards: list[dict], ctx: dict, predicate) -> bool:
+    """Backtrack: assign each card one suit from its options; check ``predicate(assigned)``."""
+
+    def search(i: int, assigned: set[str]) -> bool:
+        if i >= len(cards):
+            return predicate(assigned)
+        for suit in _card_suit_options(cards[i], ctx):
+            if search(i + 1, assigned | {suit}):
+                return True
+        return False
+
+    return search(0, set())
 
 
 def _per_card_joker_bonus(card: dict, key: str, ctx: dict) -> tuple[int, int, float]:
@@ -281,30 +320,20 @@ def _per_card_joker_bonus(card: dict, key: str, ctx: dict) -> tuple[int, int, fl
 
 
 def _flower_pot_active(scoring_cards: list[dict], ctx: dict) -> bool:
-    tallies = {"H": 0, "D": 0, "S": 0, "C": 0}
-    for card in scoring_cards:
-        if _card_is_suit(card, "H", ctx):
-            if tallies["H"] == 0:
-                tallies["H"] = 1
-        elif _card_is_suit(card, "D", ctx):
-            if tallies["D"] == 0:
-                tallies["D"] = 1
-        elif _card_is_suit(card, "S", ctx):
-            if tallies["S"] == 0:
-                tallies["S"] = 1
-        elif _card_is_suit(card, "C", ctx):
-            if tallies["C"] == 0:
-                tallies["C"] = 1
-    return all(tallies[s] > 0 for s in "HDSC")
+    return _suit_assignment_possible(
+        scoring_cards,
+        ctx,
+        lambda assigned: all(s in assigned for s in _ALL_SUITS),
+    )
 
 
 def _seeing_double_active(scoring_cards: list[dict], ctx: dict) -> bool:
-    tallies = {s: 0 for s in "HDSC"}
-    for card in scoring_cards:
-        for s in "HDSC":
-            if tallies[s] == 0 and _card_is_suit(card, s, ctx):
-                tallies[s] = 1
-    return tallies["C"] > 0 and any(tallies[s] > 0 for s in "HDS")
+    return _suit_assignment_possible(
+        scoring_cards,
+        ctx,
+        lambda assigned: "C" in assigned
+        and any(s in assigned for s in ("H", "D", "S")),
+    )
 
 
 def _parse_effect_bonus(joker: dict, stat: str) -> int:
@@ -504,7 +533,7 @@ _TROUSERS_HAND_TYPES = frozenset({"Two Pair", "Full House", "Flush House"})
 
 def _blackboard_held_ok(card: dict) -> bool:
     """Held card counts for Blackboard (Wild satisfies Spade/Club-only rule)."""
-    if card.get("enhancement") == "WILD":
+    if _card_is_wild(card):
         return True
     return card.get("suit") in {"S", "C"}
 

@@ -142,6 +142,7 @@ Runs inside the game engine and exposes an API.
     **Core Endpoints:**
 
     - `add.lua`: Add a new card (joker, consumable, voucher, playing card, or booster pack).
+    - `debuff.lua`: Set or clear debuff on hand cards (debug / estimate testing).
     - `buy.lua`: Buy a card or booster pack from the shop.
     - `cash_out.lua`: Cash out and collect round rewards.
     - `endless.lua`: Dismiss victory overlay to continue in endless mode.

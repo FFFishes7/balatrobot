@@ -49,6 +49,7 @@ class LiveRecipe:
     jokers: tuple[JokerAdd, ...] = ()
     cards: tuple[CardAdd, ...] = ()
     set_state: dict[str, Any] = field(default_factory=dict)
+    debuff: tuple[CardAdd, ...] = ()
     pick: str = "pair_5s"
     check_unmodeled: bool = True
     pre_play_pair: bool = False
@@ -99,6 +100,20 @@ FOUR_STRAIGHT = (
     CardAdd("D_T"),
     CardAdd("H_J"),
     CardAdd("C_Q"),
+)
+FIVE_WILD_KINGS = (
+    CardAdd("H_K", enhancement="WILD"),
+    CardAdd("D_K", enhancement="WILD"),
+    CardAdd("S_K", enhancement="WILD"),
+    CardAdd("C_K", enhancement="WILD"),
+    CardAdd("H_K", enhancement="WILD"),
+)
+WILD_DEBUFF_FLUSH = (
+    CardAdd("H_K", enhancement="WILD"),
+    CardAdd("D_5"),
+    CardAdd("D_7"),
+    CardAdd("D_9"),
+    CardAdd("D_J"),
 )
 SHORTCUT_STRAIGHT = (
     CardAdd("S_T"),
@@ -438,6 +453,27 @@ def build_buff_recipes() -> list[LiveRecipe]:
             jokers=(JokerAdd("j_cavendish", edition="POLYCHROME"),),
             cards=PAIR_5,
             pick="pair_5s",
+            check_unmodeled=False,
+        ),
+        LiveRecipe(
+            recipe_id="buff_wild_flush_five",
+            cards=FIVE_WILD_KINGS,
+            pick="play_added",
+            check_unmodeled=False,
+        ),
+        LiveRecipe(
+            recipe_id="buff_wild_debuff_flush",
+            cards=WILD_DEBUFF_FLUSH,
+            debuff=(CardAdd("H_K", enhancement="WILD"),),
+            pick="play_added",
+            check_unmodeled=False,
+        ),
+        LiveRecipe(
+            recipe_id="buff_wild_debuff_lusty",
+            joker_keys=("j_lusty_joker",),
+            cards=(CardAdd("H_K", enhancement="WILD"), CardAdd("D_5")),
+            debuff=(CardAdd("H_K", enhancement="WILD"),),
+            pick="play_added",
             check_unmodeled=False,
         ),
     ]

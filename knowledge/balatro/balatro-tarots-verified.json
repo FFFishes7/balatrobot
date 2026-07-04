@@ -61,7 +61,7 @@
   },
   "The Lovers": {
     "key": "c_lovers",
-    "effect": "Enhances 1 selected card into a Wild Card",
+    "effect": "Enhances 1 selected card into a Wild Card (all suits; rank unchanged — see rule wild_card_enhancement)",
     "wiki": "https://balatrowiki.org/w/The_Lovers"
   },
   "The Magician": {

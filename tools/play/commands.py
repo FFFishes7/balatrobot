@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from cheats import build_add_params, build_set_params
+from cheats import build_add_params, build_debuff_params, build_set_params
 
 NO_PARAMS = frozenset(
     {
@@ -117,6 +117,8 @@ def build_params(method: str, args: list[str]) -> dict:
         return build_add_params(args)
     if method == "set":
         return build_set_params(args)
+    if method == "debuff":
+        return build_debuff_params(args)
     raise ValueError(f"unknown method: {method}")
 
 
@@ -195,4 +197,9 @@ def format_friendly_action(action: dict) -> str | None:
     if cmd == "set":
         pairs = [f"{k}={v}" for k, v in params.items()]
         return "set " + " ".join(pairs) if pairs else "set"
+    if cmd == "debuff":
+        cards = params.get("cards") or []
+        if not params.get("debuff", True):
+            return "debuff clear " + " ".join(str(c) for c in cards)
+        return "debuff " + " ".join(str(c) for c in cards)
     return cmd

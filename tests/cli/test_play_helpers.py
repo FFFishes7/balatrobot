@@ -1017,13 +1017,16 @@ import estimate  # noqa: E402  # type: ignore[unresolved-import]
 def _hand_cards(*ranks_suits: tuple[str, str, dict]) -> list[dict]:
     out = []
     for rank, suit, mod in ranks_suits:
-        out.append(
-            {
-                "label": f"{rank} of {suit}",
-                "value": {"rank": rank, "suit": suit},
-                "modifier": mod,
-            }
-        )
+        mod = dict(mod)
+        debuffed = mod.pop("debuff", False)
+        card = {
+            "label": f"{rank} of {suit}",
+            "value": {"rank": rank, "suit": suit},
+            "modifier": mod,
+        }
+        if debuffed:
+            card["state"] = {"debuff": True}
+        out.append(card)
     return out
 
 
@@ -1347,6 +1350,17 @@ def test_build_params_set_round_fields(cheats_on: None) -> None:
 def test_build_params_set_rejects_money(cheats_on: None) -> None:
     with pytest.raises(ValueError, match="not allowed"):
         build_params("set", ["money", "100"])
+
+
+def test_build_params_debuff(cheats_on: None) -> None:
+    assert build_params("debuff", ["0", "2"]) == {"cards": [0, 2], "debuff": True}
+    assert build_params("debuff", ["clear", "1"]) == {"cards": [1], "debuff": False}
+
+
+def test_debuff_requires_cheats_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BALATROBOT_ALLOW_CHEATS", raising=False)
+    with pytest.raises(ValueError, match="BALATROBOT_ALLOW_CHEATS"):
+        build_params("debuff", ["0"])
 
 
 def test_estimate_wily_joker_three_of_a_kind_chips() -> None:
@@ -2199,6 +2213,119 @@ def test_estimate_blackboard_wild_held_counts() -> None:
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
     assert top[0]["mult"] == 6
+
+
+def test_estimate_wild_flush_with_four_same_suit() -> None:
+    hand = _hand_cards(
+        ("K", "H", {}),
+        ("Q", "H", {}),
+        ("J", "H", {}),
+        ("T", "H", {}),
+        ("9", "D", {"enhancement": "WILD"}),
+    )
+    est = estimate.estimate(_est_state(hand))
+    top = est["estimate"]["top"]
+    assert top[0]["hand_type"] == "Straight Flush"
+
+
+def test_estimate_lusty_joker_wild_heart_scores() -> None:
+    hand = _hand_cards(
+        ("K", "H", {}),
+        ("Q", "H", {}),
+        ("J", "H", {}),
+        ("T", "H", {}),
+        ("9", "C", {"enhancement": "WILD"}),
+    )
+    jokers = [{"label": "Lusty Joker", "key": "j_lusty_joker", "value": {}}]
+    est = estimate.estimate(_est_state(hand, jokers=jokers))
+    top = est["estimate"]["top"]
+    assert top[0]["hand_type"] == "Straight Flush"
+    assert top[0]["mult"] == 23
+
+
+def test_estimate_ace_and_queen_wild_not_pair() -> None:
+    hand = _hand_cards(
+        ("A", "S", {"enhancement": "MULT"}),
+        ("Q", "D", {"enhancement": "WILD"}),
+        ("5", "C", {}),
+        ("3", "H", {}),
+        ("2", "S", {}),
+    )
+    est = estimate.estimate(_est_state(hand))
+    top = est["estimate"]["top"]
+    assert top[0]["hand_type"] == "High Card"
+    assert top[0]["indices"] == [0]
+
+
+def test_flower_pot_wild_suit_assignment() -> None:
+    import estimate_jokers as ej  # type: ignore[unresolved-import]
+
+    three_hearts = [
+        {"rank": "K", "suit": "H", "enhancement": "WILD"},
+        {"rank": "Q", "suit": "H", "enhancement": ""},
+        {"rank": "J", "suit": "H", "enhancement": ""},
+    ]
+    assert not ej._flower_pot_active(three_hearts, {})
+
+    four_wilds = [
+        {"rank": "K", "suit": "H", "enhancement": "WILD"},
+        {"rank": "Q", "suit": "D", "enhancement": "WILD"},
+        {"rank": "J", "suit": "S", "enhancement": "WILD"},
+        {"rank": "T", "suit": "C", "enhancement": "WILD"},
+    ]
+    assert ej._flower_pot_active(four_wilds, {})
+
+
+def test_seeing_double_wild_assigns_club_and_other() -> None:
+    import estimate_jokers as ej  # type: ignore[unresolved-import]
+
+    wild_plus_club = [
+        {"rank": "K", "suit": "H", "enhancement": "WILD"},
+        {"rank": "Q", "suit": "C", "enhancement": ""},
+    ]
+    assert ej._seeing_double_active(wild_plus_club, {})
+
+
+def test_wild_debuffed_no_flush_help() -> None:
+    hand = _hand_cards(
+        ("K", "H", {"enhancement": "WILD", "debuff": True}),
+        ("5", "D", {}),
+        ("7", "D", {}),
+        ("9", "D", {}),
+        ("J", "D", {}),
+    )
+    est = estimate.estimate(_est_state(hand))
+    top = est["estimate"]["top"]
+    assert top[0]["hand_type"] != "Flush"
+    assert top[0]["hand_type"] == "High Card"
+
+
+def test_wild_debuffed_lusty_no_bonus() -> None:
+    hand = _hand_cards(
+        ("K", "H", {"enhancement": "WILD", "debuff": True}),
+        ("5", "D", {}),
+        ("3", "C", {}),
+        ("2", "S", {}),
+        ("6", "D", {}),
+    )
+    jokers = [{"label": "Lusty Joker", "key": "j_lusty_joker", "value": {}}]
+    line = estimate.score_hand_indices(_est_state(hand, jokers=jokers), [0])
+    assert line["hand_type"] == "High Card"
+    assert line["mult"] == 1
+
+
+def test_flush_five_five_wild_kings() -> None:
+    hand = _hand_cards(
+        ("K", "H", {"enhancement": "WILD"}),
+        ("K", "D", {"enhancement": "WILD"}),
+        ("K", "S", {"enhancement": "WILD"}),
+        ("K", "C", {"enhancement": "WILD"}),
+        ("K", "H", {"enhancement": "WILD"}),
+    )
+    est = estimate.estimate(_est_state(hand))
+    top = est["estimate"]["top"]
+    assert top[0]["hand_type"] == "Flush Five"
+    assert top[0]["mult"] == 16
 
 
 def test_estimate_obelisk_grows_off_most_played_hand() -> None:

@@ -49,6 +49,7 @@ from estimate_jokers import (
     _apply_joker_edition_before,
     _baseball_react_xmult,
     _card_is_face,
+    _card_is_wild,
     _effective_joker_at,
     _enhancement_scores_on_play,
     _global_joker_bonus,
@@ -161,13 +162,21 @@ def _straight_indices(
 def _flush_indices(
     cards: list[dict], idx_with_rank: list[int], *, min_len: int
 ) -> list[int] | None:
+    """Best flush subset; Wild cards fill any suit (_card_is_wild excludes debuffed)."""
+    wild_idx = [i for i in idx_with_rank if _card_is_wild(cards[i])]
+    non_wild = [i for i in idx_with_rank if i not in wild_idx]
+
     from collections import Counter
 
-    suit_count = Counter(cards[i]["suit"] for i in idx_with_rank)
-    for suit, cnt in suit_count.items():
-        if cnt >= min_len:
-            return [i for i in idx_with_rank if cards[i]["suit"] == suit]
-    return None
+    suit_count = Counter(cards[i]["suit"] for i in non_wild)
+    best: list[int] | None = None
+    for suit in "HDSC":
+        total = suit_count.get(suit, 0) + len(wild_idx)
+        if total >= min_len:
+            indices = [i for i in non_wild if cards[i]["suit"] == suit] + wild_idx
+            if best is None or len(indices) > len(best):
+                best = indices
+    return best
 
 
 def _classify(
@@ -215,7 +224,7 @@ def _classify(
                             break
         return out
 
-    # Flush Five: flush + 5 of a kind
+    # Flush Five before Five of a Kind: five Wilds can satisfy both flush and 5oak.
     if is_flush and len(flush_idx or []) == 5 and counts == [5]:
         return "Flush Five", list(range(5))
     # Flush House: flush + full house (3+2)
