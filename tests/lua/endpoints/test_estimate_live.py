@@ -79,3 +79,58 @@ class TestEstimateLiveScoring:
         assert delta == est_line["score"], (
             f"estimate={est_line['score']} actual={delta} idx={indices}"
         )
+
+    def test_obelisk_top_matches_play(self, client: httpx.Client) -> None:
+        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
+        gs = api(client, "add", {"key": "j_obelisk"})["result"]
+        est = estimate.estimate(gs)
+        assert not est["estimate"]["unmodeled_jokers"]
+        top = est["estimate"]["top"][0]
+        delta = _play_delta(client, gs, top["indices"])
+        assert delta == top["score"], (
+            f"estimate={top['score']} actual={delta} "
+            f"hand={top['hand_type']} idx={top['indices']}"
+        )
+
+    def test_ride_the_bus_pair_of_fives_matches_play(self, client: httpx.Client) -> None:
+        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
+        gs = api(client, "add", {"key": "j_ride_the_bus"})["result"]
+        gs = api(client, "add", {"key": "S_5"})["result"]
+        gs = api(client, "add", {"key": "D_5"})["result"]
+        fives = [i for i in range((gs.get("hand") or {}).get("count", 0)) if _hand_rank(gs, i) == "5"]
+        assert len(fives) >= 2, "hand needs two 5s for ride the bus live test"
+        indices = fives[:2]
+        est_line = estimate.score_hand_indices(gs, indices)
+        delta = _play_delta(client, gs, indices)
+        assert delta == est_line["score"], (
+            f"estimate={est_line['score']} actual={delta} idx={indices}"
+        )
+
+    def test_green_joker_pair_matches_play(self, client: httpx.Client) -> None:
+        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
+        gs = api(client, "add", {"key": "j_green_joker"})["result"]
+        gs = api(client, "add", {"key": "S_5"})["result"]
+        gs = api(client, "add", {"key": "D_5"})["result"]
+        fives = [i for i in range((gs.get("hand") or {}).get("count", 0)) if _hand_rank(gs, i) == "5"]
+        assert len(fives) >= 2, "hand needs two 5s for green joker live test"
+        indices = fives[:2]
+        est_line = estimate.score_hand_indices(gs, indices)
+        delta = _play_delta(client, gs, indices)
+        assert delta == est_line["score"], (
+            f"estimate={est_line['score']} actual={delta} idx={indices}"
+        )
+
+    def test_brainstorm_jolly_pair_matches_play(self, client: httpx.Client) -> None:
+        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
+        gs = api(client, "add", {"key": "j_jolly"})["result"]
+        gs = api(client, "add", {"key": "j_brainstorm"})["result"]
+        gs = api(client, "add", {"key": "H_J"})["result"]
+        gs = api(client, "add", {"key": "S_J"})["result"]
+        jacks = [i for i in range((gs.get("hand") or {}).get("count", 0)) if _hand_rank(gs, i) == "J"]
+        assert len(jacks) >= 2, "hand needs two Jacks for brainstorm+jolly live test"
+        indices = jacks[:2]
+        est_line = estimate.score_hand_indices(gs, indices)
+        delta = _play_delta(client, gs, indices)
+        assert delta == est_line["score"], (
+            f"estimate={est_line['score']} actual={delta} idx={indices}"
+        )

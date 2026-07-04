@@ -321,6 +321,27 @@ local function extract_joker_stats(card)
     if tally >= 16 and type(a.extra) == "number" then
       stats.x_mult = a.extra
     end
+  elseif name == "Obelisk" then
+    if type(a.extra) == "number" then
+      stats.obelisk_step = a.extra
+    end
+    if type(a.x_mult) == "number" and a.x_mult > 1 then
+      stats.x_mult = a.x_mult
+    end
+  elseif name == "Ride the Bus" then
+    if type(a.extra) == "number" then
+      stats.ride_the_bus_step = a.extra
+    end
+    if type(a.mult) == "number" and a.mult ~= 0 then
+      stats.mult = a.mult
+    end
+  elseif name == "Green Joker" and type(a.extra) == "table" then
+    if type(a.mult) == "number" then
+      stats.mult = a.mult
+    end
+    if type(a.extra.hand_add) == "number" then
+      stats.green_hand_add = a.extra.hand_add
+    end
   elseif name == "Loyalty Card" and type(a.extra) == "table" then
     local every = a.extra.every
     if type(every) == "number" then
@@ -600,6 +621,9 @@ local function extract_hand_info(hands)
       played_this_round = hand.played_this_round or 0,
       example = hand.example or {},
     }
+    if hand.visible ~= nil then
+      hands_data[name].visible = hand.visible
+    end
   end
 
   return hands_data

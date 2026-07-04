@@ -49,6 +49,7 @@
 ---@field mult integer Current multiplier value for this hand
 ---@field played integer Total number of times this hand has been played
 ---@field played_this_round integer Number of times this hand has been played this round
+---@field visible boolean? Whether this poker hand type is unlocked/visible (Obelisk checks)
 ---@field example table<integer, table> Example cards showing what makes this hand (array of [card_key, is_scored])
 
 ---@class Round

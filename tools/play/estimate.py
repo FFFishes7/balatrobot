@@ -130,6 +130,90 @@ HAND_ORDER = {
     "High Card": 12,
 }
 
+# Jokers Blueprint / Brainstorm cannot copy (game.lua blueprint_compat = false).
+BLUEPRINT_INCOMPATIBLE = frozenset(
+    {
+        "j_four_fingers",
+        "j_credit_card",
+        "j_chaos",
+        "j_delayed_grat",
+        "j_pareidolia",
+        "j_egg",
+        "j_splash",
+        "j_sixth_sense",
+        "j_shortcut",
+        "j_cloud_9",
+        "j_rocket",
+        "j_midas_mask",
+        "j_gift",
+        "j_turtle_bean",
+        "j_to_the_moon",
+        "j_juggler",
+        "j_drunkard",
+        "j_golden",
+        "j_trading",
+        "j_mr_bones",
+        "j_troubadour",
+        "j_smeared",
+        "j_ring_master",
+        "j_merry_andy",
+        "j_oops",
+        "j_invisible",
+        "j_satellite",
+        "j_astronomer",
+        "j_chicot",
+    }
+)
+
+
+def _blueprint_compatible(key: str) -> bool:
+    return bool(key) and key not in BLUEPRINT_INCOMPATIBLE
+
+
+def _resolve_chain_from(index: int, jokers: list[dict], depth: int = 0) -> dict | None:
+    """Resolve copy-chain from joker slot ``index`` (Blueprint/Brainstorm recursion)."""
+    if depth > len(jokers) or index < 0 or index >= len(jokers):
+        return None
+    j = jokers[index]
+    key = j.get("key") or ""
+    if not _blueprint_compatible(key):
+        return None
+    if key == "j_blueprint":
+        if index + 1 >= len(jokers):
+            return None
+        return _resolve_chain_from(index + 1, jokers, depth + 1)
+    if key == "j_brainstorm":
+        if not jokers or jokers[0].get("key") == "j_brainstorm":
+            return None
+        return _resolve_chain_from(0, jokers, depth + 1)
+    return j
+
+
+def _resolve_copy_target(index: int, jokers: list[dict]) -> dict | None:
+    """Joker whose scoring effect Blueprint/Brainstorm applies at ``index``."""
+    if index >= len(jokers):
+        return None
+    key = jokers[index].get("key") or ""
+    if key == "j_brainstorm":
+        return _resolve_chain_from(0, jokers)
+    if key == "j_blueprint":
+        if index + 1 >= len(jokers):
+            return None
+        return _resolve_chain_from(index + 1, jokers)
+    return None
+
+
+def _effective_joker_at(index: int, jokers: list[dict]) -> tuple[dict | None, str]:
+    """Return (joker, key) used for scoring at slot ``index`` (copycats delegate)."""
+    j = jokers[index]
+    key = j.get("key") or ""
+    if key in ("j_blueprint", "j_brainstorm"):
+        target = _resolve_copy_target(index, jokers)
+        if not target:
+            return None, key
+        return target, target.get("key") or ""
+    return j, key
+
 
 # --- joker registry ---------------------------------------------------------
 # New joker? Mandatory checklist: tools/play/estimate_registry.md
@@ -143,14 +227,11 @@ NO_SCORE_JOKERS = {
     "j_egg",
     "j_gift",
     "j_golden",
-    "j_flash",
     "j_faceless",
     "j_cartomancer",
     "j_certificate",
     "j_mail",
-    "j_ramen",
     "j_ripple",
-    "j_hologram",
     "j_trading",
     "j_riff_raff",
     "j_drunkard",
@@ -179,8 +260,6 @@ PER_CARD_JOKERS = {
     "j_even_steven": lambda c: (0, 4 if c["rank"] in EVEN_RANKS else 0, 1),
     "j_odd_todd": lambda c: (31 if c["rank"] in ODD_RANKS else 0, 0, 1),
     "j_onyx_agate": lambda c: (0, 7 if c["suit"] == "C" else 0, 1),  # +7 M per club
-    "j_scary_face": lambda c: (30 if c["rank"] in FACE_RANKS else 0, 0, 1),
-    "j_smiley": lambda c: (0, 5 if c["rank"] in FACE_RANKS else 0, 1),
     "j_scholar": lambda c: (
         (20 if c["rank"] == "A" else 0),
         (4 if c["rank"] == "A" else 0),
@@ -261,6 +340,15 @@ def _joker_stats(joker: dict) -> dict:
 
 def _stat_mult(joker: dict) -> int:
     stats = _joker_stats(joker)
+    key = joker.get("key") or ""
+    if key == "j_ride_the_bus":
+        if "mult" in stats:
+            return int(stats["mult"])
+        return 0
+    if key == "j_green_joker":
+        if "mult" in stats:
+            return int(stats["mult"])
+        return 0
     if "mult" in stats:
         return int(stats["mult"])
     return _parse_effect_mult(joker)
@@ -325,6 +413,7 @@ EFFECT_XMULT_JOKERS = frozenset(
         "j_ramen",
         "j_madness",
         "j_vampire",
+        "j_hit_the_road",
     }
 )
 
@@ -381,6 +470,75 @@ def _round_aware_card_xmult(card: dict, jokers: list[dict], ctx: dict) -> float:
     return xmult
 
 
+def _card_is_face(card: dict, ctx: dict) -> bool:
+    """Face check mirroring ``Card:is_face`` (Pareidolia makes every card a face)."""
+    if ctx.get("pareidolia"):
+        return True
+    return card.get("rank") in FACE_RANKS
+
+
+def _ride_the_bus_step(joker: dict) -> int:
+    stats = _joker_stats(joker)
+    if "ride_the_bus_step" in stats:
+        return int(stats["ride_the_bus_step"])
+    return 1
+
+
+def _project_ride_the_bus_mult(joker: dict, ctx: dict) -> int:
+    """+Mult from stats; +step when no scoring face; reset to 0 if any scoring face."""
+    scoring = ctx.get("scoring_cards") or []
+    if any(_card_is_face(c, ctx) for c in scoring):
+        return 0
+    return _stat_mult(joker) + _ride_the_bus_step(joker)
+
+
+def _green_hand_add(joker: dict) -> int:
+    stats = _joker_stats(joker)
+    if "green_hand_add" in stats:
+        return int(stats["green_hand_add"])
+    return 1
+
+
+def _project_green_joker_mult(joker: dict, ctx: dict) -> int:
+    """+Mult after context.before increment (hand_add per hand played)."""
+    _ = ctx
+    return _stat_mult(joker) + _green_hand_add(joker)
+
+
+def _obelisk_step(joker: dict) -> float:
+    stats = _joker_stats(joker)
+    if "obelisk_step" in stats:
+        return float(stats["obelisk_step"])
+    return 0.2
+
+
+def _obelisk_resets(hand_type: str, hands_meta: dict[str, dict]) -> bool:
+    """True when playing *hand_type* resets Obelisk (sole most-played after increment).
+
+    Game increments ``hands[scoring_name].played`` before ``context.before``; only
+    visible poker hand types participate (``SMODS.is_poker_hand_visible``).
+    """
+    played_after = hands_meta.get(hand_type, {}).get("played", 0) + 1
+    for name, meta in hands_meta.items():
+        if name == hand_type:
+            continue
+        if meta.get("visible") is False:
+            continue
+        if meta.get("played", 0) >= played_after:
+            return False
+    return True
+
+
+def _project_obelisk_xmult(joker: dict, ctx: dict) -> float:
+    """Project Obelisk ×Mult after context.before for this hand type."""
+    hand_type = ctx.get("hand_type") or ""
+    hands_meta = ctx.get("hands_meta") or {}
+    if _obelisk_resets(hand_type, hands_meta):
+        return 1.0
+    base = _stat_xmult(joker)
+    return (base if base > 1.0 else 1.0) + _obelisk_step(joker)
+
+
 def _global_joker_bonus(joker: dict, ctx: dict) -> tuple[int, int, float]:
     """Global (hand-level) joker contribution: (add_chips, add_mult, xmult)."""
     key = joker.get("key") or ""
@@ -405,6 +563,12 @@ def _global_joker_bonus(joker: dict, ctx: dict) -> tuple[int, int, float]:
         if hand_type in _TROUSERS_HAND_TYPES:
             mult += 2
         return (0, mult, 1) if mult > 0 else (0, 0, 1)
+    if key == "j_ride_the_bus":
+        mult = _project_ride_the_bus_mult(joker, ctx)
+        return (0, mult, 1) if mult > 0 else (0, 0, 1)
+    if key == "j_green_joker":
+        mult = _project_green_joker_mult(joker, ctx)
+        return (0, mult, 1) if mult > 0 else (0, 0, 1)
     if key == "j_swashbuckler" or key in EFFECT_MULT_JOKERS:
         return (0, _stat_mult(joker), 1)
     if key == "j_blackboard":
@@ -424,6 +588,9 @@ def _global_joker_bonus(joker: dict, ctx: dict) -> tuple[int, int, float]:
             xm = base + 0.1 * _scoring_enhanced_count(ctx.get("scoring_cards") or [])
             return (0, 0, xm) if xm > 1.0 else (0, 0, 1)
         if key == "j_madness":
+            return (0, 0, xm) if xm > 1.0 else (0, 0, 1)
+        if key == "j_obelisk":
+            xm = _project_obelisk_xmult(joker, ctx)
             return (0, 0, xm) if xm > 1.0 else (0, 0, 1)
         if key == "j_steel_joker" and xm <= 1.0:
             return (0, 0, 1)
@@ -497,20 +664,21 @@ def _global_joker_bonus(joker: dict, ctx: dict) -> tuple[int, int, float]:
 
 def _held_joker_bonus(held_cards: list[dict], jokers: list[dict]) -> tuple[int, float]:
     """Held-in-hand joker phase: (add_mult, xmult)."""
-    keys = {j.get("key") for j in jokers}
     add_mult = 0
     xmult = 1.0
-    if "j_shoot_the_moon" in keys:
-        add_mult += 13 * sum(1 for c in held_cards if c.get("rank") == "Q")
-    if "j_baron" in keys:
-        kings = sum(1 for c in held_cards if c.get("rank") == "K")
-        if kings:
-            xmult *= 1.5**kings
-    if "j_raised_fist" in keys and held_cards:
-        ranked = [c for c in held_cards if c.get("rank")]
-        if ranked:
-            lowest = min(ranked, key=lambda c: RANK_ORDER.get(c["rank"], 99))
-            add_mult += 2 * RANK_CHIPS.get(lowest["rank"], 0)
+    for i in range(len(jokers)):
+        _eff, key = _effective_joker_at(i, jokers)
+        if key == "j_shoot_the_moon":
+            add_mult += 13 * sum(1 for c in held_cards if c.get("rank") == "Q")
+        elif key == "j_baron":
+            kings = sum(1 for c in held_cards if c.get("rank") == "K")
+            if kings:
+                xmult *= 1.5**kings
+        elif key == "j_raised_fist" and held_cards:
+            ranked = [c for c in held_cards if c.get("rank")]
+            if ranked:
+                lowest = min(ranked, key=lambda c: RANK_ORDER.get(c["rank"], 99))
+                add_mult += 2 * RANK_CHIPS.get(lowest["rank"], 0)
     return add_mult, xmult
 
 
@@ -530,8 +698,10 @@ def _seltzer_active(joker: dict) -> int:
 def _retrigger_config(jokers: list[dict]) -> dict:
     """Build retrigger config from owned jokers."""
     cfg = {"retrigger_all": 0, "retrigger_leftmost": 0, "retrigger_face": 0, "dusk_owned": False, "hack_owned": False}
-    for j in jokers:
-        key = j.get("key") or ""
+    for i, _j in enumerate(jokers):
+        j, key = _effective_joker_at(i, jokers)
+        if not j:
+            continue
         if key == "j_selzer":
             cfg["retrigger_all"] += _seltzer_active(j)
         elif key == "j_hanging_chad":
@@ -591,6 +761,13 @@ def _modeled(jokers: list[dict]) -> tuple[list[str], list[str]]:
             "j_idol",
             "j_drivers_license",
             "j_loyalty_card",
+            "j_pareidolia",
+            "j_scary_face",
+            "j_smiley",
+            "j_blueprint",
+            "j_brainstorm",
+            "j_four_fingers",
+            "j_shortcut",
         }
         | EFFECT_MULT_JOKERS
         | EFFECT_CHIPS_JOKERS
@@ -631,28 +808,98 @@ def _parse_card(card: dict) -> dict | None:
 # --- poker hand classification ---------------------------------------------
 
 
-def _classify(cards: list[dict]) -> tuple[str, list[int]]:
+def _consecutive_values(vals: list[int], shortcut: bool) -> bool:
+    """True when sorted unique values form a straight (Shortcut allows one gap)."""
+    if len(vals) < 2:
+        return len(vals) >= 1
+    gaps = 0
+    for i in range(1, len(vals)):
+        diff = vals[i] - vals[i - 1]
+        if diff == 1:
+            continue
+        if shortcut and diff == 2 and gaps == 0:
+            gaps = 1
+            continue
+        return False
+    return True
+
+
+def _straight_indices(
+    cards: list[dict],
+    idx_with_rank: list[int],
+    *,
+    min_len: int,
+    shortcut: bool,
+) -> list[int] | None:
+    """Indices of one best straight of at least ``min_len`` cards, if any."""
+    from itertools import combinations
+
+    rank_groups: dict[str, list[int]] = {}
+    for i in idx_with_rank:
+        rank_groups.setdefault(cards[i]["rank"], []).append(i)
+
+    def pick_straight(rank_keys: list[str]) -> list[int] | None:
+        if len(rank_keys) < min_len:
+            return None
+        for combo in combinations(rank_keys, min_len):
+            vals = sorted(RANK_ORDER[r] for r in combo)
+            if _consecutive_values(vals, shortcut):
+                return [rank_groups[r][0] for r in combo]
+        return None
+
+    normal = pick_straight(list(rank_groups))
+    if normal:
+        return normal
+    wheel = ["A", "2", "3", "4", "5"]
+    wheel_present = [r for r in wheel if r in rank_groups]
+    if len(wheel_present) >= min_len:
+        wheel_vals = {"A": 1, "2": 2, "3": 3, "4": 4, "5": 5}
+        for combo in combinations(wheel_present, min_len):
+            vals = sorted(wheel_vals[r] for r in combo)
+            if _consecutive_values(vals, shortcut):
+                return [rank_groups[r][0] for r in combo]
+    return None
+
+
+def _flush_indices(cards: list[dict], idx_with_rank: list[int], *, min_len: int) -> list[int] | None:
+    from collections import Counter
+
+    suit_count = Counter(cards[i]["suit"] for i in idx_with_rank)
+    for suit, cnt in suit_count.items():
+        if cnt >= min_len:
+            return [i for i in idx_with_rank if cards[i]["suit"] == suit]
+    return None
+
+
+def _classify(
+    cards: list[dict],
+    *,
+    four_fingers: bool = False,
+    shortcut: bool = False,
+) -> tuple[str, list[int]]:
     """Classify 1-5 played cards. Returns (hand_type, scoring_indices_into_played)."""
     # Separate stones (no rank/suit) — they never help form a hand but score.
     idx_with_rank = [i for i, c in enumerate(cards) if c["rank"]]
     ranks = [cards[i]["rank"] for i in idx_with_rank]
     suits = [cards[i]["suit"] for i in idx_with_rank]
     n_ranked = len(idx_with_rank)
+    min_run = 4 if four_fingers else 5
 
     from collections import Counter
 
     rank_count = Counter(ranks)
 
-    is_flush = n_ranked == 5 and len(set(suits)) == 1
-    # Straight: 5 distinct consecutive ranks (A can be low).
-    is_straight = False
-    if n_ranked == 5 and len(set(ranks)) == 5:
-        vals = sorted(RANK_ORDER[r] for r in ranks)
-        if vals == list(range(vals[0], vals[0] + 5)):
-            is_straight = True
-        # A-low wheel: A,2,3,4,5 -> vals [2,3,4,5,14]
-        elif sorted(ranks) == ["A", "2", "3", "4", "5"]:
-            is_straight = True
+    flush_idx = _flush_indices(cards, idx_with_rank, min_len=min_run)
+    straight_idx = _straight_indices(
+        cards, idx_with_rank, min_len=min_run, shortcut=shortcut
+    )
+    is_flush = flush_idx is not None
+    is_straight = straight_idx is not None
+    sf_idx: list[int] | None = None
+    if is_flush and is_straight:
+        overlap = sorted(set(flush_idx or []) & set(straight_idx or []))
+        if len(overlap) >= min_run:
+            sf_idx = overlap
 
     counts = sorted(rank_count.values(), reverse=True)
     # Groups: list of (rank, count) sorted by count desc then rank desc.
@@ -672,17 +919,17 @@ def _classify(cards: list[dict]) -> tuple[str, list[int]]:
         return out
 
     # Flush Five: flush + 5 of a kind
-    if is_flush and counts == [5]:
+    if is_flush and len(flush_idx or []) == 5 and counts == [5]:
         return "Flush Five", list(range(5))
     # Flush House: flush + full house (3+2)
-    if is_flush and counts == [3, 2]:
+    if is_flush and len(flush_idx or []) == 5 and counts == [3, 2]:
         return "Flush House", list(range(5))
     # Five of a Kind
     if counts == [5]:
         return "Five of a Kind", list(range(5))
     # Straight Flush
-    if is_flush and is_straight:
-        return "Straight Flush", list(range(5))
+    if sf_idx:
+        return "Straight Flush", sf_idx
     # Four of a Kind
     if counts in ([4, 1], [4]):
         return "Four of a Kind", idx_of_group(4, 1)
@@ -690,11 +937,11 @@ def _classify(cards: list[dict]) -> tuple[str, list[int]]:
     if counts == [3, 2]:
         return "Full House", list(range(5))
     # Flush
-    if is_flush:
-        return "Flush", list(range(5))
+    if is_flush and flush_idx:
+        return "Flush", flush_idx
     # Straight
-    if is_straight:
-        return "Straight", list(range(5))
+    if is_straight and straight_idx:
+        return "Straight", straight_idx
     # Three of a Kind
     if counts in ([3, 1, 1], [3, 1], [3]):
         return "Three of a Kind", idx_of_group(3, 1)
@@ -707,6 +954,11 @@ def _classify(cards: list[dict]) -> tuple[str, list[int]]:
     # High Card: single highest-rank card
     best = max(idx_with_rank, key=lambda i: RANK_ORDER.get(cards[i]["rank"], 0))
     return "High Card", [best]
+
+
+def _classify_flags(jokers: list[dict]) -> tuple[bool, bool]:
+    keys = {j.get("key") for j in jokers}
+    return ("j_four_fingers" in keys, "j_shortcut" in keys)
 
 
 # --- scoring ----------------------------------------------------------------
@@ -751,6 +1003,12 @@ def _card_trigger_chips_mult(
         chips += c_add
         mult += m_add
         xmult *= x
+    for i in range(len(jokers)):
+        _eff, jkey = _effective_joker_at(i, jokers)
+        if jkey == "j_scary_face" and _card_is_face(card, ctx):
+            chips += 30
+        elif jkey == "j_smiley" and _card_is_face(card, ctx):
+            mult += 5
     xmult *= _round_aware_card_xmult(card, jokers, ctx)
     if photograph_x2:
         xmult *= 2
@@ -780,9 +1038,11 @@ def _score_combo(
     chips = base_chips
     mult = base_mult
 
-    per_card_fns = [
-        PER_CARD_JOKERS[j["key"]] for j in jokers if j.get("key") in PER_CARD_JOKERS
-    ]
+    per_card_fns = []
+    for i, _j in enumerate(jokers):
+        _eff, key = _effective_joker_at(i, jokers)
+        if key in PER_CARD_JOKERS:
+            per_card_fns.append(PER_CARD_JOKERS[key])
     retrigger_all = cfg.get("retrigger_all", 0)
     retrigger_leftmost = cfg.get("retrigger_leftmost", 0)
     if dusk_active and cfg.get("dusk_owned"):
@@ -793,13 +1053,18 @@ def _score_combo(
     eff_scoring = list(range(5)) if cfg.get("splash") else scoring_idx
     # Leftmost scoring card index (for Hanging Chad).
     leftmost = min(eff_scoring) if eff_scoring else -1
-    photograph_owned = any(j.get("key") == "j_photograph" for j in jokers)
+    photograph_owned = any(
+        _effective_joker_at(i, jokers)[1] == "j_photograph" for i in range(len(jokers))
+    )
     first_face_scoring_idx = -1
     if photograph_owned:
-        for i in eff_scoring:
-            if cards[i]["rank"] in FACE_RANKS:
-                first_face_scoring_idx = i
-                break
+        if ctx.get("pareidolia") and eff_scoring:
+            first_face_scoring_idx = eff_scoring[0]
+        else:
+            for i in eff_scoring:
+                if _card_is_face(cards[i], ctx):
+                    first_face_scoring_idx = i
+                    break
 
     for pos, i in enumerate(eff_scoring):
         card = cards[i]
@@ -808,7 +1073,7 @@ def _score_combo(
             triggers += 1
         if cfg.get("hack_owned") and card["rank"] in LOW_RANKS:
             triggers += 1
-        if cfg.get("retrigger_face") and card["rank"] in FACE_RANKS:
+        if cfg.get("retrigger_face") and _card_is_face(card, ctx):
             triggers += cfg["retrigger_face"]
         if i == leftmost:
             triggers += retrigger_leftmost
@@ -835,8 +1100,10 @@ def _score_combo(
         "stencil_count": ctx.get("stencil_count", 0),
         "cards_played": len(cards),
     }
-    for j in jokers:
-        key = j.get("key") or ""
+    for i, j in enumerate(jokers):
+        j, key = _effective_joker_at(i, jokers)
+        if not j:
+            continue
         if key in NO_SCORE_JOKERS or key in PER_CARD_JOKERS:
             continue
         if key in {"j_selzer", "j_hanging_chad", "j_dusk", "j_splash", "j_hack", "j_sock_and_buskin"}:
@@ -885,6 +1152,8 @@ def _hands_meta(state: dict) -> dict[str, dict]:
             "played_this_round": info.get("played_this_round", 0),
             "played": info.get("played", 0),
         }
+        if info.get("visible") is not None:
+            out[name]["visible"] = info.get("visible")
     return out
 
 
@@ -934,16 +1203,18 @@ def score_hand_indices(state: dict, hand_indices: list[int]) -> dict:
 
     jokers = (state.get("jokers") or {}).get("cards") or []
     cfg = _retrigger_config(jokers)
+    four_fingers, shortcut = _classify_flags(jokers)
     ctx_base = {
         **_ctx(state),
         "joker_count": len(jokers),
         "stencil_count": sum(1 for j in jokers if j.get("key") == "j_stencil"),
+        "pareidolia": any(j.get("key") == "j_pareidolia" for j in jokers),
     }
     levels = _hand_levels(state)
     dusk_now = cfg.get("dusk_owned", False) and ctx_base.get("hands_left") == 1
 
     cards = [parsed[i] for i in combo_local]
-    hand_type, scoring_idx = _classify(cards)
+    hand_type, scoring_idx = _classify(cards, four_fingers=four_fingers, shortcut=shortcut)
     level = levels.get(hand_type, {"chips": 0, "mult": 0, "level": 1})
     combo_set = set(combo_local)
     combo_ctx = {
@@ -984,10 +1255,12 @@ def estimate(state: dict) -> dict:
             parsed.append(p)
     jokers = (state.get("jokers") or {}).get("cards") or []
     cfg = _retrigger_config(jokers)
+    four_fingers, shortcut = _classify_flags(jokers)
     ctx = {
         **_ctx(state),
         "joker_count": len(jokers),
         "stencil_count": sum(1 for j in jokers if j.get("key") == "j_stencil"),
+        "pareidolia": any(j.get("key") == "j_pareidolia" for j in jokers),
     }
     levels = _hand_levels(state)
     _, unmodeled = _modeled(jokers)
@@ -1005,7 +1278,7 @@ def estimate(state: dict) -> dict:
     dusk_now = cfg.get("dusk_owned", False) and ctx.get("hands_left") == 1
     for combo in combos:
         cards = [parsed[i] for i in combo]
-        hand_type, scoring_idx = _classify(cards)
+        hand_type, scoring_idx = _classify(cards, four_fingers=four_fingers, shortcut=shortcut)
         level = levels.get(hand_type, {"chips": 0, "mult": 0, "level": 1})
         combo_set = set(combo)
         combo_ctx = {

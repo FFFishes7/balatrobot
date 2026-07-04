@@ -113,6 +113,9 @@ that run.
 | `seltzer_remaining` | Seltzer countdown |
 | `steel_tally` / `stone_tally` / `driver_tally` | Deck tallies |
 | `loyalty_every` / `loyalty_remaining` / `loyalty_x_mult` | Loyalty Card countdown |
+| `obelisk_step` | Obelisk ×Mult increment per non-dominant hand |
+| `ride_the_bus_step` | Ride the Bus +Mult per hand without scoring face |
+| `green_hand_add` | Green Joker +Mult increment per hand played |
 
 Run-level counters live on `gamestate.run`: `skips`, `deck_size`,
 `starting_deck_size`, `tarot_used`.
@@ -182,7 +185,18 @@ Cross-checked against `game-dump/card.lua` and/or live `play` validation.
 | `j_square` / `j_runner` / `j_wee` | +chips from `stats` + in-hand growth (4 cards / Straight / each 2 scored) | Global |
 | `j_trousers` | +Mult from `stats` + 2 on Two Pair / Full House | Global |
 | `j_madness` / `j_vampire` | ×Mult from `stats` (+0.1 per enhanced scoring card for Vampire) | Global |
+| `j_obelisk` | ×Mult from `stats` + `obelisk_step` when playing a non-dominant visible hand; resets to ×1 when sole most-played after increment | Global; uses `hands.*.played` + `visible` |
 | `j_blackboard` | Wild held cards count as ♠/♣ for the held-card check | Global |
+| `j_ride_the_bus` | +Mult from `stats` + `ride_the_bus_step` when no scoring face; resets to 0 if any | Global |
+| `j_pareidolia` | All cards count as face (Scary/Smiley/Photograph/Sock and Buskin/Ride the Bus) | Modifier |
+| `j_hit_the_road` | ×Mult from `value.stats.x_mult` (Jacks discarded this round) | Global |
+| `j_flash` | +Mult from `value.stats.mult` (shop reroll growth) | Global |
+| `j_blueprint` | Copies scoring effect of joker to the right (when blueprint-compatible) | Copycat |
+| `j_brainstorm` | Copies scoring effect of leftmost joker (when blueprint-compatible) | Copycat |
+| `j_hologram` / `j_ramen` | ×Mult from `value.stats.x_mult` (cards added / consumables used) | Global |
+| `j_green_joker` | +Mult from `stats` + `green_hand_add` per hand (context.before) | Global |
+| `j_four_fingers` | Straights/flushes need 4 cards (not 5) | Hand classifier |
+| `j_shortcut` | Straights may contain one rank gap | Hand classifier |
 
 **Output fields**
 
@@ -195,8 +209,8 @@ Cross-checked against `game-dump/card.lua` and/or live `play` validation.
 
 Modeled as zero score impact so they do **not** appear in `unmodeled_jokers`:
 
-`j_midas_mask`, `j_delayed_grat`, `j_egg`, `j_gift`, `j_golden`, `j_flash`, `j_faceless`,
-`j_cartomancer`, `j_certificate`, `j_mail`, `j_ramen`, `j_ripple`, `j_hologram`,
+`j_midas_mask`, `j_delayed_grat`, `j_egg`, `j_gift`, `j_golden`, `j_faceless`,
+`j_cartomancer`, `j_certificate`, `j_mail`, `j_ripple`,
 `j_trading`, `j_riff_raff`, `j_drunkard` (+discard slot only), `j_matador`, `j_cloud_9`,
 `j_hiker`, `j_rough_gem`, `j_golden_ticket`, `j_business`, `j_reserved_parking`, …
 

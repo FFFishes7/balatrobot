@@ -926,6 +926,13 @@ class TestGamestateJokerStats:
         assert "loyalty_remaining" in stats
         assert stats["loyalty_x_mult"] == 4
 
+    def test_obelisk_exposes_obelisk_step(self, client: httpx.Client) -> None:
+        load_fixture(client, "gamestate", "state-SELECTING_HAND")
+        response = api(client, "add", {"key": "j_obelisk"})
+        joker = response["result"]["jokers"]["cards"][-1]
+        assert joker["key"] == "j_obelisk"
+        assert joker["value"]["stats"]["obelisk_step"] == 0.2
+
 
 class TestGamestateCardModifiers:
     """Test gamestate card modifiers."""

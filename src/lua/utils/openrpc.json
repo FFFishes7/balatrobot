@@ -1194,6 +1194,10 @@
             "type": "integer",
             "description": "Number of times this hand has been played this round"
           },
+          "visible": {
+            "type": "boolean",
+            "description": "Whether this poker hand type is unlocked (used by Obelisk reset logic)"
+          },
           "example": {
             "type": "array",
             "description": "Example cards showing what makes this hand",
@@ -1449,6 +1453,14 @@
           "loyalty_x_mult": {
             "type": "number",
             "description": "Loyalty Card ×Mult when countdown hits every"
+          },
+          "obelisk_step": {
+            "type": "number",
+            "description": "Obelisk ×Mult increment per non-dominant hand played"
+          },
+          "ride_the_bus_step": {
+            "type": "number",
+            "description": "Ride the Bus +Mult increment per hand without scoring face cards"
           }
         }
       },
