@@ -81,17 +81,17 @@ balatrobot --fast --debug
 
 Available make targets:
 
-| Target           | Description                                             |
-| ---------------- | ------------------------------------------------------- |
-| `make help`      | Show all available targets                              |
-| `make lint`      | Run ruff linter (check only)                            |
-| `make format`    | Run ruff and mdformat formatters                        |
-| `make typecheck` | Run type checker (Python and Lua)                       |
-| `make quality`   | Run all code quality checks (lint + typecheck + format) |
-| `make test`      | Run all tests                                           |
-| `make all`       | Run all quality checks and tests                        |
-| `make fixtures`  | Generate test fixtures                                  |
-| `make install`   | Install dependencies                                    |
+| Target           | Description                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------- |
+| `make help`      | Show all available targets                                                                         |
+| `make lint`      | Run ruff linter (check only)                                                                       |
+| `make format`    | Run ruff format `.`, **mdformat `.`**, and stylua (same markdown scope as CI `mdformat --check .`) |
+| `make typecheck` | Run type checker (Python and Lua)                                                                  |
+| `make quality`   | Run all code quality checks (lint + typecheck + format)                                            |
+| `make test`      | Run all tests                                                                                      |
+| `make all`       | Run all quality checks and tests                                                                   |
+| `make fixtures`  | Generate test fixtures                                                                             |
+| `make install`   | Install dependencies                                                                               |
 
 **Important rules:**
 

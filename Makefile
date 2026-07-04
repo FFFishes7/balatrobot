@@ -48,7 +48,7 @@ format: ## Run formatters (ruff, mdformat, stylua)
 	$(PYTHON) -m ruff check --select I --fix .
 	$(PYTHON) -m ruff format .
 	@$(PRINT) "$(YELLOW)Running mdformat formatter...$(RESET)"
-	$(PYTHON) -m mdformat --no-validate ./docs README.md AGENTS.md .claude/skills/balatrobot/SKILL.md
+	$(PYTHON) -m mdformat --no-validate .
 	@if command -v stylua >/dev/null 2>&1; then \
 		$(PRINT) "$(YELLOW)Running stylua formatter...$(RESET)"; \
 		stylua src/lua; \

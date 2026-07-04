@@ -203,7 +203,7 @@ The project includes a Makefile with convenient targets for common development t
 make help      # Show all available commands with descriptions
 make install   # Install all dependencies (dev + test groups)
 make lint      # Run ruff linter with auto-fix
-make format    # Format code (Python, Markdown, Lua)
+make format    # Format code (Python, Markdown, Lua); mdformat covers `.` like CI
 make typecheck # Run type checker (ty)
 make quality   # Run all code quality checks
 make fixtures  # Generate test fixtures (starts Balatro)
