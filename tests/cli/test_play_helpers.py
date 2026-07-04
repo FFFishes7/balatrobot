@@ -27,8 +27,10 @@ from envelope import (  # noqa: E402  # type: ignore[unresolved-import]
     build_play_envelope,
 )
 from layers import (  # noqa: E402  # type: ignore[unresolved-import]
+    effective_state,
     extract_query,
     filter_layer1,
+    normalize_play_state,
 )
 from start_options import (  # noqa: E402  # type: ignore[unresolved-import]
     build_decks,
@@ -273,6 +275,99 @@ def test_build_actions_pack_open(selecting_hand_state: dict) -> None:
     assert pick["example"]["params"] == {"card": 0}
 
 
+def test_effective_state_blind_select_with_open_pack() -> None:
+    raw = {
+        "state": "BLIND_SELECT",
+        "pack": {
+            "count": 2,
+            "limit": 2,
+            "cards": [{"label": "Joker", "key": "j_joker"}],
+        },
+    }
+    assert effective_state(raw) == "SMODS_BOOSTER_OPENED"
+
+
+def test_effective_state_vanilla_buffoon_pack() -> None:
+    raw = {"state": "BUFFOON_PACK", "pack": {"count": 0, "limit": 0, "cards": []}}
+    assert effective_state(raw) == "SMODS_BOOSTER_OPENED"
+
+
+def test_build_actions_blind_select_with_open_pack(selecting_hand_state: dict) -> None:
+    """Tag-skip can leave pack data while engine state was BLIND_SELECT."""
+    raw = {
+        **selecting_hand_state,
+        "state": "BLIND_SELECT",
+        "blinds": {
+            "small": {"status": "SKIPPED", "name": "Small Blind", "type": "SMALL"},
+            "big": {
+                "status": "SELECT",
+                "name": "Big Blind",
+                "type": "BIG",
+                "score": 450,
+            },
+            "boss": {
+                "status": "UPCOMING",
+                "name": "The Hook",
+                "type": "BOSS",
+                "score": 600,
+            },
+        },
+        "pack": {
+            "count": 2,
+            "limit": 2,
+            "cards": [{"label": "Joker", "key": "j_joker", "value": {"effect": "x"}}],
+        },
+    }
+    normalized = normalize_play_state(raw)
+    commands = {a["command"] for a in build_actions(normalized)}
+    assert "pack" in commands
+    assert "select" not in commands
+    assert "skip" not in commands
+
+
+def test_print_summary_tag_skip_pack_open(capsys: pytest.CaptureFixture[str]) -> None:
+    raw = {
+        "state": "BLIND_SELECT",
+        "money": 4,
+        "round_num": 1,
+        "ante_num": 1,
+        "deck": "RED",
+        "stake": "WHITE",
+        "round": {"reroll_cost": 5},
+        "blinds": {
+            "small": {"status": "SKIPPED", "name": "Small Blind", "type": "SMALL"},
+            "big": {
+                "status": "SELECT",
+                "name": "Big Blind",
+                "type": "BIG",
+                "score": 450,
+            },
+            "boss": {
+                "status": "UPCOMING",
+                "name": "The Hook",
+                "type": "BOSS",
+                "score": 600,
+            },
+        },
+        "jokers": {"count": 0, "limit": 5, "cards": []},
+        "consumables": {"count": 0, "limit": 2, "cards": []},
+        "cards": {"count": 52, "limit": 52},
+        "pack": {
+            "count": 2,
+            "limit": 2,
+            "cards": [
+                {"label": "Joker", "key": "j_joker", "value": {"effect": "+4 Mult"}}
+            ],
+        },
+    }
+    print_summary(_envelope(raw))
+    out = capsys.readouterr().out
+    assert "state=SMODS_BOOSTER_OPENED" in out
+    assert "pack:" in out
+    assert "actions: pack" in out
+    assert "select" not in out.split("actions:")[-1]
+
+
 # --- view.card_label ---------------------------------------------------------
 
 
@@ -365,7 +460,8 @@ def test_joker_line_perishable_rental() -> None:
 
 
 def _envelope(raw: dict) -> dict:
-    return build_play_envelope(raw, build_actions(raw))
+    normalized = normalize_play_state(raw)
+    return build_play_envelope(normalized, build_actions(normalized))
 
 
 def test_print_summary_menu(capsys: pytest.CaptureFixture[str]) -> None:

@@ -149,6 +149,14 @@ if you `skip` that blind, not if you defeat it. The boss blind has no tag. Read
 shop; an Investment Tag gives money per skip this round). `know preflight` also
 lists pending tags with verified effects.
 
+**Five tags open a booster immediately on skip** (Charm / Meteor / Ethereal /
+Standard / Buffoon — see `know check tag "Charm Tag"` and `opens_pack_on_skip` in
+the tag library). After skip, `glance` should show `SMODS_BOOSTER_OPENED` and
+`actions: pack …`. Most other tags (Foil, Economy, Boss, …) stay on
+`BLIND_SELECT`. Buffoon/Meteor/Ethereal/Standard only appear from ante 2+; Charm
+is the only pack tag on ante 1. Tags stack oldest-first — an older Charm Tag can
+still open a pack when you skip a later blind with a non-pack tag.
+
 ## 3. Minimal Full-Game Trace
 
 ```powershell
@@ -193,7 +201,7 @@ Equivalent raw JSON-RPC (fallback when `bot.ps1` isn't available):
 - **Boss blinds hide card faces.** Cards with `state.hidden == true` return no rank/suit (shown as `??` in `glance`) — do not try to "read" them; decide based on what's visible.
 - **`buy` / `reroll` affordability is `money - bankrupt_at`**, not raw `money` (Credit Card raises `bankrupt_at`). `glance` shows `[ok]` / `[need $N]` on shop rows; if a buy still fails with `BAD_REQUEST`, slots may be full or cost changed after reroll.
 - **Joker/consumable slots can be full.** `buy` returns `BAD_REQUEST` when slots are full — `sell` something first or skip.
-- **`skip` only works on Small/Big blinds**, not boss. Skip collects a tag reward (see [Tag semantics](#tag-semantics-skip-rewards)).
+- **`skip` only works on Small/Big blinds**, not boss. Skip collects a tag reward (see [Tag semantics](#tag-semantics-skip-rewards)). Only five tags open a pack on skip; `glance` after skip should show `pack` actions when one fires. If skip with **Charm Tag** leaves blind select with the tag in the HUD but no pack, restart the game (Lua mod reload) — a prior API bug blocked tag apply; use a fresh run after updating.
 - \*\*`reroll_boss` is Boss-only and costs $10.** Only in `BLIND_SELECT` when the Boss blind is on deck, you own **Director's Cut** (once per ante) or **Retcon** (unlimited), and `money - bankrupt_at >= 10`. `glance` shows `reroll_boss=$10 [ok]`/`[need $N]`/`[used this ante]`; then`select`the new boss. Shop`reroll\` is unrelated.
 - **`won` ≠ current outcome on `GAME_OVER`.** `won: true` means you beat Ante 8 Boss (stays true in endless). Read **`run_summary.result`** for the actual line (`Lost to …`, `Victory`, etc.) — especially after endless-mode death.
 - **Connection failure ≠ bug.** During state transitions the server may briefly not respond. Retry `glance` once before investigating.

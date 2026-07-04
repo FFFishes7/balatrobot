@@ -43,7 +43,15 @@ return {
     },
   },
 
-  requires_state = { G.STATES.SMODS_BOOSTER_OPENED },
+  requires_state = {
+    G.STATES.SMODS_BOOSTER_OPENED,
+    G.STATES.TAROT_PACK,
+    G.STATES.PLANET_PACK,
+    G.STATES.SPECTRAL_PACK,
+    G.STATES.STANDARD_PACK,
+    G.STATES.BUFFOON_PACK,
+    G.STATES.BLIND_SELECT,
+  },
 
   ---@param args Request.Endpoint.Pack.Params
   ---@param send_response fun(response: Response.Endpoint)

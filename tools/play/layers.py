@@ -172,6 +172,35 @@ QUERY_EXTRACTORS: dict[str, str] = {
 POLL_INTERVAL_SEC = 0.05
 POLL_TIMEOUT_SEC = float(os.getenv("BALATROBOT_POLL_TIMEOUT", "30"))
 
+VANILLA_PACK_STATES = frozenset(
+    {
+        "TAROT_PACK",
+        "PLANET_PACK",
+        "SPECTRAL_PACK",
+        "STANDARD_PACK",
+        "BUFFOON_PACK",
+    }
+)
+
+
+def effective_state(raw: dict[str, Any]) -> str:
+    """Normalize API state for play helpers when a pack UI is open."""
+    state = raw.get("state", "UNKNOWN")
+    if state in VANILLA_PACK_STATES:
+        return "SMODS_BOOSTER_OPENED"
+    pack_cards = (raw.get("pack") or {}).get("cards") or []
+    if pack_cards and state == "BLIND_SELECT":
+        return "SMODS_BOOSTER_OPENED"
+    return state
+
+
+def normalize_play_state(raw: dict[str, Any]) -> dict[str, Any]:
+    """Return gamestate dict with effective play state for glance/actions."""
+    state = effective_state(raw)
+    if state == raw.get("state"):
+        return raw
+    return {**raw, "state": state}
+
 
 def pack_has_hand(raw: dict[str, Any]) -> bool:
     hand = raw.get("hand") or {}

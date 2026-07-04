@@ -11,6 +11,11 @@
 ---@field boss_reroll_has_voucher fun(): boolean
 ---@field boss_reroll_available fun(): boolean
 ---@field BOSS_REROLL_COST integer
+---@field pack_is_open fun(): boolean
+---@field pack_open_ready fun(): boolean
+---@field is_pack_skip_tag fun(tag_name: string|nil): boolean
+---@field skip_settled fun(blind_key: string, opts?: { expect_pack?: boolean }): boolean
+---@field get_reported_state_name fun(): string
 local gamestate = {}
 
 gamestate.BOSS_REROLL_COST = 10
@@ -36,6 +41,138 @@ local function get_state_name(state_num)
   end
 
   return "UNKNOWN"
+end
+
+---Pack-related G.STATES values (vanilla + SMODS)
+local function is_vanilla_pack_state_name(name)
+  return name == "TAROT_PACK"
+    or name == "PLANET_PACK"
+    or name == "SPECTRAL_PACK"
+    or name == "STANDARD_PACK"
+    or name == "BUFFOON_PACK"
+end
+
+---Whether a booster pack UI is open with selectable cards
+---@return boolean
+function gamestate.pack_is_open()
+  if G.pack_cards ~= nil and not G.pack_cards.REMOVED and G.pack_cards.cards ~= nil and #G.pack_cards.cards > 0 then
+    return true
+  end
+  return is_vanilla_pack_state_name(get_state_name(G.STATE))
+end
+
+---State string for API / play helpers (normalizes open-pack phases)
+---@return string
+function gamestate.get_reported_state_name()
+  if gamestate.pack_is_open() then
+    return "SMODS_BOOSTER_OPENED"
+  end
+  local name = get_state_name(G.STATE)
+  if is_vanilla_pack_state_name(name) then
+    return "SMODS_BOOSTER_OPENED"
+  end
+  return name
+end
+
+---Skip tags that open a booster immediately (game.lua config.type = new_blind_choice;
+---see tag.lua Charm/Meteor/Ethereal/Standard/Buffoon — Boss Tag is excluded).
+local PACK_SKIP_TAG_NAMES = {
+  ["Charm Tag"] = true,
+  ["Buffoon Tag"] = true,
+  ["Ethereal Tag"] = true,
+  ["Meteor Tag"] = true,
+  ["Standard Tag"] = true,
+}
+
+local function is_pack_skip_tag(tag_name)
+  return tag_name ~= nil and PACK_SKIP_TAG_NAMES[tag_name] == true
+end
+
+function gamestate.is_pack_skip_tag(tag_name)
+  return is_pack_skip_tag(tag_name)
+end
+
+---Untriggered pack tag still on the stack (oldest-first apply on skip).
+---@return boolean
+local function has_pending_pack_skip_tag()
+  if G.GAME == nil or G.GAME.tags == nil then
+    return false
+  end
+  for _, tag in ipairs(G.GAME.tags) do
+    if not tag.triggered and is_pack_skip_tag(tag.name) then
+      return true
+    end
+  end
+  return false
+end
+
+---Booster from skip/buy is stable enough for API pack actions.
+---@return boolean
+function gamestate.pack_open_ready()
+  if G.pack_cards == nil or G.pack_cards.REMOVED or G.pack_cards.cards == nil then
+    return false
+  end
+  if not G.pack_cards.cards[1] then
+    return false
+  end
+  if G.STATE_COMPLETE ~= true then
+    return false
+  end
+  if G.STATE == G.STATES.SMODS_BOOSTER_OPENED then
+    return true
+  end
+  local state_name = get_state_name(G.STATE)
+  if is_vanilla_pack_state_name(state_name) then
+    return true
+  end
+  -- Tag-skip Charm/Arcana: G.STATE can stay BLIND_SELECT while pack_cards is live.
+  if G.STATE == G.STATES.BLIND_SELECT and #G.pack_cards.cards > 0 then
+    return true
+  end
+  return false
+end
+
+---Whether skip/tag side effects have settled (blind skipped + stable screen)
+---@param blind_key string lower-case blind key (e.g. "small")
+---@param opts? { expect_pack?: boolean } expect_pack: skipped blind had a pack-opening tag
+---@return boolean
+function gamestate.skip_settled(blind_key, opts)
+  opts = opts or {}
+  if G.GAME == nil or G.GAME.blind_on_deck == nil or G.blind_select_opts == nil then
+    return false
+  end
+  local blinds = gamestate.get_blinds_info()
+  local blind = blinds[blind_key]
+  if blind == nil or blind.status ~= "SKIPPED" then
+    return false
+  end
+
+  if gamestate.pack_open_ready() then
+    return true
+  end
+
+  if has_pending_pack_skip_tag() then
+    return false
+  end
+
+  -- Wait for tag yep animation + booster open after a pack skip tag on this blind.
+  if opts.expect_pack then
+    return false
+  end
+
+  if G.STATE == G.STATES.SMODS_BOOSTER_OPENED then
+    return false
+  end
+  local state_name = get_state_name(G.STATE)
+  if is_vanilla_pack_state_name(state_name) then
+    return false
+  end
+
+  if G.STATE == G.STATES.BLIND_SELECT and G.STATE_COMPLETE then
+    return true
+  end
+
+  return false
 end
 
 -- ==========================================================================
@@ -1166,7 +1303,7 @@ function gamestate.get_gamestate()
   end
 
   local state_data = {
-    state = get_state_name(G.STATE),
+    state = gamestate.get_reported_state_name(),
   }
 
   -- Basic game info

@@ -25,6 +25,7 @@ from bot_client import APIError
 from commands import build_params
 from envelope import build_error_envelope, build_play_envelope
 from exec import execute
+from layers import normalize_play_state
 from view import print_summary
 
 JSON_FLAG = "--json"
@@ -59,7 +60,8 @@ def main() -> int:
     try:
         params: dict[str, Any] = build_params(method, rest)
         raw = execute(method, params)
-        envelope = build_play_envelope(raw, build_actions(raw))
+        normalized = normalize_play_state(raw)
+        envelope = build_play_envelope(normalized, build_actions(normalized))
         if json_out:
             print(json.dumps(envelope, ensure_ascii=False))
         else:

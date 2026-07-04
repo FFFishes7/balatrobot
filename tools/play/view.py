@@ -17,7 +17,7 @@ from actions import (
 )
 from bot_client import APIError
 from envelope import build_error_envelope, build_play_envelope
-from layers import TRANSITION_STATES
+from layers import TRANSITION_STATES, normalize_play_state
 from start_options import build_decks, build_stakes
 from state import fetch_stable_gamestate
 
@@ -535,7 +535,8 @@ def _pack_block(state: dict[str, Any]) -> str:
 def main() -> int:
     try:
         raw = fetch_stable_gamestate()
-        envelope = build_play_envelope(raw, build_actions(raw))
+        normalized = normalize_play_state(raw)
+        envelope = build_play_envelope(normalized, build_actions(normalized))
         print_summary(envelope)
         return 0
     except APIError as e:

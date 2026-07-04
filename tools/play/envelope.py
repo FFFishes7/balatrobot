@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from layers import available_queries, filter_layer1
+from layers import available_queries, filter_layer1, normalize_play_state
 from start_options import build_decks, build_stakes
 
 PLAY_FORMAT = "balatrobot-play-v1"
@@ -26,11 +26,12 @@ def detect_save_path() -> str | None:
 def build_play_envelope(
     raw: dict[str, Any], actions: list[dict[str, Any]]
 ) -> dict[str, Any]:
-    state = raw.get("state", "UNKNOWN")
+    normalized = normalize_play_state(raw)
+    state = normalized.get("state", "UNKNOWN")
     envelope: dict[str, Any] = {
         "ok": True,
         "format": PLAY_FORMAT,
-        "gamestate": filter_layer1(raw),
+        "gamestate": filter_layer1(normalized),
         "actions": actions,
     }
     queries = available_queries(state)

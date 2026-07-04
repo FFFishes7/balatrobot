@@ -52,35 +52,50 @@ return {
     assert(skip_button ~= nil, "skip() skip button not found: " .. current_blind)
 
     -- Execute blind skip
+    local expect_pack = BB_GAMESTATE.is_pack_skip_tag(blind.tag_name)
     G.FUNCS.skip_blind(skip_button)
 
     -- Wait for the skip to complete and for tag side effects to settle. Some
     -- tags update money or open a booster immediately after the blind status
     -- flips to SKIPPED, so returning on the first skipped frame can expose stale
     -- money/state to bot.ps1 glance.
+    --
+    -- Must be blocking=false: a blocking condition stalls the event queue and
+    -- prevents skip_blind's deferred tag apply (Charm → pack) from ever running.
     local settled_once = false
+    local frames = 0
+    local max_frames = 600
     G.E_MANAGER:add_event(Event({
       trigger = "condition",
-      blocking = true,
+      blocking = false,
       func = function()
+        frames = frames + 1
         local blinds = BB_GAMESTATE.get_blinds_info()
         local skipped = (
           G.GAME.blind_on_deck ~= nil
           and G.blind_select_opts ~= nil
           and blinds[current_blind_key].status == "SKIPPED"
         )
-        local stable_state = G.STATE == G.STATES.BLIND_SELECT or G.STATE == G.STATES.SMODS_BOOSTER_OPENED
-        local done = skipped and stable_state and settled_once
+        local settled = skipped and BB_GAMESTATE.skip_settled(current_blind_key, { expect_pack = expect_pack })
+        local done = settled and settled_once
         if done then
           sendDebugMessage("Return skip()", "BB.ENDPOINTS")
           local state_data = BB_GAMESTATE.get_gamestate()
           send_response(state_data)
+          return true
         end
-        if skipped and stable_state then
+        if settled then
           settled_once = true
         end
-
-        return done
+        if frames >= max_frames then
+          sendDebugMessage("Return skip() timeout", "BB.ENDPOINTS")
+          send_response({
+            message = "Skip timed out waiting for tag side effects (e.g. Charm pack open)",
+            name = BB_ERROR_NAMES.INTERNAL_ERROR,
+          })
+          return true
+        end
+        return false
       end,
     }))
   end,

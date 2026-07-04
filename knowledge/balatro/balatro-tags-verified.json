@@ -7,11 +7,13 @@
   "Buffoon Tag": {
     "effect": "Free Mega Buffoon Pack.",
     "min_ante": 2,
+    "opens_pack_on_skip": true,
     "wiki": "https://balatrowiki.org/w/Buffoon_Tag",
     "trigger": "Obtained by skipping the shown Blind."
   },
   "Charm Tag": {
     "effect": "Free Mega Arcana Pack.",
+    "opens_pack_on_skip": true,
     "wiki": "https://balatrowiki.org/w/Charm_Tag",
     "trigger": "Obtained by skipping the shown Blind."
   },
@@ -39,6 +41,7 @@
   "Ethereal Tag": {
     "effect": "Free Spectral Pack.",
     "min_ante": 2,
+    "opens_pack_on_skip": true,
     "wiki": "https://balatrowiki.org/w/Ethereal_Tag",
     "trigger": "Obtained by skipping the shown Blind."
   },
@@ -77,6 +80,7 @@
   "Meteor Tag": {
     "effect": "Free Mega Celestial Pack.",
     "min_ante": 2,
+    "opens_pack_on_skip": true,
     "wiki": "https://balatrowiki.org/w/Meteor_Tag",
     "trigger": "Obtained by skipping the shown Blind."
   },
@@ -110,6 +114,7 @@
   "Standard Tag": {
     "effect": "Free Mega Standard Pack.",
     "min_ante": 2,
+    "opens_pack_on_skip": true,
     "wiki": "https://balatrowiki.org/w/Standard_Tag",
     "trigger": "Obtained by skipping the shown Blind."
   },

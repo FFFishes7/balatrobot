@@ -7,7 +7,7 @@ import json
 from actions import build_actions
 from bot_client import APIError, rpc
 from envelope import build_error_envelope, build_play_envelope
-from layers import poll_until_stable
+from layers import normalize_play_state, poll_until_stable
 
 
 def fetch_stable_gamestate() -> dict:
@@ -17,7 +17,8 @@ def fetch_stable_gamestate() -> dict:
 def main() -> int:
     try:
         raw = fetch_stable_gamestate()
-        envelope = build_play_envelope(raw, build_actions(raw))
+        normalized = normalize_play_state(raw)
+        envelope = build_play_envelope(normalized, build_actions(normalized))
         print(json.dumps(envelope, ensure_ascii=False))
         return 0
     except APIError as e:

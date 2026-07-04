@@ -10,6 +10,7 @@ from actions import build_actions
 from bot_client import APIError, rpc
 from commands import move_before, normalize_sort_mode
 from envelope import build_error_envelope, build_play_envelope
+from layers import normalize_play_state
 from state import fetch_stable_gamestate
 
 
@@ -72,7 +73,8 @@ def main() -> int:
     try:
         command, params = parse_exec_payload(sys.argv[1])
         raw = execute(command, params)
-        envelope = build_play_envelope(raw, build_actions(raw))
+        normalized = normalize_play_state(raw)
+        envelope = build_play_envelope(normalized, build_actions(normalized))
         print(json.dumps(envelope, ensure_ascii=False))
         return 0
     except json.JSONDecodeError as e:
