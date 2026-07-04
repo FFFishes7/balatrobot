@@ -196,6 +196,32 @@
       ]
     },
     {
+      "name": "endless",
+      "summary": "Dismiss victory overlay to continue in endless mode",
+      "description": "Closes the post-win victory screen (same as the in-game Endless button). After this, cash_out and the normal shop loop apply for Ante 9+.",
+      "tags": [
+        {
+          "$ref": "#/components/tags/shop"
+        }
+      ],
+      "params": [],
+      "result": {
+        "name": "gamestate",
+        "description": "Complete game state after dismissing the victory overlay",
+        "schema": {
+          "$ref": "#/components/schemas/GameState"
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/InvalidState"
+        },
+        {
+          "$ref": "#/components/errors/NotAllowed"
+        }
+      ]
+    },
+    {
       "name": "discard",
       "summary": "Discard cards from the hand",
       "description": "Discard specified cards from the hand. Card indices are 0-based.",
@@ -1014,6 +1040,10 @@
           "won": {
             "type": "boolean",
             "description": "Whether the game has been won"
+          },
+          "victory_overlay": {
+            "type": "boolean",
+            "description": "Victory screen is visible after winning the run; call endless to dismiss and continue in endless mode"
           },
           "used_vouchers": {
             "type": "object",

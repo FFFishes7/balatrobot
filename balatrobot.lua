@@ -27,8 +27,9 @@ BB_ENDPOINTS = {
   -- Play/discard endpoints
   "src/lua/endpoints/play.lua",
   "src/lua/endpoints/discard.lua",
-  -- Cash out endpoint
+  -- Cash out / endless endpoints
   "src/lua/endpoints/cash_out.lua",
+  "src/lua/endpoints/endless.lua",
   -- Shop endpoints
   "src/lua/endpoints/next_round.lua",
   "src/lua/endpoints/reroll.lua",

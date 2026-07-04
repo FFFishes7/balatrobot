@@ -19,7 +19,7 @@ If the user asks you to **play** Balatro (not develop this repo), read [`PLAY.md
 | `MENU`                 | `bot.ps1 start DECK STAKE [SEED]` (e.g. `start RED WHITE`; `glance` lists decks/stakes)          |
 | `BLIND_SELECT`         | `bot.ps1 select` · `bot.ps1 skip` (Small/Big only)                                               |
 | `SELECTING_HAND`       | `bot.ps1 play 0 1 2 3 4` · `discard 0 1` · `use 0 [1 2]` · `sort rank` · *(optional)* `estimate` |
-| `ROUND_EVAL`           | `bot.ps1 cash_out`                                                                               |
+| `ROUND_EVAL`           | `bot.ps1 cash_out` · after Ante 8 win with victory overlay: `bot.ps1 endless` first              |
 | `SHOP`                 | `bot.ps1 buy card 0` · `buy pack 0` · `reroll` · `sell joker 0` · `next_round`                   |
 | `SMODS_BOOSTER_OPENED` | `bot.ps1 pack 0 [1 2]` · `pack skip`                                                             |
 | `GAME_OVER`            | `bot.ps1 menu` then `start`                                                                      |
@@ -144,6 +144,7 @@ Runs inside the game engine and exposes an API.
     - `add.lua`: Add a new card (joker, consumable, voucher, playing card, or booster pack).
     - `buy.lua`: Buy a card or booster pack from the shop.
     - `cash_out.lua`: Cash out and collect round rewards.
+    - `endless.lua`: Dismiss victory overlay to continue in endless mode.
     - `discard.lua`: Discard cards from the hand.
     - `gamestate.lua`: Get current game state.
     - `health.lua`: Health check endpoint for connection testing.

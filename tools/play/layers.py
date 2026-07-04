@@ -61,6 +61,7 @@ LAYER1_KEYS_BY_STATE: dict[str, frozenset[str]] = {
             "consumables",
             "cards",
             "won",
+            "victory_overlay",
         }
     ),
     "SHOP": frozenset(
@@ -208,6 +209,11 @@ def filter_layer1(raw: dict[str, Any]) -> dict[str, Any]:
 
         if key == "won":
             if state == "GAME_OVER" or value is True:
+                out[key] = value
+            continue
+
+        if key == "victory_overlay":
+            if value is True:
                 out[key] = value
             continue
 

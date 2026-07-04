@@ -314,6 +314,8 @@ def _round_eval_block(state: dict[str, Any]) -> list[str]:
     pending = _economy_parts(state, include_hands=True)
     if pending:
         lines.append("  pending: " + " · ".join(pending))
+    if state.get("won") and state.get("victory_overlay"):
+        lines.append("→ endless")
     lines.append("→ cash_out")
     return lines
 

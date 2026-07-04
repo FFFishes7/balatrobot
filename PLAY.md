@@ -76,7 +76,9 @@ When you don't know what to do, read `actions:`.
 - **Pack open:** Tarot/Spectral candidates show **`(needs 1-2 targets)`** etc.
 - **GAME_OVER:** **`→ menu  then  start RED WHITE [SEED]`** uses the run's deck/stake.
 - **ROUND_EVAL:** pending round-end money (hands left, interest, Delayed
-    Gratification) before **`→ cash_out`**.
+    Gratification) before **`→ cash_out`**. After beating Ante 8 Boss, if
+    **`victory_overlay`** is set, **`→ endless`** appears first — dismiss the
+    win screen, then **`cash_out`** → shop → **`next_round`** for Ante 9+.
 - **Transient states** (`HAND_PLAYED`, etc.): wait and **`glance`** again — no
     actions until stable.
 - **Hand cards and eligible pack candidates carry modifier tags:** `4♦[e:Mult,s:Red]` = Mult enhancement + Red
@@ -95,7 +97,7 @@ When you don't know what to do, read `actions:`.
 | `BLIND_SELECT`         | Play or skip the blind                          | `bot.ps1 select` · or `bot.ps1 skip` (Small/Big only)                                                                            |
 | `SELECTING_HAND`       | Play / discard / use / sort (estimate optional) | `bot.ps1 play 0 1 2 3 4` · `bot.ps1 discard 0 1` · `bot.ps1 use 0 [1 2]` · `bot.ps1 sort rank` · *(optional)* `bot.ps1 estimate` |
 | `HAND_PLAYED`          | Transient — just poll                           | `bot.ps1 glance`                                                                                                                 |
-| `ROUND_EVAL`           | Collect rewards                                 | `bot.ps1 cash_out`                                                                                                               |
+| `ROUND_EVAL`           | Collect rewards                                 | `bot.ps1 cash_out` · if `victory_overlay`: `bot.ps1 endless` first, then `cash_out`                                               |
 | `SHOP`                 | Buy / reroll / sell / leave                     | `bot.ps1 buy card 0` · `bot.ps1 buy pack 0` · `bot.ps1 reroll` · `bot.ps1 sell joker 0` · `bot.ps1 next_round`                   |
 | `SMODS_BOOSTER_OPENED` | Pick or skip                                    | `bot.ps1 pack 0` (or `pack 0 1 2` with targets) · `bot.ps1 pack skip`                                                            |
 | `GAME_OVER`            | Run ended                                       | `bot.ps1 menu` then `start`                                                                                                      |

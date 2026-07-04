@@ -258,7 +258,16 @@ def build_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
     if name == "SELECTING_HAND":
         return _selecting_hand_actions(state)
     if name == "ROUND_EVAL":
-        actions = [_action("cash_out", "Cash out round rewards", example_params={})]
+        actions: list[dict[str, Any]] = []
+        if state.get("won") and state.get("victory_overlay"):
+            actions.append(
+                _action(
+                    "endless",
+                    "Dismiss victory overlay to continue in endless mode",
+                    example_params={},
+                )
+            )
+        actions.append(_action("cash_out", "Cash out round rewards", example_params={}))
         actions.extend(_sell_actions(state))
         actions.extend(_use_actions(state))
         return actions

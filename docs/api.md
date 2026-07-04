@@ -126,6 +126,7 @@ MENU ──► BLIND_SELECT ──► SELECTING_HAND ──► ROUND_EVAL ──
 - [`sell`](#sell) - Sell a joker or consumable
 - [`reroll`](#reroll) - Reroll the shop items
 - [`cash_out`](#cash_out) - Cash out round rewards and transition to shop
+- [`endless`](#endless) - Dismiss victory overlay to continue in endless mode
 - [`next_round`](#next_round) - Leave the shop and advance to blind selection
 - [`play`](#play) - Play cards from hand
 - [`discard`](#discard) - Discard cards from hand
@@ -511,6 +512,28 @@ curl -X POST http://127.0.0.1:12346 \
 
 ---
 
+### `endless`
+
+Dismiss the post-win victory overlay (same as the in-game **Endless** button) so the run can continue into endless mode (Ante 9+).
+
+**Returns:** [GameState](#gamestate-schema) (state remains `ROUND_EVAL`; `victory_overlay` becomes absent)
+
+**Errors:** `INVALID_STATE`, `NOT_ALLOWED` (run not won, or overlay already dismissed)
+
+**Required State:** `ROUND_EVAL` with `won: true` and `victory_overlay: true`
+
+**Typical flow after beating Ante 8 Boss:** `endless` → [`cash_out`](#cash_out) → shop → [`next_round`](#next_round)
+
+**Example:**
+
+```bash
+curl -X POST http://127.0.0.1:12346 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc": "2.0", "method": "endless", "id": 1}'
+```
+
+---
+
 ### `discard`
 
 Discard cards from hand.
@@ -735,6 +758,7 @@ The complete game state returned by most methods.
   "stake": "WHITE",
   "seed": "ABC123",
   "won": false,
+  "victory_overlay": false,
   "used_vouchers": {},
   "hands": { ... },
   "round": { ... },
@@ -752,6 +776,8 @@ The complete game state returned by most methods.
 ```
 
 `run` ([RunCounters](#runcounters)) is present during an active run. Joker cards may include `value.stats` ([JokerStats](#jokerstats)) and `value.rarity` — see [Joker card example](#card).
+
+`victory_overlay: true` means the post-win screen is visible (`won: true`, `ROUND_EVAL`); call [`endless`](#endless) before [`cash_out`](#cash_out) to continue into endless mode.
 
 | Field         | Type    | Description                                                                                                                                              |
 | ------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |

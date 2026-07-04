@@ -48,7 +48,8 @@ See the root [README](../../README.md#local-play) and [`PLAY.md`](../../PLAY.md)
 - **GAME_OVER:** restart hint uses the ended run's deck/stake, e.g.
     **`→ menu  then  start RED WHITE [SEED]`**.
 - **ROUND_EVAL:** `round won, score=…` plus a **`pending:`** line (hands-left $,
-    interest, Delayed Gratification) and **`→ cash_out`**.
+    interest, Delayed Gratification). When **`victory_overlay`** is set after
+    winning the run, **`→ endless`** then **`→ cash_out`**; otherwise **`→ cash_out`** only.
 - **Transient states** (`HAND_PLAYED`, `DRAW_TO_HAND`, `NEW_ROUND`, `PLAY_TAROT`):
     **`→ transient: wait for stable state, then glance again`** and `actions: (none)`.
 - **Card modifier tags** (so buffs are visible without a separate query):
@@ -79,6 +80,7 @@ No JSON, no quoting — `bot.ps1` forwards these to `act.py`, which parses posit
 | `sell`                         | `joker\|consumable IDX`                | e.g. `sell joker 0`                                                                               |
 | `reroll`                       | —                                      | reroll shop                                                                                       |
 | `cash_out`                     | —                                      | collect round rewards                                                                             |
+| `endless`                      | —                                      | dismiss victory overlay to continue in endless mode (after Ante 8 win)                            |
 | `next_round`                   | —                                      | leave shop for blind select                                                                       |
 | `pack`                         | `IDX [TARGET_IDX...]` or `skip`        | e.g. `pack 0`, `pack 0 1 2` (targets for Tarot/Spectral), `pack skip`                             |
 | `use`                          | `CONSUMABLE_IDX [CARD_IDX...]`         | e.g. `use 0`, `use 0 1 2`                                                                         |

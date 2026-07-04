@@ -17,6 +17,7 @@ class Method(StrEnum):
     BUY = "buy"
     CASH_OUT = "cash_out"
     DISCARD = "discard"
+    ENDLESS = "endless"
     GAMESTATE = "gamestate"
     HEALTH = "health"
     LOAD = "load"

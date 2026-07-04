@@ -1098,6 +1098,12 @@ end
 -- Main Gamestate Extractor
 -- ==========================================================================
 
+---Whether the post-win victory overlay (Endless / New Run) is visible
+---@return boolean
+function gamestate.has_victory_overlay()
+  return G.GAME ~= nil and G.GAME.won and G.OVERLAY_MENU ~= nil and G.STATE == G.STATES.ROUND_EVAL
+end
+
 ---Extracts the simplified game state according to the new specification
 ---@return GameState gamestate The complete simplified game state
 function gamestate.get_gamestate()
@@ -1121,6 +1127,9 @@ function gamestate.get_gamestate()
     state_data.money = G.GAME.dollars or 0
     state_data.bankrupt_at = G.GAME.bankrupt_at or 0
     state_data.won = G.GAME.won
+    if G.GAME.won and gamestate.has_victory_overlay() then
+      state_data.victory_overlay = true
+    end
 
     -- Deck (optional)
     if G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.center then

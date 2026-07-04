@@ -29,6 +29,7 @@
 ---@field vouchers Area? Vouchers area (available during shop phase)
 ---@field packs Area? Booster packs area (available during shop phase)
 ---@field won boolean? Whether the game has been won
+---@field victory_overlay boolean? Victory screen visible; call endless to continue
 ---@field run RunCounters? Run-level counters for scoring (skips, deck size, …)
 ---@field run_summary RunSummary? Run statistics (GAME_OVER only)
 
@@ -186,7 +187,7 @@
 -- ==========================================================================
 
 ---@alias Request.Endpoint.Method
----| "add" | "buy" | "cash_out" | "discard" | "gamestate" | "health" | "load"
+---| "add" | "buy" | "cash_out" | "discard" | "endless" | "gamestate" | "health" | "load"
 ---| "menu" | "next_round" | "play" | "rearrange" | "reroll" | "save"
 ---| "screenshot" | "select" | "sell" | "set" | "skip" | "sort" | "start" | "use"
 

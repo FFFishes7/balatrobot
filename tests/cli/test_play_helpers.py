@@ -228,6 +228,19 @@ def test_build_actions_round_eval(selecting_hand_state: dict) -> None:
     assert {"cash_out", "sell", "use"}.issubset(commands)
 
 
+def test_build_actions_round_eval_victory_overlay(selecting_hand_state: dict) -> None:
+    round_eval_state = {
+        **selecting_hand_state,
+        "state": "ROUND_EVAL",
+        "won": True,
+        "victory_overlay": True,
+    }
+    actions = build_actions(round_eval_state)
+    commands = [a["command"] for a in actions]
+    assert commands[0] == "endless"
+    assert "cash_out" in commands
+
+
 def test_build_actions_pack_open(selecting_hand_state: dict) -> None:
     pack_state = {
         **selecting_hand_state,
@@ -717,6 +730,30 @@ def test_print_summary_round_eval(capsys: pytest.CaptureFixture[str]) -> None:
     assert "pending:" in out
     assert "→ cash_out" in out
     assert "cash_out" in out
+
+
+def test_print_summary_round_eval_victory_overlay(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    raw = {
+        "state": "ROUND_EVAL",
+        "money": 12,
+        "round_num": 24,
+        "ante_num": 8,
+        "deck": "RED",
+        "stake": "WHITE",
+        "round": {"hands_left": 0, "discards_left": 0, "chips": 1000000},
+        "jokers": {"count": 0, "limit": 5, "cards": []},
+        "consumables": {"count": 0, "limit": 2, "cards": []},
+        "cards": {"count": 44, "limit": 52},
+        "won": True,
+        "victory_overlay": True,
+    }
+    print_summary(_envelope(raw))
+    out = capsys.readouterr().out
+    assert "→ endless" in out
+    assert "→ cash_out" in out
+    assert out.index("→ endless") < out.index("→ cash_out")
 
 
 def test_print_summary_shop(capsys: pytest.CaptureFixture[str]) -> None:

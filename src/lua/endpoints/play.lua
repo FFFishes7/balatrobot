@@ -124,8 +124,7 @@ return {
           -- Game is won
           if G.GAME.won then
             sendDebugMessage("Return play() - won", "BB.ENDPOINTS")
-            local state_data = BB_GAMESTATE.get_gamestate()
-            send_response(state_data)
+            send_response(BB_GAMESTATE.get_gamestate())
             return true
           end
 
