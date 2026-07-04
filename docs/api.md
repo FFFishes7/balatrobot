@@ -741,9 +741,12 @@ The complete game state returned by most methods.
   "shop": { ... },
   "vouchers": { ... },
   "packs": { ... },
-  "pack": { ... }
+  "pack": { ... },
+  "run": { ... }
 }
 ```
+
+`run` ([RunCounters](#runcounters)) is present during an active run. Joker cards may include `value.stats` ([JokerStats](#jokerstats)) and `value.rarity` — see [Joker card example](#card).
 
 ### Area
 
@@ -806,6 +809,40 @@ All other fields use placeholder values: empty `key`/`label`, `set: "DEFAULT"`, 
 }
 ```
 
+**Joker card example** (includes locale-independent scoring snapshot):
+
+```json
+{
+  "id": 0,
+  "key": "j_jolly",
+  "set": "JOKER",
+  "label": "Jolly Joker",
+  "value": {
+    "effect": "+8 Mult if played hand contains a Pair",
+    "stats": {
+      "mult": 8
+    },
+    "rarity": "COMMON"
+  },
+  "modifier": {
+    "edition": "HOLOGRAPHIC",
+    "eternal": false,
+    "perishable": null,
+    "rental": false
+  },
+  "state": {
+    "debuff": false,
+    "hidden": false
+  },
+  "cost": {
+    "sell": 2,
+    "buy": 0
+  }
+}
+```
+
+`value.stats` fields vary by joker (e.g. `x_mult`, `chips`, `loyalty_remaining`, `caino_xmult`). See [JokerStats](#jokerstats). `value.rarity` is one of `COMMON`, `UNCOMMON`, `RARE`, `LEGENDARY`.
+
 **Hidden (face-down) card example:**
 
 ```json
@@ -837,9 +874,47 @@ All other fields use placeholder values: empty `key`/`label`, `set: "DEFAULT"`, 
   "discards_left": 3,
   "discards_used": 0,
   "reroll_cost": 5,
-  "chips": 0
+  "chips": 0,
+  "ancient_suit": "S",
+  "idol_rank": "7",
+  "idol_suit": "D",
+  "castle_suit": "H"
 }
 ```
+
+Scoring-target fields (`ancient_suit`, `idol_rank`, `idol_suit`, `castle_suit`) appear when the corresponding joker is owned. Suit values: `H`, `D`, `C`, `S`. Rank values: `A`, `2`–`10`, `J`, `Q`, `K`.
+
+### RunCounters
+
+Run-level counters on `gamestate.run` (during an active run):
+
+```json
+{
+  "skips": 1,
+  "deck_size": 52,
+  "starting_deck_size": 52,
+  "tarot_used": 3
+}
+```
+
+### JokerStats
+
+Structured scoring snapshot on joker `value.stats` (from `card.ability`, not UI text). Only fields relevant to the joker are present:
+
+| Field                                                    | Meaning                                          |
+| -------------------------------------------------------- | ------------------------------------------------ |
+| `mult`                                                   | Additive Mult in joker_main                      |
+| `chips`                                                  | Additive chips in joker_main                     |
+| `x_mult`                                                 | Multiplicative Mult in joker_main                |
+| `caino_xmult`                                            | Caino ×Mult (when > 1)                           |
+| `seltzer_remaining`                                      | Seltzer retrigger countdown                      |
+| `steel_tally` / `stone_tally` / `driver_tally`           | Deck tallies                                     |
+| `loyalty_every` / `loyalty_remaining` / `loyalty_x_mult` | Loyalty Card countdown                           |
+| `obelisk_step`                                           | Obelisk ×Mult increment per non-dominant hand    |
+| `ride_the_bus_step`                                      | Ride the Bus +Mult per hand without scoring face |
+| `green_hand_add`                                         | Green Joker +Mult increment per hand played      |
+
+Machine-readable schema: `src/lua/utils/openrpc.json` → `JokerStats`.
 
 ### Blind
 

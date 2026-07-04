@@ -73,21 +73,21 @@ When you don't know what to do, read `actions:`.
     edition `d:Foil/Holo/Poly/Neg`, seal `s:Red/Blue/Gold/Purple`. Debuffed cards
     are wrapped `(7♣)`. So you can see buffs without a separate query.
 - **Joker & consumable slots:** `jokers (5/5)` / `consumables (1/2)`.
-- **Economy:** an `economy:` line shows pending interest and Delayed Gratification
-    bonus when relevant.
+- **Economy:** an `economy:` line shows pending interest, Delayed Gratification
+    bonus, and rental joker upkeep (`rental_due=-$N/round`) when relevant.
 
 ## 2. State → Friendly Command Table
 
-| State                  | What to do                                 | Command                                                                                                             |
-| ---------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `MENU`                 | Start a run                                | `bot.ps1 start RED WHITE` (optional seed: `start RED WHITE SEED`)                                                   |
-| `BLIND_SELECT`         | Play or skip the blind                     | `bot.ps1 select` · or `bot.ps1 skip` (Small/Big only)                                                               |
+| State                  | What to do                                      | Command                                                                                                                          |
+| ---------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `MENU`                 | Start a run                                     | `bot.ps1 start RED WHITE` (optional seed: `start RED WHITE SEED`)                                                                |
+| `BLIND_SELECT`         | Play or skip the blind                          | `bot.ps1 select` · or `bot.ps1 skip` (Small/Big only)                                                                            |
 | `SELECTING_HAND`       | Play / discard / use / sort (estimate optional) | `bot.ps1 play 0 1 2 3 4` · `bot.ps1 discard 0 1` · `bot.ps1 use 0 [1 2]` · `bot.ps1 sort rank` · *(optional)* `bot.ps1 estimate` |
-| `HAND_PLAYED`          | Transient — just poll                      | `bot.ps1 glance`                                                                                                    |
-| `ROUND_EVAL`           | Collect rewards                            | `bot.ps1 cash_out`                                                                                                  |
-| `SHOP`                 | Buy / reroll / sell / leave                | `bot.ps1 buy card 0` · `bot.ps1 buy pack 0` · `bot.ps1 reroll` · `bot.ps1 sell joker 0` · `bot.ps1 next_round`      |
-| `SMODS_BOOSTER_OPENED` | Pick or skip                               | `bot.ps1 pack 0` (or `pack 0 1 2` with targets) · `bot.ps1 pack skip`                                               |
-| `GAME_OVER`            | Run ended                                  | `bot.ps1 menu` then `start`                                                                                         |
+| `HAND_PLAYED`          | Transient — just poll                           | `bot.ps1 glance`                                                                                                                 |
+| `ROUND_EVAL`           | Collect rewards                                 | `bot.ps1 cash_out`                                                                                                               |
+| `SHOP`                 | Buy / reroll / sell / leave                     | `bot.ps1 buy card 0` · `bot.ps1 buy pack 0` · `bot.ps1 reroll` · `bot.ps1 sell joker 0` · `bot.ps1 next_round`                   |
+| `SMODS_BOOSTER_OPENED` | Pick or skip                                    | `bot.ps1 pack 0` (or `pack 0 1 2` with targets) · `bot.ps1 pack skip`                                                            |
+| `GAME_OVER`            | Run ended                                       | `bot.ps1 menu` then `start`                                                                                                      |
 
 Command arg cheatsheet:
 
@@ -212,4 +212,3 @@ effect as unknown and fall back to the in-game `effect`/`tag_effect` text.
 - `bot.ps1 know preflight` — verified effects of all active jokers + current boss + pending tags (table by default; `--json` for raw).
 - `bot.ps1 know check joker "Name"` / `check boss "Name"` / `check tag "Name"` — look up one entry.
 - `screenshot PATH` / `save PATH` / `load PATH` — visual debug and run checkpoints (`bot.ps1 screenshot C:\tmp\ss.png`).
-

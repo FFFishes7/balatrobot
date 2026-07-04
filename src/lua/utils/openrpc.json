@@ -1470,6 +1470,10 @@
           "green_hand_add": {
             "type": "integer",
             "description": "Green Joker +Mult increment per hand played"
+          },
+          "caino_xmult": {
+            "type": "number",
+            "description": "Caino ×Mult when > 1"
           }
         }
       },

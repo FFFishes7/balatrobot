@@ -14,15 +14,15 @@ If the user asks you to **play** Balatro (not develop this repo), read [`PLAY.md
 - **Use friendly subcommands, never `exec '{...}'`** — PowerShell strips unescaped double quotes from JSON args.
 - State → command:
 
-| State | Command |
-|---|---|
-| `MENU` | `bot.ps1 start RED WHITE [SEED]` |
-| `BLIND_SELECT` | `bot.ps1 select` · `bot.ps1 skip` (Small/Big only) |
-| `SELECTING_HAND` | `bot.ps1 play 0 1 2 3 4` · `discard 0 1` · `use 0 [1 2]` · `sort rank` · *(optional)* `estimate` |
-| `ROUND_EVAL` | `bot.ps1 cash_out` |
-| `SHOP` | `bot.ps1 buy card 0` · `buy pack 0` · `reroll` · `sell joker 0` · `next_round` |
-| `SMODS_BOOSTER_OPENED` | `bot.ps1 pack 0 [1 2]` · `pack skip` |
-| `GAME_OVER` | `bot.ps1 menu` then `start` |
+| State                  | Command                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------ |
+| `MENU`                 | `bot.ps1 start RED WHITE [SEED]`                                                                 |
+| `BLIND_SELECT`         | `bot.ps1 select` · `bot.ps1 skip` (Small/Big only)                                               |
+| `SELECTING_HAND`       | `bot.ps1 play 0 1 2 3 4` · `discard 0 1` · `use 0 [1 2]` · `sort rank` · *(optional)* `estimate` |
+| `ROUND_EVAL`           | `bot.ps1 cash_out`                                                                               |
+| `SHOP`                 | `bot.ps1 buy card 0` · `buy pack 0` · `reroll` · `sell joker 0` · `next_round`                   |
+| `SMODS_BOOSTER_OPENED` | `bot.ps1 pack 0 [1 2]` · `pack skip`                                                             |
+| `GAME_OVER`            | `bot.ps1 menu` then `start`                                                                      |
 
 Each `glance`/action output ends with an `actions:` line listing valid next commands. For scoring, use `query hands` + `know check rule scoring_formula`; `bot.ps1 estimate` is an incomplete optional helper (not recommended for normal play). Common pitfalls (full list in `PLAY.md`): boss blinds hide card faces (`??`), `pack` targets only for Tarot/Spectral, `buy` checks `dollars - bankrupt_at`, tags are skip rewards not defeat rewards, zombie `balatrobot serve` processes need `Stop-Process` before restarting `serve.ps1`.
 
@@ -174,13 +174,13 @@ Runs inside the game engine and exposes an API.
 
 ## Estimate modeling (required workflow)
 
-`bot.ps1 estimate` models **deterministic** scoring only. Before changing `tools/play/estimate.py`:
+`bot.ps1 estimate` models **deterministic** scoring only. Before changing `tools/play/estimate.py` or `estimate_jokers.py`:
 
 1. **Gate** — read the joker in Balatro source (`%APPDATA%\Balatro\Mods\lovely\game-dump\card.lua`). If it uses RNG or unread state → **Never model**; leave `unmodeled`.
 2. **Trace** — find context (`joker_main` / per-card / `repetition`) via `state_events.lua` → `evaluate_play` and `smods/src/utils.lua` (`SMODS.calculate_main_scoring`, `trigger_effects`).
-3. **Implement** — port to `estimate.py`; register in `_modeled()`; `indices` = full `bot.ps1 play` args (kickers included when they change held-card effects).
-4. **Test** — `pytest tests/cli/test_play_helpers.py -k estimate`; live: `estimate` then `play` same `idx` (use `BALATROBOT_ALLOW_CHEATS=1` for lab setups).
-5. **Document** — update [`tools/play/estimate_registry.md`](tools/play/estimate_registry.md) (checklist + Verified/Never tables + live log).
+3. **Implement** — port to `tools/play/estimate_jokers.py`; register in `_modeled()`; pipeline glue stays in `estimate.py`. `indices` = full `bot.ps1 play` args (kickers included when they change held-card effects).
+4. **Test** — unit: `pytest tests/cli/test_play_helpers.py -k estimate`; integration (required for new/changed jokers): `pytest tests/lua/endpoints/test_estimate_live.py` — add a recipe in `estimate_live_recipes.py` or scenario in `estimate_live_scenarios.py`. Manual fallback: `estimate` then `play` same `idx` with `BALATROBOT_ALLOW_CHEATS=1`.
+5. **Document** — update [`tools/play/estimate_registry.md`](tools/play/estimate_registry.md) (checklist + Verified/Never tables + live log); update `docs/api.md` if gamestate fields changed.
 
 Full checklist and scoring pipeline map: **`tools/play/estimate_registry.md`**. Do not use wiki guesses when source is available.
 

@@ -186,6 +186,15 @@ pytest tests/lua -m integration
 pytest tests/lua -m "not integration"
 ```
 
+**Estimate live tests** (`tests/lua/endpoints/test_estimate_live.py`) start a single Balatro instance and run ~110 parametrized plays (~6 min). Do not run in parallel with other Lua suites (OOM risk). When changing `tools/play/estimate_jokers.py`, run:
+
+```bash
+pytest tests/lua/endpoints/test_estimate_live.py -v
+pytest tests/cli/test_play_helpers.py -k estimate -v
+```
+
+See [`tools/play/estimate_registry.md`](../tools/play/estimate_registry.md) for the modeling checklist.
+
 ## Available Make Commands
 
 The project includes a Makefile with convenient targets for common development tasks. Run `make help` to see all available commands.

@@ -8,11 +8,11 @@ Single-file map of the whole project: what it is, how the pieces connect, and wh
 
 A personal setup for letting an AI (Cursor / Codex) play Balatro autonomously while you watch.
 
-| Role | Who |
-|---|---|
-| **The Game** | Balatro (running as a normal Windows game) |
+| Role              | Who                                          |
+| ----------------- | -------------------------------------------- |
+| **The Game**      | Balatro (running as a normal Windows game)   |
 | **The Interface** | This repository — mod + API + helper scripts |
-| **The Brain** | Cursor / Codex (outside this repo) |
+| **The Brain**     | Cursor / Codex (outside this repo)           |
 
 The Python CLI launches Balatro with the mod loaded; after that all control goes through the JSON-RPC API.
 
@@ -69,16 +69,17 @@ balatrobot/
 
 ## 4. Where to Read What
 
-| Topic | Document |
-|---|---|
-| **Playing a run** (loop, state→endpoint table, trace, pitfalls, strategy) | [`PLAY.md`](../PLAY.md) |
-| **Installing / launching** (one-time setup, `serve.ps1`) | [`README.md`](../README.md) |
-| **AI dev guidance** (make rules, architecture summary, play quick-start inline) | [`AGENTS.md`](../AGENTS.md) |
-| **API reference** (every method, params, schemas, enums, errors) | [`api.md`](api.md) |
-| **CLI reference** (all `serve` flags, env vars, platform paths, troubleshooting) | [`cli.md`](cli.md) |
-| **Contributing / dev setup** (direnv, Lua LSP, adding an endpoint, tests, CI, PR rules) | [`contributing.md`](contributing.md) |
-| **Play helpers** (`bot.ps1` commands, layers, envelope) | [`../tools/play/README.md`](../tools/play/README.md) |
-| **Knowledge library** (verified joker/boss/tag/tarot/planet/voucher/spectral/rule tables) | [`../knowledge/balatro/README.md`](../knowledge/balatro/README.md) |
+| Topic                                                                                     | Document                                                                   |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Playing a run** (loop, state→endpoint table, trace, pitfalls, strategy)                 | [`PLAY.md`](../PLAY.md)                                                    |
+| **Installing / launching** (one-time setup, `serve.ps1`)                                  | [`README.md`](../README.md)                                                |
+| **AI dev guidance** (make rules, architecture summary, play quick-start inline)           | [`AGENTS.md`](../AGENTS.md)                                                |
+| **API reference** (every method, params, schemas, enums, errors)                          | [`api.md`](api.md)                                                         |
+| **CLI reference** (all `serve` flags, env vars, platform paths, troubleshooting)          | [`cli.md`](cli.md)                                                         |
+| **Contributing / dev setup** (direnv, Lua LSP, adding an endpoint, tests, CI, PR rules)   | [`contributing.md`](contributing.md)                                       |
+| **Play helpers** (`bot.ps1` commands, layers, envelope)                                   | [`../tools/play/README.md`](../tools/play/README.md)                       |
+| **Estimate scoring model** (joker registry, live-test checklist)                          | [`../tools/play/estimate_registry.md`](../tools/play/estimate_registry.md) |
+| **Knowledge library** (verified joker/boss/tag/tarot/planet/voucher/spectral/rule tables) | [`../knowledge/balatro/README.md`](../knowledge/balatro/README.md)         |
 
 ---
 
@@ -87,6 +88,7 @@ balatrobot/
 These one-line descriptions are enough to orient you; read the linked doc for behavior details.
 
 ### Python layer (`src/balatrobot/`)
+
 - **`cli/serve.py`** — `balatrobot serve` launches `Balatro.exe` with the mod, polls `/health`, keeps the process alive.
 - **`cli/api.py`** — `balatrobot api METHOD PARAMS` calls one JSON-RPC method on a running server.
 - **`manager.py`** — `BalatroInstance` async context manager: starts subprocess, waits for health, logs to `logs/<timestamp>/<port>.log`, tears down on exit.
@@ -94,6 +96,7 @@ These one-line descriptions are enough to orient you; read the linked doc for be
 - **`platforms/`** — per-OS launcher: `validate_paths`, `build_cmd`, `build_env`, `cleanup`.
 
 ### Lua layer (`src/lua/`)
+
 - **`core/server.lua`** — single-client HTTP/1.1 server on LuaSocket, max body 64KB, only handles `POST /`.
 - **`core/dispatcher.lua`** — routes by `method`; pipeline: protocol check → endpoint lookup → schema validation → game-state check → execute.
 - **`core/validator.lua`** — checks params against each endpoint's `schema` table; returns `BAD_REQUEST` on failure.
@@ -102,9 +105,11 @@ These one-line descriptions are enough to orient you; read the linked doc for be
 - **`utils/openrpc.json`** — machine-readable API spec, the source of truth for method signatures.
 
 ### Game states
+
 Eight states drive the play loop: `MENU`, `BLIND_SELECT`, `SELECTING_HAND`, `HAND_PLAYED`, `ROUND_EVAL`, `SHOP`, `SMODS_BOOSTER_OPENED`, `GAME_OVER`. The state→endpoint mapping is in [`PLAY.md`](../PLAY.md) §2; the per-method contracts are in [`api.md`](api.md).
 
 ### Error codes
+
 `INTERNAL_ERROR` (-32000), `BAD_REQUEST` (-32001), `INVALID_STATE` (-32002), `NOT_ALLOWED` (-32003). See [`api.md`](api.md) for the full error object shape.
 
 ---
