@@ -18,74 +18,17 @@ from balatrobot.manager import BalatroInstance
 
 HOST = "127.0.0.1"
 
-# Files that contain integration tests requiring Balatro
+# Files that contain tests requiring a real Balatro instance.
 INTEGRATION_FILES = {
     "test_client.py",
     "test_api_cmd.py",
-    "test_serve_cmd.py",
     "test_integration.py",
 }
 
 
 # ============================================================================
-# Pytest Hooks for Balatro Instance Management
+# Pytest Hooks for Integration Marking
 # ============================================================================
-
-
-def pytest_configure(config):
-    """Start Balatro instances for integration tests (master only)."""
-    # Skip if xdist worker (master handles startup)
-    if os.environ.get("PYTEST_XDIST_WORKER"):
-        return
-
-    # Determine parallelism
-    numprocesses = getattr(config.option, "numprocesses", None)
-    parallel = numprocesses if numprocesses and numprocesses > 0 else 1
-
-    # Allocate random ports
-    ports = random.sample(range(20000, 30000), parallel)
-    os.environ["BALATROBOT_CLI_PORTS"] = ",".join(str(p) for p in ports)
-
-    config._cli_balatro_ports = ports
-    config._cli_balatro_parallel = parallel
-
-    # Start instances
-    base_config = Config.from_env()
-    instances: list[BalatroInstance] = []
-
-    async def start_all():
-        for port in ports:
-            instances.append(BalatroInstance(base_config, port=port))
-        await asyncio.gather(*[inst.start() for inst in instances])
-        print(f"CLI tests: {parallel} Balatro instance(s) started on ports: {ports}")
-
-    try:
-        asyncio.run(start_all())
-        config._cli_balatro_instances = instances
-    except Exception as e:
-        # Cleanup on failure
-        async def cleanup():
-            for instance in instances:
-                await instance.stop()
-
-        asyncio.run(cleanup())
-        raise pytest.UsageError(f"Could not start Balatro instances: {e}") from e
-
-
-def pytest_unconfigure(config):
-    """Stop Balatro instances after tests complete."""
-    instances = getattr(config, "_cli_balatro_instances", None)
-    if instances is None:
-        return
-
-    async def stop_all():
-        for instance in instances:
-            await instance.stop()
-
-    try:
-        asyncio.run(stop_all())
-    except Exception as e:
-        print(f"Error stopping Balatro instances: {e}")
 
 
 def pytest_collection_modifyitems(items):
@@ -111,16 +54,41 @@ def pytest_collection_modifyitems(items):
 
 
 @pytest.fixture(scope="session")
-def cli_port(worker_id) -> int:
-    """Get assigned port for this worker from env var."""
-    ports_str = os.environ.get("BALATROBOT_CLI_PORTS", "12346")
-    ports = [int(p) for p in ports_str.split(",")]
+def cli_instance(worker_id):
+    """Start a Balatro instance only for tests that request CLI API access.
 
-    if worker_id == "master":
-        return ports[0]
+    Previously this conftest started Balatro in pytest_configure for every
+    tests/cli invocation, including pure unit tests such as test_play_helpers.py.
+    Keeping startup behind this fixture lets non-integration CLI tests collect
+    and run without a local game process.
+    """
+    port = random.randint(20000, 30000)
+    os.environ["BALATROBOT_CLI_PORTS"] = str(port)
 
-    worker_num = int(worker_id.replace("gw", ""))
-    return ports[worker_num]
+    base_config = Config.from_env()
+    instance = BalatroInstance(base_config, port=port)
+
+    async def start():
+        await instance.start()
+
+    async def stop():
+        await instance.stop()
+
+    try:
+        asyncio.run(start())
+        print(f"CLI test Balatro instance started on port: {port} ({worker_id})")
+        yield instance
+    finally:
+        try:
+            asyncio.run(stop())
+        except Exception as e:
+            print(f"Error stopping Balatro instance on port {port}: {e}")
+
+
+@pytest.fixture(scope="session")
+def cli_port(cli_instance) -> int:
+    """Get the port for the lazily-started CLI Balatro instance."""
+    return cli_instance.port
 
 
 @pytest.fixture

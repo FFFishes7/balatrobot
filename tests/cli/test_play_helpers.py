@@ -939,7 +939,10 @@ def test_act_main_no_args_returns_usage(
 
 
 def test_buy_blocked_by_slots_allows_negative_joker_when_slots_full() -> None:
-    state = {"jokers": {"count": 5, "limit": 5}, "consumables": {"count": 0, "limit": 2}}
+    state = {
+        "jokers": {"count": 5, "limit": 5},
+        "consumables": {"count": 0, "limit": 2},
+    }
     base_joker = {"set": "JOKER", "modifier": {}}
     negative_joker = {"set": "JOKER", "modifier": {"edition": "NEGATIVE"}}
 
@@ -1397,14 +1400,18 @@ def test_estimate_raised_fist_excludes_played_kicker_from_held_cards() -> None:
     jokers = [{"label": "Raised Fist", "key": "j_raised_fist", "value": {}}]
 
     ace_only = estimate.score_hand_indices(_est_state(hand, jokers=jokers), [0])
-    with_low_kicker = estimate.score_hand_indices(_est_state(hand, jokers=jokers), [0, 3])
+    with_low_kicker = estimate.score_hand_indices(
+        _est_state(hand, jokers=jokers), [0, 3]
+    )
 
     assert ace_only["hand_type"] == "High Card"
     assert ace_only["scoring_indices"] == [0]
     assert ace_only["mult"] == 5  # base 1 + lowest held 2 doubled => +4
     assert with_low_kicker["hand_type"] == "High Card"
     assert with_low_kicker["scoring_indices"] == [0]
-    assert with_low_kicker["mult"] == 7  # played 2 is no longer held; lowest held 3 => +6
+    assert (
+        with_low_kicker["mult"] == 7
+    )  # played 2 is no longer held; lowest held 3 => +6
     assert with_low_kicker["score"] > ace_only["score"]
 
 
@@ -2778,7 +2785,7 @@ def test_all_joker_keys_modeled() -> None:
     """Every OpenRPC / enums.lua joker key is registered in the estimate registry."""
     import re
 
-    import estimate_jokers as ej
+    import estimate_jokers as ej  # type: ignore[unresolved-import]
 
     modeled_set, _ = ej._modeled([])
     root = Path(__file__).resolve().parents[2]

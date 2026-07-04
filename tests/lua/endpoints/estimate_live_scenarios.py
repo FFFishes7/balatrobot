@@ -6,11 +6,11 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from tests.lua.endpoints.estimate_live_recipes import (
-    CardAdd,
-    JokerAdd,
     PAIR_5,
     PAIR_J,
     STRAIGHT_5,
+    CardAdd,
+    JokerAdd,
 )
 
 # ---------------------------------------------------------------------------
@@ -125,7 +125,12 @@ def build_scenarios() -> list[ScenarioRecipe]:
             cards=(*PAIR_5, STEEL_RED_K),
             lines=(
                 _line("optimal", pick="pair_5s"),
-                _line("no_steel_red", cards=(*PAIR_5, PLAIN_K), pick="pair_5s", expect_lower=True),
+                _line(
+                    "no_steel_red",
+                    cards=(*PAIR_5, PLAIN_K),
+                    pick="pair_5s",
+                    expect_lower=True,
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -133,7 +138,11 @@ def build_scenarios() -> list[ScenarioRecipe]:
             description="Steel K Baron+Mime two kings",
             category="steel_held",
             joker_keys=("j_baron", "j_mime"),
-            cards=(*PAIR_5, STEEL_RED_K, CardAdd("D_K", enhancement="STEEL", seal="RED")),
+            cards=(
+                *PAIR_5,
+                STEEL_RED_K,
+                CardAdd("D_K", enhancement="STEEL", seal="RED"),
+            ),
             lines=(
                 _line("optimal", pick="pair_5s"),
                 _line(
@@ -149,10 +158,18 @@ def build_scenarios() -> list[ScenarioRecipe]:
             description="Steel K High Card vs pair",
             category="steel_held",
             joker_keys=("j_baron", "j_mime"),
-            cards=(CardAdd("S_5"), CardAdd("D_5"), CardAdd("S_2"), STEEL_K, CardAdd("H_K", enhancement="STEEL")),
+            cards=(
+                CardAdd("S_5"),
+                CardAdd("D_5"),
+                CardAdd("S_2"),
+                STEEL_K,
+                CardAdd("H_K", enhancement="STEEL"),
+            ),
             lines=(
                 _line("optimal", pick="pair_5s"),
-                _line("high_card", play_order_cards=(CardAdd("S_2"),), expect_lower=True),
+                _line(
+                    "high_card", play_order_cards=(CardAdd("S_2"),), expect_lower=True
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -163,7 +180,12 @@ def build_scenarios() -> list[ScenarioRecipe]:
             cards=(*PAIR_5, CardAdd("H_Q"), STEEL_K),
             lines=(
                 _line("with_steel", pick="pair_5s"),
-                _line("no_steel", cards=(*PAIR_5, CardAdd("H_Q"), PLAIN_K), pick="pair_5s", expect_lower=True),
+                _line(
+                    "no_steel",
+                    cards=(*PAIR_5, CardAdd("H_Q"), PLAIN_K),
+                    pick="pair_5s",
+                    expect_lower=True,
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -174,7 +196,12 @@ def build_scenarios() -> list[ScenarioRecipe]:
             cards=(*PAIR_5, CardAdd("S_2"), CardAdd("S_3", enhancement="STEEL")),
             lines=(
                 _line("with_steel", pick="pair_5s"),
-                _line("no_steel", cards=(*PAIR_5, CardAdd("S_2"), CardAdd("S_3")), pick="pair_5s", expect_lower=True),
+                _line(
+                    "no_steel",
+                    cards=(*PAIR_5, CardAdd("S_2"), CardAdd("S_3")),
+                    pick="pair_5s",
+                    expect_lower=True,
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -185,7 +212,12 @@ def build_scenarios() -> list[ScenarioRecipe]:
             cards=(*PAIR_5, STEEL_K, CardAdd("C_K", enhancement="STEEL")),
             lines=(
                 _line("optimal", pick="pair_5s"),
-                _line("no_held_steel", cards=(*PAIR_5, CardAdd("H_3"), CardAdd("C_7"), CardAdd("S_2")), pick="pair_5s", expect_lower=True),
+                _line(
+                    "no_held_steel",
+                    cards=(*PAIR_5, CardAdd("H_3"), CardAdd("C_7"), CardAdd("S_2")),
+                    pick="pair_5s",
+                    expect_lower=True,
+                ),
             ),
         ),
         # --- B. Scored buff stacks ---
@@ -197,7 +229,9 @@ def build_scenarios() -> list[ScenarioRecipe]:
             cards=(MULT_5, GLASS_5, CardAdd("S_3"), CardAdd("H_7"), CardAdd("C_2")),
             lines=(
                 _line("mult_left", play_order_cards=(MULT_5, GLASS_5)),
-                _line("glass_left", play_order_cards=(GLASS_5, MULT_5), expect_lower=True),
+                _line(
+                    "glass_left", play_order_cards=(GLASS_5, MULT_5), expect_lower=True
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -205,12 +239,24 @@ def build_scenarios() -> list[ScenarioRecipe]:
             description="BONUS+FOIL pair",
             category="scored_buff",
             joker_keys=("j_abstract",),
-            cards=(BONUS_FOIL_5, CardAdd("D_5"), CardAdd("S_3"), CardAdd("H_7"), CardAdd("C_2")),
+            cards=(
+                BONUS_FOIL_5,
+                CardAdd("D_5"),
+                CardAdd("S_3"),
+                CardAdd("H_7"),
+                CardAdd("C_2"),
+            ),
             lines=(
                 _line("optimal", play_order_cards=(BONUS_FOIL_5, CardAdd("D_5"))),
                 _line(
                     "plain_pair",
-                    cards=(CardAdd("S_5"), CardAdd("D_5"), CardAdd("H_3"), CardAdd("C_7"), CardAdd("S_2")),
+                    cards=(
+                        CardAdd("S_5"),
+                        CardAdd("D_5"),
+                        CardAdd("H_3"),
+                        CardAdd("C_7"),
+                        CardAdd("S_2"),
+                    ),
                     pick="pair_5s",
                     expect_lower=True,
                 ),
@@ -221,13 +267,29 @@ def build_scenarios() -> list[ScenarioRecipe]:
             description="Stone+Splash all score",
             category="scored_buff",
             joker_keys=("j_stone", "j_splash"),
-            cards=(STONE_CARD, CardAdd("S_3"), CardAdd("H_7"), CardAdd("C_4"), CardAdd("D_9")),
+            cards=(
+                STONE_CARD,
+                CardAdd("S_3"),
+                CardAdd("H_7"),
+                CardAdd("C_4"),
+                CardAdd("D_9"),
+            ),
             lines=(
                 _line(
                     "optimal",
-                    play_order_cards=(STONE_CARD, CardAdd("S_3"), CardAdd("H_7"), CardAdd("C_4"), CardAdd("D_9")),
+                    play_order_cards=(
+                        STONE_CARD,
+                        CardAdd("S_3"),
+                        CardAdd("H_7"),
+                        CardAdd("C_4"),
+                        CardAdd("D_9"),
+                    ),
                 ),
-                _line("pair_only", play_order_cards=(CardAdd("S_3"), CardAdd("H_7")), expect_lower=True),
+                _line(
+                    "pair_only",
+                    play_order_cards=(CardAdd("S_3"), CardAdd("H_7")),
+                    expect_lower=True,
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -238,7 +300,13 @@ def build_scenarios() -> list[ScenarioRecipe]:
             lines=(
                 _line(
                     "bonus_pair",
-                    cards=(CardAdd("S_5", enhancement="BONUS"), CardAdd("D_5"), CardAdd("H_3"), CardAdd("C_7"), CardAdd("S_2")),
+                    cards=(
+                        CardAdd("S_5", enhancement="BONUS"),
+                        CardAdd("D_5"),
+                        CardAdd("H_3"),
+                        CardAdd("C_7"),
+                        CardAdd("S_2"),
+                    ),
                     pick="pair_5s",
                 ),
                 _line(
@@ -272,7 +340,13 @@ def build_scenarios() -> list[ScenarioRecipe]:
                 ),
                 _line(
                     "plain_pair",
-                    cards=(CardAdd("S_5"), CardAdd("D_5"), CardAdd("H_3"), CardAdd("C_7"), CardAdd("S_2")),
+                    cards=(
+                        CardAdd("S_5"),
+                        CardAdd("D_5"),
+                        CardAdd("H_3"),
+                        CardAdd("C_7"),
+                        CardAdd("S_2"),
+                    ),
                     pick="pair_5s",
                     expect_lower=True,
                 ),
@@ -283,7 +357,13 @@ def build_scenarios() -> list[ScenarioRecipe]:
             description="MULT+HOLO Jack pair",
             category="scored_buff",
             joker_keys=("j_smiley",),
-            cards=(MULT_HOLO_J, CardAdd("S_J"), CardAdd("H_5"), CardAdd("C_3"), CardAdd("D_2")),
+            cards=(
+                MULT_HOLO_J,
+                CardAdd("S_J"),
+                CardAdd("H_5"),
+                CardAdd("C_3"),
+                CardAdd("D_2"),
+            ),
             lines=(
                 _line("optimal", pick="pair_j"),
                 _line(
@@ -303,7 +383,9 @@ def build_scenarios() -> list[ScenarioRecipe]:
             cards=(*PAIR_5, CardAdd("H_3"), CardAdd("C_7"), CardAdd("S_2")),
             lines=(
                 _line("optimal", joker_order=(0, 1), pick="pair_5s"),
-                _line("reversed", joker_order=(1, 0), pick="pair_5s", expect_lower=True),
+                _line(
+                    "reversed", joker_order=(1, 0), pick="pair_5s", expect_lower=True
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -314,7 +396,12 @@ def build_scenarios() -> list[ScenarioRecipe]:
             cards=(*PAIR_J, CardAdd("H_5"), CardAdd("C_3"), CardAdd("D_2")),
             lines=(
                 _line("optimal", joker_order=(1, 0, 2), pick="pair_j"),
-                _line("wrong_left", joker_order=(0, 1, 2), pick="pair_j", expect_lower=True),
+                _line(
+                    "wrong_left",
+                    joker_order=(0, 1, 2),
+                    pick="pair_j",
+                    expect_lower=True,
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -367,7 +454,11 @@ def build_scenarios() -> list[ScenarioRecipe]:
             cards=STRAIGHT_5,
             lines=(
                 _line("optimal", pick="straight_5"),
-                _line("two_card", play_order_cards=(CardAdd("S_9"), CardAdd("D_T")), expect_lower=True),
+                _line(
+                    "two_card",
+                    play_order_cards=(CardAdd("S_9"), CardAdd("D_T")),
+                    expect_lower=True,
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -378,7 +469,9 @@ def build_scenarios() -> list[ScenarioRecipe]:
             cards=(*PAIR_5, CardAdd("H_3"), CardAdd("C_7"), CardAdd("S_2")),
             lines=(
                 _line("optimal", joker_order=(0, 1, 2), pick="pair_5s"),
-                _line("reversed", joker_order=(1, 0, 2), pick="pair_5s", expect_lower=True),
+                _line(
+                    "reversed", joker_order=(1, 0, 2), pick="pair_5s", expect_lower=True
+                ),
             ),
         ),
         # --- D. Retrigger + buff ---
@@ -387,10 +480,20 @@ def build_scenarios() -> list[ScenarioRecipe]:
             description="PhotoChad POLY face leftmost",
             category="retrigger",
             joker_keys=("j_photograph", "j_hanging_chad"),
-            cards=(POLY_J, CardAdd("S_J"), CardAdd("H_5"), CardAdd("C_3"), CardAdd("D_2")),
+            cards=(
+                POLY_J,
+                CardAdd("S_J"),
+                CardAdd("H_5"),
+                CardAdd("C_3"),
+                CardAdd("D_2"),
+            ),
             lines=(
                 _line("optimal", play_order_cards=(POLY_J, CardAdd("S_J"))),
-                _line("face_not_left", play_order_cards=(CardAdd("S_J"), POLY_J), expect_lower=True),
+                _line(
+                    "face_not_left",
+                    play_order_cards=(CardAdd("S_J"), POLY_J),
+                    expect_lower=True,
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -398,9 +501,19 @@ def build_scenarios() -> list[ScenarioRecipe]:
             description="PhotoChad face slot with kicker",
             category="retrigger",
             joker_keys=("j_photograph", "j_hanging_chad"),
-            cards=(GLASS_J, CardAdd("S_J"), CardAdd("H_5"), CardAdd("C_3"), CardAdd("D_2"), CardAdd("S_7")),
+            cards=(
+                GLASS_J,
+                CardAdd("S_J"),
+                CardAdd("H_5"),
+                CardAdd("C_3"),
+                CardAdd("D_2"),
+                CardAdd("S_7"),
+            ),
             lines=(
-                _line("face_right", play_order_cards=(CardAdd("H_5"), GLASS_J, CardAdd("S_J"))),
+                _line(
+                    "face_right",
+                    play_order_cards=(CardAdd("H_5"), GLASS_J, CardAdd("S_J")),
+                ),
                 _line(
                     "no_chad",
                     joker_keys=("j_photograph",),
@@ -442,8 +555,20 @@ def build_scenarios() -> list[ScenarioRecipe]:
             joker_keys=("j_sock_and_buskin", "j_smiley", "j_scary_face"),
             cards=FACE_LINE,
             lines=(
-                _line("all_faces", play_order_cards=(CardAdd("H_J"), CardAdd("S_Q"), CardAdd("D_K"), CardAdd("C_K"))),
-                _line("one_less", play_order_cards=(CardAdd("H_J"), CardAdd("S_Q"), CardAdd("D_K")), expect_lower=True),
+                _line(
+                    "all_faces",
+                    play_order_cards=(
+                        CardAdd("H_J"),
+                        CardAdd("S_Q"),
+                        CardAdd("D_K"),
+                        CardAdd("C_K"),
+                    ),
+                ),
+                _line(
+                    "one_less",
+                    play_order_cards=(CardAdd("H_J"), CardAdd("S_Q"), CardAdd("D_K")),
+                    expect_lower=True,
+                ),
             ),
         ),
         # --- E. Hand type ---
@@ -473,10 +598,20 @@ def build_scenarios() -> list[ScenarioRecipe]:
             description="PhotoChad POLY face leftmost",
             category="hand_type",
             joker_keys=("j_photograph", "j_hanging_chad"),
-            cards=(POLY_J, CardAdd("S_J"), CardAdd("H_5"), CardAdd("C_3"), CardAdd("D_2")),
+            cards=(
+                POLY_J,
+                CardAdd("S_J"),
+                CardAdd("H_5"),
+                CardAdd("C_3"),
+                CardAdd("D_2"),
+            ),
             lines=(
                 _line("optimal", play_order_cards=(POLY_J, CardAdd("S_J"))),
-                _line("face_not_left", play_order_cards=(CardAdd("S_J"), POLY_J), expect_lower=True),
+                _line(
+                    "face_not_left",
+                    play_order_cards=(CardAdd("S_J"), POLY_J),
+                    expect_lower=True,
+                ),
             ),
         ),
         # --- F. Buffed joker + hand buff combos ---
@@ -504,7 +639,9 @@ def build_scenarios() -> list[ScenarioRecipe]:
             cards=(*PAIR_5, CardAdd("H_3"), CardAdd("C_7"), CardAdd("S_2")),
             lines=(
                 _line("optimal", joker_order=(0, 1), pick="pair_5s"),
-                _line("reversed", joker_order=(1, 0), pick="pair_5s", expect_lower=True),
+                _line(
+                    "reversed", joker_order=(1, 0), pick="pair_5s", expect_lower=True
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -528,11 +665,24 @@ def build_scenarios() -> list[ScenarioRecipe]:
             scenario_id="S30",
             description="PhotoChad Holo joker slot",
             category="buffed_joker",
-            jokers=(JokerAdd("j_photograph", edition="HOLO"), JokerAdd("j_hanging_chad")),
-            cards=(POLY_J, CardAdd("S_J"), CardAdd("H_5"), CardAdd("C_3"), CardAdd("D_2")),
+            jokers=(
+                JokerAdd("j_photograph", edition="HOLO"),
+                JokerAdd("j_hanging_chad"),
+            ),
+            cards=(
+                POLY_J,
+                CardAdd("S_J"),
+                CardAdd("H_5"),
+                CardAdd("C_3"),
+                CardAdd("D_2"),
+            ),
             lines=(
                 _line("optimal", play_order_cards=(POLY_J, CardAdd("S_J"))),
-                _line("face_not_left", play_order_cards=(CardAdd("S_J"), POLY_J), expect_lower=True),
+                _line(
+                    "face_not_left",
+                    play_order_cards=(CardAdd("S_J"), POLY_J),
+                    expect_lower=True,
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -563,7 +713,9 @@ def build_scenarios() -> list[ScenarioRecipe]:
             cards=(*PAIR_5, CardAdd("H_3"), CardAdd("C_7"), CardAdd("S_2")),
             lines=(
                 _line("optimal", joker_order=(0, 1, 2), pick="pair_5s"),
-                _line("reversed", joker_order=(1, 0, 2), pick="pair_5s", expect_lower=True),
+                _line(
+                    "reversed", joker_order=(1, 0, 2), pick="pair_5s", expect_lower=True
+                ),
             ),
         ),
         ScenarioRecipe(
@@ -571,12 +723,24 @@ def build_scenarios() -> list[ScenarioRecipe]:
             description="PhotoChad GLASS+RED top tier",
             category="buffed_joker",
             joker_keys=("j_photograph", "j_hanging_chad"),
-            cards=(GLASS_RED_J, CardAdd("S_J"), CardAdd("H_5"), CardAdd("C_3"), CardAdd("D_2")),
+            cards=(
+                GLASS_RED_J,
+                CardAdd("S_J"),
+                CardAdd("H_5"),
+                CardAdd("C_3"),
+                CardAdd("D_2"),
+            ),
             lines=(
                 _line("optimal", play_order_cards=(GLASS_RED_J, CardAdd("S_J"))),
                 _line(
                     "no_red",
-                    cards=(GLASS_J, CardAdd("S_J"), CardAdd("H_5"), CardAdd("C_3"), CardAdd("D_2")),
+                    cards=(
+                        GLASS_J,
+                        CardAdd("S_J"),
+                        CardAdd("H_5"),
+                        CardAdd("C_3"),
+                        CardAdd("D_2"),
+                    ),
                     play_order_cards=(GLASS_J, CardAdd("S_J")),
                     expect_lower=True,
                 ),

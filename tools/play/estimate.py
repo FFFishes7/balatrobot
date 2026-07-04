@@ -72,7 +72,9 @@ class InvalidEstimateState(Exception):
     """Raised when estimate is requested outside SELECTING_HAND."""
 
     def __init__(self, state: str):
-        super().__init__(f"estimate is only available in SELECTING_HAND, current state is {state}")
+        super().__init__(
+            f"estimate is only available in SELECTING_HAND, current state is {state}"
+        )
         self.state = state
 
 
@@ -156,7 +158,9 @@ def _straight_indices(
     return None
 
 
-def _flush_indices(cards: list[dict], idx_with_rank: list[int], *, min_len: int) -> list[int] | None:
+def _flush_indices(
+    cards: list[dict], idx_with_rank: list[int], *, min_len: int
+) -> list[int] | None:
     from collections import Counter
 
     suit_count = Counter(cards[i]["suit"] for i in idx_with_rank)
@@ -176,8 +180,6 @@ def _classify(
     # Separate stones (no rank/suit) — they never help form a hand but score.
     idx_with_rank = [i for i, c in enumerate(cards) if c["rank"]]
     ranks = [cards[i]["rank"] for i in idx_with_rank]
-    suits = [cards[i]["suit"] for i in idx_with_rank]
-    n_ranked = len(idx_with_rank)
     min_run = 4 if four_fingers else 5
 
     from collections import Counter
@@ -322,7 +324,7 @@ def _score_combo(
     cfg: dict,
     ctx: dict,
     dusk_active: bool,
-) -> tuple[int, int, int]:
+) -> tuple[float, float, int]:
     """Return (chips, mult, score) for one combo."""
     base_chips = hand_level.get("chips", 0)
     base_mult = hand_level.get("mult", 0)
@@ -516,7 +518,6 @@ def score_hand_indices(state: dict, hand_indices: list[int]) -> dict:
         if p is not None:
             p["hand_index"] = i
             parsed.append(p)
-    want = set(hand_indices)
     index_to_local = {p["hand_index"]: i for i, p in enumerate(parsed)}
     combo_local = sorted(
         (index_to_local[hi] for hi in hand_indices),
@@ -540,7 +541,9 @@ def score_hand_indices(state: dict, hand_indices: list[int]) -> dict:
     dusk_now = cfg.get("dusk_owned", False) and ctx_base.get("hands_left") == 1
 
     cards = [parsed[i] for i in combo_local]
-    hand_type, scoring_idx = _classify(cards, four_fingers=four_fingers, shortcut=shortcut)
+    hand_type, scoring_idx = _classify(
+        cards, four_fingers=four_fingers, shortcut=shortcut
+    )
     level = levels.get(hand_type, {"chips": 0, "mult": 0, "level": 1})
     combo_set = set(combo_local)
     combo_ctx = {
@@ -606,7 +609,9 @@ def estimate(state: dict) -> dict:
     dusk_now = cfg.get("dusk_owned", False) and ctx.get("hands_left") == 1
     for combo in combos:
         cards = [parsed[i] for i in combo]
-        hand_type, scoring_idx = _classify(cards, four_fingers=four_fingers, shortcut=shortcut)
+        hand_type, scoring_idx = _classify(
+            cards, four_fingers=four_fingers, shortcut=shortcut
+        )
         level = levels.get(hand_type, {"chips": 0, "mult": 0, "level": 1})
         combo_set = set(combo)
         combo_ctx = {
@@ -651,8 +656,7 @@ def estimate(state: dict) -> dict:
             prev is None
             or r["score"] > prev["score"]
             or (
-                r["score"] == prev["score"]
-                and len(r["indices"]) < len(prev["indices"])
+                r["score"] == prev["score"] and len(r["indices"]) < len(prev["indices"])
             )
         ):
             deduped[key] = r
@@ -715,7 +719,12 @@ def main() -> int:
         print(json.dumps(est, ensure_ascii=False) if json_out else _format(est))
         return 0
     except InvalidEstimateState as e:
-        print(json.dumps(build_error_envelope("INVALID_STATE", str(e), fmt=ESTIMATE_FORMAT), ensure_ascii=False))
+        print(
+            json.dumps(
+                build_error_envelope("INVALID_STATE", str(e), fmt=ESTIMATE_FORMAT),
+                ensure_ascii=False,
+            )
+        )
         return 1
     except APIError as e:
         print(json.dumps(build_error_envelope(e.name, e.message), ensure_ascii=False))
@@ -727,5 +736,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-

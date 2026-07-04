@@ -242,7 +242,12 @@ def build_scoring_joker_recipes() -> list[LiveRecipe]:
             _r("j_greedy_joker", "j_greedy_joker", cards=PAIR_D, pick="pair_suit"),
             _r("j_lusty_joker", "j_lusty_joker", cards=PAIR_H, pick="pair_suit"),
             _r("j_wrathful_joker", "j_wrathful_joker", cards=PAIR_S, pick="pair_suit"),
-            _r("j_gluttenous_joker", "j_gluttenous_joker", cards=PAIR_C, pick="pair_suit"),
+            _r(
+                "j_gluttenous_joker",
+                "j_gluttenous_joker",
+                cards=PAIR_C,
+                pick="pair_suit",
+            ),
             _r("j_onyx_agate", "j_onyx_agate", cards=PAIR_C, pick="pair_suit"),
             _r("j_arrowhead", "j_arrowhead", cards=PAIR_S, pick="pair_suit"),
             _r("j_walkie_talkie", "j_walkie_talkie", cards=PAIR_4, pick="pair_rank"),
@@ -253,17 +258,33 @@ def build_scoring_joker_recipes() -> list[LiveRecipe]:
             _r("j_scary_face", "j_scary_face", cards=PAIR_J, pick="pair_rank"),
             _r("j_smiley", "j_smiley", cards=PAIR_J, pick="pair_rank"),
             _r("j_photograph", "j_photograph", cards=PAIR_J, pick="pair_rank"),
-            _r("j_sock_and_buskin", "j_sock_and_buskin", cards=PAIR_J, pick="pair_rank"),
+            _r(
+                "j_sock_and_buskin", "j_sock_and_buskin", cards=PAIR_J, pick="pair_rank"
+            ),
             _r("j_runner", "j_runner", pick="top"),
             _r("j_wee", "j_wee", cards=PAIR_2, pick="pair_rank"),
             _r("j_square", "j_square", cards=TWO_PAIR, pick="two_pair"),
             _r("j_trousers", "j_trousers", cards=TWO_PAIR, pick="two_pair"),
-            _r("j_vampire", "j_vampire", cards=(CardAdd("S_5", enhancement="BONUS"), CardAdd("D_5"))),
+            _r(
+                "j_vampire",
+                "j_vampire",
+                cards=(CardAdd("S_5", enhancement="BONUS"), CardAdd("D_5")),
+            ),
             _r("j_splash", "j_splash", cards=SPLASH_5, pick="straight_5"),
-            _r("j_four_fingers", "j_four_fingers", cards=FOUR_HEART_FLUSH, pick="four_flush"),
+            _r(
+                "j_four_fingers",
+                "j_four_fingers",
+                cards=FOUR_HEART_FLUSH,
+                pick="four_flush",
+            ),
             _r("j_shortcut", "j_shortcut", cards=SHORTCUT_STRAIGHT, pick="straight_5"),
             _r("j_flower_pot", "j_flower_pot", cards=FLOWER_POT, pick="flower_pot"),
-            _r("j_seeing_double", "j_seeing_double", cards=SEEING_DOUBLE, pick="seeing_double"),
+            _r(
+                "j_seeing_double",
+                "j_seeing_double",
+                cards=SEEING_DOUBLE,
+                pick="seeing_double",
+            ),
             _r(
                 "j_blackboard",
                 "j_blackboard",
@@ -271,19 +292,46 @@ def build_scoring_joker_recipes() -> list[LiveRecipe]:
                 pick="blackboard",
             ),
             _r("j_baron", "j_baron", cards=BARON_HOLD, pick="baron_hold"),
-            _r("j_shoot_the_moon", "j_shoot_the_moon", cards=SHOOT_MOON_HOLD, pick="shoot_hold"),
-            _r("j_raised_fist", "j_raised_fist", cards=RAISED_FIST_HOLD, pick="raised_fist_hold"),
+            _r(
+                "j_shoot_the_moon",
+                "j_shoot_the_moon",
+                cards=SHOOT_MOON_HOLD,
+                pick="shoot_hold",
+            ),
+            _r(
+                "j_raised_fist",
+                "j_raised_fist",
+                cards=RAISED_FIST_HOLD,
+                pick="raised_fist_hold",
+            ),
             _r("j_mime", "j_mime", cards=MIME_STEEL, pick="mime_steel"),
-            _r("j_smeared", "j_smeared", "j_greedy_joker", cards=PAIR_H, pick="pair_suit"),
+            _r(
+                "j_smeared",
+                "j_smeared",
+                "j_greedy_joker",
+                cards=PAIR_H,
+                pick="pair_suit",
+            ),
             _r("j_blueprint", "j_blueprint", "j_jolly", cards=PAIR_J, pick="pair_rank"),
-            _r("j_brainstorm", "j_jolly", "j_brainstorm", cards=PAIR_J, pick="pair_rank"),
+            _r(
+                "j_brainstorm",
+                "j_jolly",
+                "j_brainstorm",
+                cards=PAIR_J,
+                pick="pair_rank",
+            ),
             _r("j_swashbuckler", "j_gros_michel", "j_swashbuckler"),
             _r("j_baseball", "j_baseball", "j_popcorn"),
             _r("j_bull", "j_bull"),
             _r("j_bootstraps", "j_bootstraps"),
             _r("j_acrobat", "j_acrobat", set_state={"hands": 1}, pick="pair_5s"),
             _r("j_dusk", "j_dusk", set_state={"hands": 1}, pick="pair_5s"),
-            _r("j_mystic_summit", "j_mystic_summit", set_state={"discards": 0}, pick="pair_5s"),
+            _r(
+                "j_mystic_summit",
+                "j_mystic_summit",
+                set_state={"discards": 0},
+                pick="pair_5s",
+            ),
             _r("j_banner", "j_banner", pick="pair_5s"),
             _r("j_ancient", "j_ancient", pick="ancient"),
             _r("j_idol", "j_idol", pick="idol"),
@@ -405,7 +453,7 @@ def _all_scoring_joker_keys() -> list[str]:
 
     root = Path(__file__).resolve().parents[3]
     sys.path.insert(0, str(root / "tools" / "play"))
-    import estimate_jokers as ej  # noqa: WPS433
+    import estimate_jokers as ej  # noqa: WPS433  # type: ignore[unresolved-import]
 
     modeled, _ = ej._modeled([])
     return sorted(set(modeled) - ej.NO_SCORE_JOKERS - {"j_misprint", "j_bloodstone"})

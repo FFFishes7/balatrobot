@@ -13,9 +13,17 @@ sys.path.insert(0, str(PLAY_ROOT))
 
 import estimate  # noqa: E402  # type: ignore[unresolved-import]
 
-from tests.lua.endpoints.estimate_live_recipes import CardAdd, JokerAdd, LiveRecipe, PAIR_5  # noqa: E402
-from tests.lua.endpoints.estimate_live_scenarios import ScenarioLine, ScenarioRecipe  # noqa: E402
 from tests.lua.conftest import api, load_fixture  # noqa: E402
+from tests.lua.endpoints.estimate_live_recipes import (  # noqa: E402
+    PAIR_5,
+    CardAdd,
+    JokerAdd,
+    LiveRecipe,
+)
+from tests.lua.endpoints.estimate_live_scenarios import (  # noqa: E402
+    ScenarioLine,
+    ScenarioRecipe,
+)
 
 
 def _ranks_equal(a: str | None, b: str) -> bool:
@@ -78,7 +86,9 @@ def _indices_for_cards(gs: dict, wants: tuple[CardAdd, ...]) -> list[int]:
                 found = True
                 break
         if not found:
-            raise AssertionError(f"card not found in hand: {want.key} enh={want.enhancement}")
+            raise AssertionError(
+                f"card not found in hand: {want.key} enh={want.enhancement}"
+            )
     return indices
 
 
@@ -124,7 +134,11 @@ def setup_recipe(client: httpx.Client, recipe: LiveRecipe) -> dict:
             stats = (j.get("value") or {}).get("stats") or {}
             every = stats.get("loyalty_every")
             remaining = stats.get("loyalty_remaining")
-            if every is not None and remaining is not None and int(remaining) == int(every):
+            if (
+                every is not None
+                and remaining is not None
+                and int(remaining) == int(every)
+            ):
                 loyalty_ok = True
                 break
         if not loyalty_ok:
@@ -138,7 +152,9 @@ def setup_recipe(client: httpx.Client, recipe: LiveRecipe) -> dict:
     return gs
 
 
-def _maybe_add_round_target_cards(client: httpx.Client, gs: dict, recipe: LiveRecipe) -> dict:
+def _maybe_add_round_target_cards(
+    client: httpx.Client, gs: dict, recipe: LiveRecipe
+) -> dict:
     if recipe.pick == "ancient":
         suit = (gs.get("round") or {}).get("ancient_suit")
         if not suit:
@@ -268,8 +284,7 @@ def assert_estimate_matches_play(
     if isinstance(expected, float):
         expected = int(round(expected))
     assert abs(delta - expected) <= 1, (
-        f"estimate={expected} actual={delta} "
-        f"hand={est_line['hand_type']} idx={indices}"
+        f"estimate={expected} actual={delta} hand={est_line['hand_type']} idx={indices}"
     )
     return delta
 
@@ -391,7 +406,9 @@ def setup_scenario(
     elif recipe.jokers:
         gs = _add_jokers(client, recipe.jokers)
     else:
-        joker_keys = line.joker_keys if line.joker_keys is not None else recipe.joker_keys
+        joker_keys = (
+            line.joker_keys if line.joker_keys is not None else recipe.joker_keys
+        )
         for key in joker_keys:
             gs = api(client, "add", {"key": key})["result"]
     cards = line.cards if line.cards is not None else recipe.cards
@@ -424,7 +441,9 @@ def resolve_line_play_indices(
         return _indices_for_cards(gs, cards)
     if pick == "play_all":
         return list(range(_hand_count(gs)))
-    raise ValueError(f"unknown line pick: {pick!r} for {recipe.scenario_id}/{line.line_id}")
+    raise ValueError(
+        f"unknown line pick: {pick!r} for {recipe.scenario_id}/{line.line_id}"
+    )
 
 
 def run_scenario(client: httpx.Client, recipe: ScenarioRecipe) -> None:
@@ -432,14 +451,18 @@ def run_scenario(client: httpx.Client, recipe: ScenarioRecipe) -> None:
     for line in recipe.lines:
         gs = setup_scenario(client, recipe, line)
         if line.play_order_cards:
-            gs, indices = _rearrange_hand_for_play_order(client, gs, line.play_order_cards)
+            gs, indices = _rearrange_hand_for_play_order(
+                client, gs, line.play_order_cards
+            )
         else:
             indices = resolve_line_play_indices(gs, recipe, line)
         delta = assert_estimate_matches_play(
             client, gs, indices, check_unmodeled=recipe.check_unmodeled
         )
         if line.expect_lower_than_optimal:
-            assert optimal_delta is not None, f"missing optimal line before {line.line_id}"
+            assert optimal_delta is not None, (
+                f"missing optimal line before {line.line_id}"
+            )
             assert delta < optimal_delta, (
                 f"{recipe.scenario_id}/{line.line_id}: expected lower than optimal "
                 f"({delta} >= {optimal_delta})"
