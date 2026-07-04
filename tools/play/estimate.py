@@ -341,8 +341,12 @@ def _score_combo(
 
     # Splash: every played card scores (all cards in the combo).
     eff_scoring = list(range(len(cards))) if cfg.get("splash") else scoring_idx
-    # Leftmost scoring card index (for Hanging Chad).
-    leftmost = min(eff_scoring) if eff_scoring else -1
+    # Play-order: scoring cards follow selection order in ``cards`` (not sorted indices).
+    if not cfg.get("splash"):
+        scoring_set = set(scoring_idx)
+        eff_scoring = [i for i in range(len(cards)) if i in scoring_set]
+    # Leftmost scoring card = first scored in play order (Hanging Chad).
+    leftmost = eff_scoring[0] if eff_scoring else -1
     photograph_owned = any(
         _effective_joker_at(i, jokers)[1] == "j_photograph" for i in range(len(jokers))
     )
@@ -396,7 +400,7 @@ def _score_combo(
             continue
         if key in NO_SCORE_JOKERS or key in PER_CARD_JOKERS:
             continue
-        if key in {"j_selzer", "j_hanging_chad", "j_dusk", "j_splash", "j_hack", "j_sock_and_buskin"}:
+        if key in {"j_selzer", "j_hanging_chad", "j_dusk", "j_splash", "j_hack", "j_sock_and_buskin", "j_mime"}:
             continue
         add_c, add_m, xm = _global_joker_bonus(j, ctx2)
         chips += add_c
@@ -416,7 +420,7 @@ def _score_combo(
         chips = balanced
         mult = balanced
 
-    return chips, mult, chips * mult
+    return chips, mult, int(round(chips * mult))
 
 
 def _hand_levels(state: dict) -> dict:
@@ -491,7 +495,11 @@ def score_hand_indices(state: dict, hand_indices: list[int]) -> dict:
             p["hand_index"] = i
             parsed.append(p)
     want = set(hand_indices)
-    combo_local = [i for i, p in enumerate(parsed) if p["hand_index"] in want]
+    index_to_local = {p["hand_index"]: i for i, p in enumerate(parsed)}
+    combo_local = sorted(
+        (index_to_local[hi] for hi in hand_indices),
+        key=lambda loc: parsed[loc]["hand_index"],
+    )
     if len(combo_local) != len(hand_indices):
         raise ValueError(f"invalid or hidden hand indices: {hand_indices}")
 

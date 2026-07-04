@@ -743,9 +743,9 @@ def _held_joker_bonus_once(held_cards: list[dict], jokers: list[dict]) -> tuple[
         if key == "j_shoot_the_moon":
             add_mult += 13 * sum(1 for c in held_cards if c.get("rank") == "Q")
         elif key == "j_baron":
-            kings = sum(1 for c in held_cards if c.get("rank") == "K")
-            if kings:
-                xmult *= 1.5**kings
+            for c in held_cards:
+                if c.get("rank") == "K":
+                    xmult *= 1.5
         elif key == "j_raised_fist" and held_cards:
             ranked = [c for c in held_cards if c.get("rank")]
             if ranked:
@@ -755,14 +755,16 @@ def _held_joker_bonus_once(held_cards: list[dict], jokers: list[dict]) -> tuple[
 
 
 def _held_playing_card_bonus(held_cards: list[dict], mime: bool) -> float:
-    """×Mult from held Steel cards (Mime retriggers once)."""
+    """×Mult from held Steel cards (Mime retriggers held abilities once)."""
     xmult = 1.0
-    triggers = 2 if mime else 1
     for card in held_cards:
         if card.get("debuff"):
             continue
         if card.get("enhancement") != "STEEL":
             continue
+        triggers = 1 + (1 if card.get("seal") == "RED" else 0)
+        if mime:
+            triggers *= 2
         for _ in range(triggers):
             xmult *= 1.5
     return xmult

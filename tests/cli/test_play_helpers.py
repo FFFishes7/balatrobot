@@ -1959,14 +1959,14 @@ def test_estimate_baseball_reacts_to_uncommon_joker() -> None:
         ("2", "S", {}),
     )
     jokers = [
-        {"label": "Mime", "key": "j_mime", "value": {"rarity": "UNCOMMON"}},
+        {"label": "Cavendish", "key": "j_cavendish", "value": {"rarity": "UNCOMMON"}},
         {"label": "Baseball Card", "key": "j_baseball", "value": {}},
     ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
-    assert top[0]["mult"] == 3
-    assert top[0]["score"] == 60
+    assert top[0]["mult"] == 9
+    assert top[0]["score"] == 180
 
 
 def test_estimate_ice_cream_uses_stats_chips() -> None:

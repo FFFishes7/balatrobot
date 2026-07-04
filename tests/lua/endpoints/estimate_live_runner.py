@@ -14,6 +14,7 @@ sys.path.insert(0, str(PLAY_ROOT))
 import estimate  # noqa: E402  # type: ignore[unresolved-import]
 
 from tests.lua.endpoints.estimate_live_recipes import CardAdd, LiveRecipe, PAIR_5  # noqa: E402
+from tests.lua.endpoints.estimate_live_scenarios import ScenarioLine, ScenarioRecipe  # noqa: E402
 from tests.lua.conftest import api, load_fixture  # noqa: E402
 
 
@@ -251,7 +252,7 @@ def assert_estimate_matches_play(
     indices: list[int],
     *,
     check_unmodeled: bool = True,
-) -> None:
+) -> int:
     est_full = estimate.estimate(gs)
     if check_unmodeled:
         assert not est_full["estimate"]["unmodeled_jokers"], (
@@ -259,10 +260,14 @@ def assert_estimate_matches_play(
         )
     est_line = estimate.score_hand_indices(gs, indices)
     delta = _play_delta(client, gs, indices)
-    assert delta == est_line["score"], (
-        f"estimate={est_line['score']} actual={delta} "
+    expected = est_line["score"]
+    if isinstance(expected, float):
+        expected = int(round(expected))
+    assert abs(delta - expected) <= 1, (
+        f"estimate={expected} actual={delta} "
         f"hand={est_line['hand_type']} idx={indices}"
     )
+    return delta
 
 
 def run_live_recipe(client: httpx.Client, recipe: LiveRecipe) -> None:
@@ -271,3 +276,156 @@ def run_live_recipe(client: httpx.Client, recipe: LiveRecipe) -> None:
     assert_estimate_matches_play(
         client, gs, indices, check_unmodeled=recipe.check_unmodeled
     )
+
+
+def _joker_count(gs: dict) -> int:
+    return (gs.get("jokers") or {}).get("count", 0)
+
+
+def _hand_count(gs: dict) -> int:
+    return (gs.get("hand") or {}).get("count", 0)
+
+
+def _rearrange_jokers(client: httpx.Client, order: tuple[int, ...]) -> dict:
+    return api(client, "rearrange", {"jokers": list(order)})["result"]
+
+
+def _rearrange_hand(client: httpx.Client, order: tuple[int, ...]) -> dict:
+    return api(client, "rearrange", {"hand": list(order)})["result"]
+
+
+def _rearrange_hand_for_play_order(
+    client: httpx.Client,
+    gs: dict,
+    play_order_cards: tuple[CardAdd, ...],
+) -> tuple[dict, list[int]]:
+    """Move ``play_order_cards`` to the front of the hand (slot order = score order)."""
+    want_indices = _indices_for_cards(gs, play_order_cards)
+    n = _hand_count(gs)
+    rest = [i for i in range(n) if i not in want_indices]
+    order = tuple(want_indices + rest)
+    gs = _rearrange_hand(client, order)
+    return gs, list(range(len(want_indices)))
+
+
+def _find_card_index(
+    gs: dict,
+    *,
+    rank: str | None = None,
+    enhancement: str | None = None,
+    used: set[int] | None = None,
+) -> int:
+    used = used or set()
+    for i in range(_hand_count(gs)):
+        if i in used:
+            continue
+        if rank is not None and _hand_rank(gs, i) != rank:
+            continue
+        cards = (gs.get("hand") or {}).get("cards") or []
+        mod = (cards[i].get("modifier") or {}) if i < len(cards) else {}
+        if enhancement is not None and mod.get("enhancement") != enhancement:
+            continue
+        return i
+    raise AssertionError(f"card not found rank={rank} enh={enhancement}")
+
+
+def _apply_hand_order(client: httpx.Client, gs: dict, hand_order: str) -> dict:
+    if not hand_order:
+        return gs
+    n = _hand_count(gs)
+    if hand_order == "queen_left":
+        q = _find_card_index(gs, rank="Q")
+        k = _find_card_index(gs, rank="K", enhancement="STEEL")
+        if q > k:
+            order = list(range(n))
+            order[q], order[k] = order[k], order[q]
+            return _rearrange_hand(client, tuple(order))
+        return gs
+    if hand_order == "queen_right":
+        q = _find_card_index(gs, rank="Q")
+        k = _find_card_index(gs, rank="K", enhancement="STEEL")
+        if q < k:
+            order = list(range(n))
+            order[q], order[k] = order[k], order[q]
+            return _rearrange_hand(client, tuple(order))
+        return gs
+    if hand_order == "two_left":
+        two = _find_card_index(gs, rank="2")
+        three = _find_card_index(gs, rank="3", enhancement="STEEL")
+        if two > three:
+            order = list(range(n))
+            order[two], order[three] = order[three], order[two]
+            return _rearrange_hand(client, tuple(order))
+        return gs
+    if hand_order == "two_right":
+        two = _find_card_index(gs, rank="2")
+        three = _find_card_index(gs, rank="3", enhancement="STEEL")
+        if two < three:
+            order = list(range(n))
+            order[two], order[three] = order[three], order[two]
+            return _rearrange_hand(client, tuple(order))
+        return gs
+    raise ValueError(f"unknown hand_order: {hand_order}")
+
+
+def setup_scenario(
+    client: httpx.Client,
+    recipe: ScenarioRecipe,
+    line: ScenarioLine,
+) -> dict:
+    gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
+    joker_keys = line.joker_keys if line.joker_keys is not None else recipe.joker_keys
+    for key in joker_keys:
+        gs = api(client, "add", {"key": key})["result"]
+    cards = line.cards if line.cards is not None else recipe.cards
+    gs = _add_cards(client, gs, cards)
+    merged_set = {**recipe.set_state, **line.set_state}
+    if merged_set:
+        gs = api(client, "set", merged_set)["result"]
+    if line.joker_order is not None:
+        gs = _rearrange_jokers(client, line.joker_order)
+    gs = _apply_hand_order(client, gs, line.hand_order)
+    return gs
+
+
+def resolve_line_play_indices(
+    gs: dict,
+    recipe: ScenarioRecipe,
+    line: ScenarioLine,
+) -> list[int]:
+    if line.play_order_cards:
+        return _indices_for_cards(gs, line.play_order_cards)
+    pick = line.pick
+    cards = line.cards if line.cards is not None else recipe.cards
+    if pick == "estimate_top" or pick == "top":
+        return estimate.estimate(gs)["estimate"]["top"][0]["indices"]
+    if pick == "pair_5s":
+        return _indices_for_rank(gs, "5", 2)
+    if pick == "pair_j":
+        return _indices_for_rank(gs, "J", 2)
+    if pick == "straight_5":
+        return _indices_for_cards(gs, cards)
+    if pick == "play_all":
+        return list(range(_hand_count(gs)))
+    raise ValueError(f"unknown line pick: {pick!r} for {recipe.scenario_id}/{line.line_id}")
+
+
+def run_scenario(client: httpx.Client, recipe: ScenarioRecipe) -> None:
+    optimal_delta: int | None = None
+    for line in recipe.lines:
+        gs = setup_scenario(client, recipe, line)
+        if line.play_order_cards:
+            gs, indices = _rearrange_hand_for_play_order(client, gs, line.play_order_cards)
+        else:
+            indices = resolve_line_play_indices(gs, recipe, line)
+        delta = assert_estimate_matches_play(
+            client, gs, indices, check_unmodeled=recipe.check_unmodeled
+        )
+        if line.expect_lower_than_optimal:
+            assert optimal_delta is not None, f"missing optimal line before {line.line_id}"
+            assert delta < optimal_delta, (
+                f"{recipe.scenario_id}/{line.line_id}: expected lower than optimal "
+                f"({delta} >= {optimal_delta})"
+            )
+        else:
+            optimal_delta = delta

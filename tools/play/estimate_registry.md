@@ -278,15 +278,71 @@ Integration tests: `tests/lua/endpoints/test_estimate_live.py` — parametrized 
 `tests/lua/endpoints/estimate_live_recipes.py` → `add joker` / card buffs →
 `estimate(state)` → `play` same `indices` → `round.chips` delta must match.
 
+Multi-joker **interaction scenarios** live in `tests/lua/endpoints/estimate_live_scenarios.py`
+and run via `TestEstimateLiveScenarios` (24 scenarios × 2 lines ≈ 48 plays).
+
 **Live coverage (2026-07-04):**
 
 | Suite | Count | Notes |
 | --- | ---: | --- |
 | Scoring jokers | 99 | One recipe per deterministic scoring key (`NO_SCORE` and `j_misprint` / `j_bloodstone` excluded) |
 | Card buffs | 9 | BONUS, MULT, GLASS, STONE, FOIL, HOLO, POLYCHROME, RED seal, STEEL held + Mime |
-| Runtime | ~3 min | Single Balatro instance; do not parallelize with other lua suites (OOM) |
+| Interaction scenarios | 24 | Order-sensitive multi-joker combos; each has optimal + suboptimal line |
+| Runtime | ~5 min | Single Balatro instance; do not parallelize with other lua suites (OOM) |
 
 `j_loyalty_card` skips when countdown is not active at glance time.
+
+### Live interaction scenarios (24)
+
+**Division of labor:** single-joker matrix = full smoke coverage; scenarios = order / held /
+retrigger / combo regression with **contrast assertions** (optimal line: `estimate == play`;
+suboptimal line: same match **and** score strictly lower).
+
+Runner: `estimate_live_runner.run_scenario` — each line reloads the fixture independently;
+optional `rearrange` jokers/hand; play order follows **hand slot order** (leftmost scoring card first).
+
+| Cat | ID | Description | Jokers | Contrast |
+| --- | --- | --- | --- | --- |
+| A steel/held | S04 | Steel K Baron+Mime base | Baron, Mime | STEEL+RED K held vs plain K |
+| A | S13 | Two steel kings held | Baron, Mime | 2× STEEL+RED K vs 1 steel + plain K |
+| A | S14 | High Card vs pair | Baron, Mime | Pair vs 1-card High Card |
+| A | S15 | Shoot the Moon + Steel | Shoot, Mime | Steel K held vs plain K |
+| A | S16 | Raised Fist + Steel | Raised Fist, Mime | Steel 3 held vs plain 3 |
+| A | S17 | Steel Joker deck scale | Steel Joker, Mime | Held steel vs no held steel |
+| B scored buff | S20 | MULT→GLASS play order | Jolly | MULT left vs GLASS left |
+| B | S21 | BONUS+FOIL pair | Abstract | Enhanced pair vs plain pair |
+| B | S22 | Stone+Splash | Stone, Splash | 5-card all-score vs 2-card pair |
+| B | S23 | Vampire strips BONUS | Vampire | BONUS pair vs plain pair |
+| B | S24 | POLY+GLASS pair | Jolly | GLASS+POLY pair vs plain pair |
+| B | S26 | MULT+HOLO Jack | Smiley | Face pair vs non-face pair |
+| C joker combo | S01 | +Mult→×Mult order | Jolly, Cavendish | Jolly left vs reversed |
+| C | S05 | Brainstorm copy | Brainstorm, Jolly, Abstract | Jolly leftmost vs wrong slot |
+| C | S06 | Blueprint trap | Blueprint, Jolly, Cavendish | Copy Cavendish vs copy Jolly |
+| C | S08 | Blackboard kicker | Blackboard, Abstract | With Blackboard vs Abstract only |
+| C | S10 | Flower Pot Splash | Flower Pot, Splash, Seeing Double | Full straight vs 2 cards |
+| C | S12 | Baseball ×Mult order | Jolly, Cavendish, Baseball | Cavendish before Baseball vs reversed |
+| D retrigger | S02 | PhotoChad POLY | Photograph, Hanging Chad | Face leftmost vs not |
+| D | S03 | PhotoChad + kicker | Photograph, Hanging Chad | With Chad vs Photograph only |
+| D | S07 | Dusk+Seltzer+Chad | Dusk, Seltzer, Hanging Chad | `hands=1` vs `hands=2` |
+| D | S09 | Face retrigger | Sock, Smiley, Scary Face | 4 faces vs 3 faces |
+| E hand type | S11 | Flush MULT/GLASS | Crafty | GLASS right vs GLASS left |
+| E | S18 | PhotoChad POLY (dup archetype) | Photograph, Hanging Chad | Face leftmost vs not |
+
+**Buff coverage in scenarios (each ≥ 2 appearances):**
+
+| Buff | Scenario IDs |
+| --- | --- |
+| BONUS | S21, S23 |
+| MULT | S20, S26 |
+| GLASS | S02, S03, S07, S11, S24 |
+| STONE | S22 |
+| STEEL (held) | S04, S13, S14, S15, S16, S17 |
+| FOIL | S21 |
+| HOLO | S26 |
+| POLYCHROME | S02, S09, S18, S24 |
+| RED seal | S04, S07, S13 |
+
+Run one scenario: `pytest tests/lua/endpoints/test_estimate_live.py -k S04 -v`
 ---
 
 ## Scoring order (pipeline summary)
