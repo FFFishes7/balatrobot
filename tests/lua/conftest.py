@@ -330,7 +330,9 @@ def _verify_committed_fixtures() -> None:
     if not missing:
         return
 
-    sample = "\n".join(f"  - {path.relative_to(Path(__file__).parent.parent)}" for path in missing[:5])
+    sample = "\n".join(
+        f"  - {path.relative_to(Path(__file__).parent.parent)}" for path in missing[:5]
+    )
     extra = f"\n  ... and {len(missing) - 5} more" if len(missing) > 5 else ""
     raise pytest.UsageError(
         f"{len(missing)} committed fixture(s) missing.\n"

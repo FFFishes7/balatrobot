@@ -23,7 +23,9 @@ def detect_save_path() -> str | None:
     return None
 
 
-def build_play_envelope(raw: dict[str, Any], actions: list[dict[str, Any]]) -> dict[str, Any]:
+def build_play_envelope(
+    raw: dict[str, Any], actions: list[dict[str, Any]]
+) -> dict[str, Any]:
     state = raw.get("state", "UNKNOWN")
     envelope: dict[str, Any] = {
         "ok": True,
@@ -40,7 +42,9 @@ def build_play_envelope(raw: dict[str, Any], actions: list[dict[str, Any]]) -> d
     return envelope
 
 
-def build_error_envelope(name: str, message: str, *, fmt: str = PLAY_FORMAT) -> dict[str, Any]:
+def build_error_envelope(
+    name: str, message: str, *, fmt: str = PLAY_FORMAT
+) -> dict[str, Any]:
     return {
         "ok": False,
         "format": fmt,

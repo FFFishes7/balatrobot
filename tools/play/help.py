@@ -48,7 +48,10 @@ def hidden_actions() -> list[dict]:
                 "deck": {"type": "string", "enum": decks},
                 "stake": {"type": "string", "enum": stakes},
             },
-            "example": {"command": "start", "params": {"deck": "RED", "stake": "WHITE"}},
+            "example": {
+                "command": "start",
+                "params": {"deck": "RED", "stake": "WHITE"},
+            },
         },
     ]
 

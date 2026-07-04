@@ -1,6 +1,9 @@
 .DEFAULT_GOAL := help
 .PHONY: help install lint format typecheck quality fixtures test all
 
+VENV_PY := $(firstword $(wildcard .venv/Scripts/python.exe) $(wildcard .venv/bin/python))
+PYTHON ?= $(if $(VENV_PY),$(VENV_PY),python)
+
 # Colors (ANSI)
 YELLOW := \033[33m
 GREEN  := \033[32m
@@ -15,7 +18,7 @@ PRINT = printf "%b\n"
 MAX_XDIST ?= 6
 
 # Compute worker count using Python (cross-platform)
-XDIST_WORKERS := $(shell MAX_XDIST=$(MAX_XDIST) python -c "import multiprocessing as mp, os; print(min(mp.cpu_count(), int(os.environ.get('MAX_XDIST', 6))))")
+XDIST_WORKERS := $(shell MAX_XDIST=$(MAX_XDIST) $(PYTHON) -c "import multiprocessing as mp, os; print(min(mp.cpu_count(), int(os.environ.get('MAX_XDIST', 6))))")
 
 help: ## Show this help message
 	@$(PRINT) "$(BLUE)BalatroBot Development Makefile$(RESET)"
@@ -37,15 +40,15 @@ install: ## Install balatrobot and all dependencies (including dev)
 
 lint: ## Run ruff linter (check only)
 	@$(PRINT) "$(YELLOW)Running ruff linter...$(RESET)"
-	ruff check --fix --select I .
-	ruff check --fix .
+	$(PYTHON) -m ruff check --fix --select I .
+	$(PYTHON) -m ruff check --fix .
 
 format: ## Run formatters (ruff, mdformat, stylua)
 	@$(PRINT) "$(YELLOW)Running ruff formatter...$(RESET)"
-	ruff check --select I --fix .
-	ruff format .
+	$(PYTHON) -m ruff check --select I --fix .
+	$(PYTHON) -m ruff format .
 	@$(PRINT) "$(YELLOW)Running mdformat formatter...$(RESET)"
-	mdformat ./docs README.md AGENTS.md .claude/skills/balatrobot/SKILL.md
+	$(PYTHON) -m mdformat --no-validate ./docs README.md AGENTS.md .claude/skills/balatrobot/SKILL.md
 	@if command -v stylua >/dev/null 2>&1; then \
 		$(PRINT) "$(YELLOW)Running stylua formatter...$(RESET)"; \
 		stylua src/lua; \
@@ -55,7 +58,7 @@ format: ## Run formatters (ruff, mdformat, stylua)
 
 typecheck: ## Run type checkers (Python and Lua)
 	@$(PRINT) "$(YELLOW)Running Python type checker...$(RESET)"
-	@ty check
+	@$(PYTHON) -m ty check
 	@if command -v lua-language-server >/dev/null 2>&1 && [ -f .luarc.json ]; then \
 		$(PRINT) "$(YELLOW)Running Lua type checker...$(RESET)"; \
 		lua-language-server --check balatrobot.lua src/lua \
@@ -72,16 +75,16 @@ fixtures: ## Generate and verify test fixtures
 	@balatrobot api health || (echo ''; echo '  Start Balatro in another terminal:'; echo '    balatrobot serve --fast --debug'; echo ''; exit 1)
 	@$(PRINT) "$(GREEN)  Connected!$(RESET)"
 	@$(PRINT) "$(YELLOW)Generating all fixtures...$(RESET)"
-	python tests/fixtures/generate.py
-	python tests/fixtures/verify.py
+	$(PYTHON) tests/fixtures/generate.py
+	$(PYTHON) tests/fixtures/verify.py
 
 test: ## Run all tests
 	@$(PRINT) "$(YELLOW)Running tests/cli with 2 workers...$(RESET)"
-	pytest -n 2 tests/cli
+	$(PYTHON) -m pytest -n 2 tests/cli
 	@$(PRINT) "$(YELLOW)Running production tests/lua with $(XDIST_WORKERS) workers...$(RESET)"
-	pytest -n $(XDIST_WORKERS) tests/lua -m "not debug"
+	$(PYTHON) -m pytest -n $(XDIST_WORKERS) tests/lua -m "not debug"
 	@$(PRINT) "$(YELLOW)Running debug tests/lua...$(RESET)"
-	pytest -n 1 tests/lua -m debug
+	$(PYTHON) -m pytest -n 1 tests/lua -m debug
 
 
 all: lint format typecheck test ## Run all code quality checks and tests

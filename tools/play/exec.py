@@ -76,13 +76,17 @@ def main() -> int:
         print(json.dumps(envelope, ensure_ascii=False))
         return 0
     except json.JSONDecodeError as e:
-        print(json.dumps(build_error_envelope("BAD_REQUEST", str(e)), ensure_ascii=False))
+        print(
+            json.dumps(build_error_envelope("BAD_REQUEST", str(e)), ensure_ascii=False)
+        )
         return 2
     except APIError as e:
         print(json.dumps(build_error_envelope(e.name, e.message), ensure_ascii=False))
         return 1
     except (ValueError, TimeoutError) as e:
-        print(json.dumps(build_error_envelope("BAD_REQUEST", str(e)), ensure_ascii=False))
+        print(
+            json.dumps(build_error_envelope("BAD_REQUEST", str(e)), ensure_ascii=False)
+        )
         return 1
 
 

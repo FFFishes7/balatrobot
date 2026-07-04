@@ -116,7 +116,9 @@ class TestUseEndpoint:
         response = api(client, "add", {"key": "c_judgement"})
         gamestate = assert_gamestate_response(response)
         consumable_index = gamestate["consumables"]["count"] - 1
-        assert gamestate["consumables"]["cards"][consumable_index]["key"] == "c_judgement"
+        assert (
+            gamestate["consumables"]["cards"][consumable_index]["key"] == "c_judgement"
+        )
         assert gamestate["jokers"]["count"] == 5
         assert_error_response(
             api(client, "use", {"consumable": consumable_index}),

@@ -434,7 +434,13 @@ local function extract_joker_stats(card)
       end
     end
     stats.mult = sell_cost
-  elseif name == "Madness" or name == "Vampire" or name == "Constellation" or name == "Campfire" or name == "Glass Joker" then
+  elseif
+    name == "Madness"
+    or name == "Vampire"
+    or name == "Constellation"
+    or name == "Campfire"
+    or name == "Glass Joker"
+  then
     if type(a.x_mult) == "number" and a.x_mult > 1 then
       stats.x_mult = a.x_mult
     end

@@ -24,7 +24,9 @@ class TestEstimateLiveScoring:
         _SCORING_IDS,
         ids=_SCORING_IDS,
     )
-    def test_scoring_joker_matches_play(self, client: httpx.Client, recipe_id: str) -> None:
+    def test_scoring_joker_matches_play(
+        self, client: httpx.Client, recipe_id: str
+    ) -> None:
         recipe = next(r for r in _ALL_RECIPES if r.recipe_id == recipe_id)
         run_live_recipe(client, recipe)
 
@@ -56,7 +58,9 @@ class TestEstimateLiveScenarios:
         _SCENARIO_IDS,
         ids=_SCENARIO_IDS,
     )
-    def test_scenario_order_sensitive(self, client: httpx.Client, scenario_id: str) -> None:
+    def test_scenario_order_sensitive(
+        self, client: httpx.Client, scenario_id: str
+    ) -> None:
         run_scenario(client, get_scenario(scenario_id))
 
     def test_scenario_count(self) -> None:

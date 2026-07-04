@@ -49,16 +49,26 @@ class TestSortEndpoint:
         "mode,check",
         [
             ("rank", lambda gs: _assert_rank_order(_hand_ranks(gs), descending=True)),
-            ("rank-desc", lambda gs: _assert_rank_order(_hand_ranks(gs), descending=True)),
-            ("rank-asc", lambda gs: _assert_rank_order(_hand_ranks(gs), descending=False)),
+            (
+                "rank-desc",
+                lambda gs: _assert_rank_order(_hand_ranks(gs), descending=True),
+            ),
+            (
+                "rank-asc",
+                lambda gs: _assert_rank_order(_hand_ranks(gs), descending=False),
+            ),
             ("suit", lambda gs: _assert_suit_order(_hand_suits(gs), descending=True)),
-            ("suit-desc", lambda gs: _assert_suit_order(_hand_suits(gs), descending=True)),
-            ("suit-asc", lambda gs: _assert_suit_order(_hand_suits(gs), descending=False)),
+            (
+                "suit-desc",
+                lambda gs: _assert_suit_order(_hand_suits(gs), descending=True),
+            ),
+            (
+                "suit-asc",
+                lambda gs: _assert_suit_order(_hand_suits(gs), descending=False),
+            ),
         ],
     )
-    def test_sort_modes(
-        self, client: httpx.Client, mode: str, check: object
-    ) -> None:
+    def test_sort_modes(self, client: httpx.Client, mode: str, check: object) -> None:
         """Test sort endpoint with supported sort modes."""
         load_fixture(client, "sort", "state-SELECTING_HAND")
         response = api(client, "sort", {"mode": mode})

@@ -75,7 +75,9 @@ def _apply_add_flags(params: dict, flags: dict[str, str]) -> None:
         if key == "enhancement":
             val = value.upper()
             if val not in ENHANCEMENTS:
-                raise ValueError(f"enhancement must be one of: {', '.join(sorted(ENHANCEMENTS))}")
+                raise ValueError(
+                    f"enhancement must be one of: {', '.join(sorted(ENHANCEMENTS))}"
+                )
             params["enhancement"] = val
         elif key == "seal":
             val = value.upper()
@@ -87,7 +89,9 @@ def _apply_add_flags(params: dict, flags: dict[str, str]) -> None:
             if val == "HOLOGRAPHIC":
                 val = "HOLO"
             if val not in EDITIONS:
-                raise ValueError(f"edition must be one of: {', '.join(sorted(EDITIONS))}")
+                raise ValueError(
+                    f"edition must be one of: {', '.join(sorted(EDITIONS))}"
+                )
             params["edition"] = "HOLO" if val == "HOLOGRAPHIC" else val
         elif key == "eternal":
             if value.lower() not in ("1", "true", "yes"):

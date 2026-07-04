@@ -67,9 +67,7 @@ return {
     if requires_cards then
       if not G.hand or not G.hand.cards or #G.hand.cards == 0 then
         send_response({
-          message = "Consumable '"
-            .. consumable_card.ability.name
-            .. "' requires card selection and a visible hand",
+          message = "Consumable '" .. consumable_card.ability.name .. "' requires card selection and a visible hand",
           name = BB_ERROR_NAMES.INVALID_STATE,
         })
         return

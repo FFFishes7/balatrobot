@@ -511,9 +511,7 @@ def _blackboard_held_ok(card: dict) -> bool:
 
 def _scoring_enhanced_count(scoring_cards: list[dict]) -> int:
     return sum(
-        1
-        for c in scoring_cards
-        if c.get("enhancement") not in (None, "", "BASE")
+        1 for c in scoring_cards if c.get("enhancement") not in (None, "", "BASE")
     )
 
 
@@ -544,7 +542,11 @@ def _round_aware_card_xmult(card: dict, jokers: list[dict], ctx: dict) -> float:
     xmult = 1.0
     for j in jokers:
         key = j.get("key") or ""
-        if key == "j_ancient" and ctx.get("ancient_suit") and _card_is_suit(card, ctx["ancient_suit"], ctx):
+        if (
+            key == "j_ancient"
+            and ctx.get("ancient_suit")
+            and _card_is_suit(card, ctx["ancient_suit"], ctx)
+        ):
             xmult *= 1.5
         if (
             key == "j_idol"
@@ -713,7 +715,9 @@ def _global_joker_bonus(joker: dict, ctx: dict) -> tuple[int, int, float]:
     if key == "j_acrobat":
         return (0, 0, 3) if ctx.get("hands_left") == 1 else (0, 0, 1)
     if key == "j_card_sharp":
-        ptr = (ctx.get("hands_meta") or {}).get(hand_type, {}).get("played_this_round", 0)
+        ptr = (
+            (ctx.get("hands_meta") or {}).get(hand_type, {}).get("played_this_round", 0)
+        )
         # Game increments played_this_round before scoring; estimate from pre-play state.
         return (0, 0, 3) if ptr >= 1 else (0, 0, 1)
     if key == "j_stuntman":
@@ -788,7 +792,9 @@ def _baseball_react_xmult(jokers: list[dict], triggered_joker: dict) -> float:
     return BASEBALL_UNCOMMON_XMULT**count if count else 1.0
 
 
-def _held_joker_bonus_once(held_cards: list[dict], jokers: list[dict]) -> tuple[int, float]:
+def _held_joker_bonus_once(
+    held_cards: list[dict], jokers: list[dict]
+) -> tuple[int, float]:
     """One pass of held-in-hand joker effects (Baron, Shoot the Moon, Raised Fist)."""
     add_mult = 0
     xmult = 1.0
@@ -850,7 +856,13 @@ def _seltzer_active(joker: dict) -> int:
 
 def _retrigger_config(jokers: list[dict]) -> dict:
     """Build retrigger config from owned jokers."""
-    cfg = {"retrigger_all": 0, "retrigger_leftmost": 0, "retrigger_face": 0, "dusk_owned": False, "hack_owned": False}
+    cfg = {
+        "retrigger_all": 0,
+        "retrigger_leftmost": 0,
+        "retrigger_face": 0,
+        "dusk_owned": False,
+        "hack_owned": False,
+    }
     for i, _j in enumerate(jokers):
         j, key = _effective_joker_at(i, jokers)
         if not j:
