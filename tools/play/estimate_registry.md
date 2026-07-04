@@ -18,7 +18,7 @@ no ad-hoc ports. Cursor rule: `.cursor/rules/estimate-maintenance.mdc` (local).
 
 ## Modeling checklist (required)
 
-Use this checklist for **every** new or changed joker in `estimate.py`. Do not skip steps.
+Use this checklist for **every** new or changed joker in `estimate_jokers.py`. Do not skip steps.
 
 ### 0. Gate — deterministic only?
 
@@ -36,14 +36,14 @@ If any check fails → add to **Never model** below; leave `unmodeled`; **stop**
 
 ### 2. Implement
 
-- [ ] Add logic in `tools/play/estimate.py` (`PER_CARD_JOKERS`, `_global_joker_bonus`, `_retrigger_config`, or `NO_SCORE_JOKERS`).
+- [ ] Add logic in `tools/play/estimate_jokers.py` (`PER_CARD_JOKERS`, `_global_joker_bonus`, `_retrigger_config`, or `NO_SCORE_JOKERS`).
 - [ ] Register key in `_modeled()` or it stays `unmodeled`.
 - [ ] If kicker choice matters (Blackboard): enumerate play sizes; **`indices`** = full `bot.ps1 play` list.
 
 ### 3. Test
 
 - [ ] Unit test in `tests/cli/test_play_helpers.py` (`python -m pytest tests/cli/test_play_helpers.py -k estimate`).
-- [ ] **Integration test** in `tests/lua/endpoints/test_estimate_live.py` — required for new/changed modeled jokers: real gamestate → `estimate(state)` → `play` same `indices` → `round.chips` delta must equal `score`. Unit tests alone are self-referential and do not count as verification.
+- [ ] **Integration test** in `tests/lua/endpoints/test_estimate_live.py` — add a row to `tests/lua/endpoints/estimate_live_recipes.py` (`build_scoring_joker_recipes()`). Parametrized run: real gamestate → `estimate(state)` → `play` same `indices` → `round.chips` delta must equal `score`. Unit tests alone are self-referential and do not count as verification.
 - [ ] Manual fallback when fixture cannot trigger the joker: `$env:BALATROBOT_ALLOW_CHEATS=1` → `estimate` → `play` **same `idx`** → log in live validation table.
 
 ### 4. Document (working tree)
@@ -136,7 +136,7 @@ Cross-checked against `game-dump/card.lua` and/or live `play` validation.
 | `j_abstract` | +3 Mult per Joker (`#G.jokers.cards` with `set == 'Joker'`) | Counts all jokers in slots |
 | `j_mystic_summit` | +15 Mult when `discards_left == 0` | `d_remaining = 0` in config |
 | `j_blackboard` | ×3 Mult when **all cards in `G.hand`** are Spades or Clubs | Unplayed cards only; kicker plays matter |
-| `j_swashbuckler` | +Mult = sum of other jokers' sell values | Uses `value.effect` `当前为+Nm` from gamestate |
+| `j_swashbuckler` | +Mult = sum of other jokers' sell values (`value.stats.mult`) | Global; live `play` validated |
 | `j_blue_joker` | +2 chips × deck remaining | Uses `cards.count` |
 | `j_dusk` | +1 retrigger on every **played** card when last hand | Game checks `hands_left == 0` **during** scoring (after `ease_hands_played(-1)`); API shows `hands_left == 1` before you play → same hand |
 | `j_seltzer` | +1 retrigger all played cards while countdown > 0 | Parsed from effect digits |
@@ -183,8 +183,7 @@ Cross-checked against `game-dump/card.lua` and/or live `play` validation.
 | `j_loyalty_card` | ×4 Mult when `value.stats.loyalty_remaining == loyalty_every` | Global |
 | `j_drivers_license` | ×Mult from `value.stats.x_mult` when tally ≥ 16 | Global |
 | `j_square` / `j_runner` / `j_wee` | +chips from `stats` + in-hand growth (4 cards / Straight / each 2 scored) | Global |
-| `j_trousers` | +Mult from `stats` + 2 on Two Pair / Full House | Global |
-| `j_madness` / `j_vampire` | ×Mult from `stats` (+0.1 per enhanced scoring card for Vampire) | Global |
+| `j_madness` / `j_vampire` | ×Mult from `stats` (+0.1 per enhanced scoring card for Vampire; strips enhancement chips) | Global |
 | `j_obelisk` | ×Mult from `stats` + `obelisk_step` when playing a non-dominant visible hand; resets to ×1 when sole most-played after increment | Global; uses `hands.*.played` + `visible` |
 | `j_blackboard` | Wild held cards count as ♠/♣ for the held-card check | Global |
 | `j_ride_the_bus` | +Mult from `stats` + `ride_the_bus_step` when no scoring face; resets to 0 if any | Global |
@@ -200,6 +199,17 @@ Cross-checked against `game-dump/card.lua` and/or live `play` validation.
 | `j_mime` | Retriggers held card/joker effects once (Steel ×1.5, Baron, …) | Held phase |
 | `j_baseball` | ×1.5 Mult per Baseball when an Uncommon joker fires joker_main | Global; needs `value.rarity` |
 | `j_smeared` | Hearts≈Diamonds, Spades≈Clubs for suit jokers / Flower Pot / Seeing Double | Modifier |
+| `j_popcorn` | +Mult from `value.stats.mult` (starts 20, −4/round) | Global; live `play` validated |
+| `j_ice_cream` | +chips from `value.stats.chips` (starts 100, −5/hand) | Global; live `play` validated |
+| `j_castle` | +chips from `value.stats.chips` when > 0 (discarded `round.castle_suit`) | Global |
+| `j_red_card` | +Mult from `value.stats.mult` (+3 per blind skip) | Global; stats-only (no effect parse) |
+| `j_swashbuckler` | +Mult = sum of other jokers' sell values (`value.stats.mult`) | Global; live `play` validated |
+| `j_fortune_teller` | +Mult = tarot used this run (`stats.mult` or `run.tarot_used`) | Global |
+| `j_trousers` | +Mult from `stats` + 2 when playing Two Pair / Full House / Flush House | Global; live `play` validated |
+| `j_vampire` | ×Mult from `stats` + 0.1 per enhanced scoring card; strips enhancement chip bonuses | Global; live `play` validated |
+| `j_madness` / `j_constellation` / `j_campfire` / `j_glass` | ×Mult from `value.stats.x_mult` when > 1 | Global; stats-only |
+| `j_caino` | ×Mult from `value.stats.caino_xmult` when > 1 | Global; stats-only |
+| `j_yorick` | ×Mult from `value.stats.x_mult` when > 1 | Global; stats-only (grows on discards) |
 
 **Output fields**
 
@@ -213,9 +223,30 @@ Cross-checked against `game-dump/card.lua` and/or live `play` validation.
 Modeled as zero score impact so they do **not** appear in `unmodeled_jokers`:
 
 `j_midas_mask`, `j_delayed_grat`, `j_egg`, `j_gift`, `j_golden`, `j_faceless`,
-`j_cartomancer`, `j_certificate`, `j_mail`, `j_ripple`,
+`j_cartomancer`, `j_certificate`, `j_mail`,
 `j_trading`, `j_riff_raff`, `j_drunkard` (+discard slot only), `j_matador`, `j_cloud_9`,
-`j_hiker`, `j_rough_gem`, `j_golden_ticket`, `j_business`, `j_reserved_parking`, …
+`j_hiker`, `j_rough_gem`, `j_business`, `j_reserved_parking`,
+`j_8_ball`, `j_astronomer`, `j_burglar`, `j_burnt`, `j_chaos`, `j_chicot`,
+`j_credit_card`, `j_diet_cola`, `j_dna`, `j_hallucination`, `j_invisible`,
+`j_juggler`, `j_luchador`, `j_marble`, `j_merry_andy`, `j_mr_bones`, `j_oops`,
+`j_perkeo`, `j_ring_master`, `j_rocket`, `j_satellite`, `j_seance`, `j_sixth_sense`,
+`j_space`, `j_superposition`, `j_ticket`, `j_to_the_moon`, `j_todo_list`,
+`j_troubadour`, `j_turtle_bean`, `j_vagabond`
+
+---
+
+## Player-uncertain (stay `unmodeled`)
+
+Score impact exists but the value is **unknown at glance** (RNG when cards score).
+Do **not** use expected-value approximations — list in `unmodeled_jokers` so agents
+know the estimate is incomplete:
+
+| Key | Why |
+| --- | --- |
+| `j_misprint` | Random +0–23 Mult each hand |
+| `j_bloodstone` | 1-in-2 ×1.5 Mult per scored Heart |
+
+Lucky card enhancement (+20 Mult proc) is likewise not modeled on scoring cards.
 
 ---
 
@@ -225,15 +256,17 @@ Do not add closed-form estimates — keep **`unmodeled`**:
 
 | Key / name | Why |
 | --- | --- |
-| `j_misprint` | Random Mult each hand (`pseudorandom('misprint', min, max)`) |
-| `j_8_ball` | Probability spawn Tarot |
-| `j_bloodstone` | Probability ×Mult |
+| `j_misprint` | Random Mult each hand (see **Player-uncertain** above) |
+| `j_bloodstone` | Probability ×Mult on Hearts (see **Player-uncertain** above) |
+| `j_8_ball` | Probability spawn Tarot (no score — also in no-op list) |
 | `j_lucky_cat`, Lucky Card enhancements | Probability money / Mult |
 | `j_wheel_of_fortune` | Random edition on joker |
-| `j_space` | Chance to level up hand |
-| `j_hack` | Retrigger 2–5 — modeled in `estimate.py` |
+| `j_space` | Chance to level up hand (no score — also in no-op list) |
 | `j_cavendish`, `j_gros_michel` | Destruction RNG (mult while alive is modeled) |
-| Most “1 in N chance” jokers | Any `SMODS.pseudorandom_probability` path |
+| Most other “1 in N chance” jokers | Any `SMODS.pseudorandom_probability` path |
+
+Economy/utility keys with no play-time score are in **Verified no-op** above
+(`j_8_ball`, `j_space`, …) so they do not spam `unmodeled_jokers`.
 
 ---
 
@@ -241,8 +274,19 @@ Do not add closed-form estimates — keep **`unmodeled`**:
 
 *(none — add rows here when a joker needs new API fields)*
 
-Integration tests: `tests/lua/endpoints/test_estimate_live.py` — `add joker` →
+Integration tests: `tests/lua/endpoints/test_estimate_live.py` — parametrized recipes in
+`tests/lua/endpoints/estimate_live_recipes.py` → `add joker` / card buffs →
 `estimate(state)` → `play` same `indices` → `round.chips` delta must match.
+
+**Live coverage (2026-07-04):**
+
+| Suite | Count | Notes |
+| --- | ---: | --- |
+| Scoring jokers | 99 | One recipe per deterministic scoring key (`NO_SCORE` and `j_misprint` / `j_bloodstone` excluded) |
+| Card buffs | 9 | BONUS, MULT, GLASS, STONE, FOIL, HOLO, POLYCHROME, RED seal, STEEL held + Mime |
+| Runtime | ~3 min | Single Balatro instance; do not parallelize with other lua suites (OOM) |
+
+`j_loyalty_card` skips when countdown is not active at glance time.
 ---
 
 ## Scoring order (pipeline summary)

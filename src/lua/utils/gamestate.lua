@@ -292,11 +292,12 @@ local function extract_joker_stats(card)
     end
   end
 
-  if name == "Fortune Teller" and G and G.GAME and G.GAME.consumeable_usage_total then
-    local tarot = G.GAME.consumeable_usage_total.tarot or 0
-    if tarot > 0 then
-      stats.mult = tarot
+  if name == "Fortune Teller" then
+    local tarot = 0
+    if G and G.GAME and G.GAME.consumeable_usage_total then
+      tarot = G.GAME.consumeable_usage_total.tarot or 0
     end
+    stats.mult = tarot
   elseif name == "Steel Joker" then
     local tally = a.steel_tally or 0
     if tally > 0 and type(a.extra) == "number" then
@@ -342,6 +343,39 @@ local function extract_joker_stats(card)
     if type(a.extra.hand_add) == "number" then
       stats.green_hand_add = a.extra.hand_add
     end
+  elseif name == "Ice Cream" and type(a.extra) == "table" and type(a.extra.chips) == "number" then
+    stats.chips = a.extra.chips
+  elseif name == "Castle" and type(a.extra) == "table" and type(a.extra.chips) == "number" and a.extra.chips > 0 then
+    stats.chips = a.extra.chips
+  elseif name == "Popcorn" and type(a.mult) == "number" then
+    stats.mult = a.mult
+  elseif name == "Ceremonial Dagger" and type(a.mult) == "number" and a.mult > 0 then
+    stats.mult = a.mult
+  elseif name == "Red Card" and type(a.mult) == "number" and a.mult > 0 then
+    stats.mult = a.mult
+  elseif name == "Flash Card" and type(a.mult) == "number" then
+    stats.mult = a.mult
+  elseif name == "Spare Trousers" and type(a.mult) == "number" then
+    stats.mult = a.mult
+  elseif name == "Swashbuckler" then
+    local sell_cost = 0
+    if G and G.jokers and G.jokers.cards then
+      for i = 1, #G.jokers.cards do
+        local other = G.jokers.cards[i]
+        if other ~= card and other.area and other.area == G.jokers then
+          sell_cost = sell_cost + (other.sell_cost or 0)
+        end
+      end
+    end
+    stats.mult = sell_cost
+  elseif name == "Madness" or name == "Vampire" or name == "Constellation" or name == "Campfire" or name == "Glass Joker" then
+    if type(a.x_mult) == "number" and a.x_mult > 1 then
+      stats.x_mult = a.x_mult
+    end
+  elseif name == "Caino" and type(a.caino_xmult) == "number" and a.caino_xmult > 1 then
+    stats.caino_xmult = a.caino_xmult
+  elseif name == "Yorick" and type(a.x_mult) == "number" and a.x_mult > 1 then
+    stats.x_mult = a.x_mult
   elseif name == "Loyalty Card" and type(a.extra) == "table" then
     local every = a.extra.every
     if type(every) == "number" then

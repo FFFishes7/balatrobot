@@ -895,6 +895,35 @@ class TestGamestateJokerStats:
         stats = joker["value"]["stats"]
         assert stats["mult"] == 15
 
+    def test_popcorn_exposes_stats_mult(self, client: httpx.Client) -> None:
+        load_fixture(client, "gamestate", "state-SELECTING_HAND")
+        response = api(client, "add", {"key": "j_popcorn"})
+        joker = response["result"]["jokers"]["cards"][-1]
+        assert joker["key"] == "j_popcorn"
+        assert joker["value"]["stats"]["mult"] == 20
+
+    def test_ice_cream_exposes_stats_chips(self, client: httpx.Client) -> None:
+        load_fixture(client, "gamestate", "state-SELECTING_HAND")
+        response = api(client, "add", {"key": "j_ice_cream"})
+        joker = response["result"]["jokers"]["cards"][-1]
+        assert joker["key"] == "j_ice_cream"
+        assert joker["value"]["stats"]["chips"] == 100
+
+    def test_swashbuckler_exposes_sell_sum_as_stats_mult(self, client: httpx.Client) -> None:
+        load_fixture(client, "gamestate", "state-SELECTING_HAND")
+        api(client, "add", {"key": "j_gros_michel"})
+        response = api(client, "add", {"key": "j_swashbuckler"})
+        joker = response["result"]["jokers"]["cards"][-1]
+        assert joker["key"] == "j_swashbuckler"
+        assert joker["value"]["stats"]["mult"] > 0
+
+    def test_fortune_teller_exposes_tarot_count(self, client: httpx.Client) -> None:
+        load_fixture(client, "gamestate", "state-SELECTING_HAND")
+        response = api(client, "add", {"key": "j_fortune_teller"})
+        joker = response["result"]["jokers"]["cards"][-1]
+        assert joker["key"] == "j_fortune_teller"
+        assert joker["value"]["stats"]["mult"] == 0
+
     def test_selzer_exposes_seltzer_remaining(self, client: httpx.Client) -> None:
         load_fixture(client, "gamestate", "state-SELECTING_HAND")
         response = api(client, "add", {"key": "j_selzer"})

@@ -147,7 +147,9 @@ payloads for each.
 - `bot.ps1` — entry point (`glance` / `estimate` / `state` / `query` / `know` / `exec` / `help` + friendly action subcommands)
 - `view.py` — compact summary formatter + `glance` command (`card_label`, `print_summary`)
 - `act.py` — friendly action dispatcher (`build_params` → `execute` → compact summary, `--json` for envelope)
-- `estimate.py` — score estimator (`estimate` command, top playable hands + modeled-joker scoring)
+- `estimate.py` — score estimator CLI + pipeline (`estimate` command)
+- `estimate_jokers.py` — joker registry and scoring effects (add new jokers here)
+- `estimate_constants.py` — rank/chip tables shared by classifier and jokers
 - `estimate_registry.md` — modeled / no-op / never-RNG joker list + source refs
 - `state.py` — full JSON gamestate envelope
 - `query.py` — Layer 2 queries (table output by default; `--json` for raw)

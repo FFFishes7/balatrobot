@@ -2,148 +2,44 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 import httpx
+import pytest
 
-PLAY_ROOT = Path(__file__).resolve().parents[3] / "tools" / "play"
-sys.path.insert(0, str(PLAY_ROOT))
+from tests.lua.endpoints.estimate_live_recipes import all_live_recipes
+from tests.lua.endpoints.estimate_live_runner import run_live_recipe
 
-import estimate  # noqa: E402  # type: ignore[unresolved-import]
-
-from tests.lua.conftest import api, load_fixture
-
-
-def _hand_rank(gs: dict, idx: int) -> str | None:
-    cards = (gs.get("hand") or {}).get("cards") or []
-    if idx >= len(cards):
-        return None
-    return (cards[idx].get("value") or {}).get("rank")
-
-
-def _play_delta(client: httpx.Client, gs: dict, indices: list[int]) -> int:
-    chips_before = gs["round"]["chips"]
-    gs_after = api(client, "play", {"cards": indices})["result"]
-    return gs_after["round"]["chips"] - chips_before
+_ALL_RECIPES = all_live_recipes()
+_SCORING_IDS = [r.recipe_id for r in _ALL_RECIPES if r.check_unmodeled]
+_BUFF_IDS = [r.recipe_id for r in _ALL_RECIPES if not r.check_unmodeled]
 
 
 class TestEstimateLiveScoring:
-    """Estimate top play must match incremental round.chips from play."""
+    """Each deterministic scoring joker: estimate must match play delta."""
 
-    def test_gros_michel_top_matches_play(self, client: httpx.Client) -> None:
-        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
-        gs = api(client, "add", {"key": "j_gros_michel"})["result"]
-        est = estimate.estimate(gs)
-        assert not est["estimate"]["unmodeled_jokers"]
-        top = est["estimate"]["top"][0]
-        delta = _play_delta(client, gs, top["indices"])
-        assert delta == top["score"], (
-            f"estimate={top['score']} actual={delta} "
-            f"hand={top['hand_type']} idx={top['indices']}"
-        )
+    @pytest.mark.parametrize(
+        "recipe_id",
+        _SCORING_IDS,
+        ids=_SCORING_IDS,
+    )
+    def test_scoring_joker_matches_play(self, client: httpx.Client, recipe_id: str) -> None:
+        recipe = next(r for r in _ALL_RECIPES if r.recipe_id == recipe_id)
+        run_live_recipe(client, recipe)
 
-    def test_jolly_pair_matches_play_when_top_is_pair(self, client: httpx.Client) -> None:
-        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
-        gs = api(client, "add", {"key": "j_jolly"})["result"]
-        est = estimate.estimate(gs)
-        assert not est["estimate"]["unmodeled_jokers"]
-        pair_plays = [r for r in est["estimate"]["top"] if r["hand_type"] == "Pair"]
-        assert pair_plays, "fixture hand should offer a Pair line with j_jolly"
-        pick = pair_plays[0]
-        delta = _play_delta(client, gs, pick["indices"])
-        assert delta == pick["score"], (
-            f"estimate={pick['score']} actual={delta} idx={pick['indices']}"
-        )
 
-    def test_runner_top_matches_play(self, client: httpx.Client) -> None:
-        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
-        gs = api(client, "add", {"key": "j_runner"})["result"]
-        est = estimate.estimate(gs)
-        assert not est["estimate"]["unmodeled_jokers"]
-        top = est["estimate"]["top"][0]
-        delta = _play_delta(client, gs, top["indices"])
-        assert delta == top["score"], (
-            f"estimate={top['score']} actual={delta} "
-            f"hand={top['hand_type']} idx={top['indices']}"
-        )
+class TestEstimateLiveCardBuffs:
+    """Deterministic card buffs: estimate must match play delta."""
 
-    def test_wee_joker_pair_of_twos_matches_play(self, client: httpx.Client) -> None:
-        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
-        gs = api(client, "add", {"key": "j_wee"})["result"]
-        twos = [i for i in range((gs.get("hand") or {}).get("count", 0)) if _hand_rank(gs, i) == "2"]
-        assert len(twos) >= 2, "fixture hand needs at least two 2s for wee joker live test"
-        indices = twos[:2]
-        est_line = estimate.score_hand_indices(gs, indices)
-        delta = _play_delta(client, gs, indices)
-        assert delta == est_line["score"], (
-            f"estimate={est_line['score']} actual={delta} idx={indices}"
-        )
+    @pytest.mark.parametrize(
+        "recipe_id",
+        _BUFF_IDS,
+        ids=_BUFF_IDS,
+    )
+    def test_card_buff_matches_play(self, client: httpx.Client, recipe_id: str) -> None:
+        recipe = next(r for r in _ALL_RECIPES if r.recipe_id == recipe_id)
+        run_live_recipe(client, recipe)
 
-    def test_obelisk_top_matches_play(self, client: httpx.Client) -> None:
-        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
-        gs = api(client, "add", {"key": "j_obelisk"})["result"]
-        est = estimate.estimate(gs)
-        assert not est["estimate"]["unmodeled_jokers"]
-        top = est["estimate"]["top"][0]
-        delta = _play_delta(client, gs, top["indices"])
-        assert delta == top["score"], (
-            f"estimate={top['score']} actual={delta} "
-            f"hand={top['hand_type']} idx={top['indices']}"
-        )
+    def test_scoring_joker_count(self) -> None:
+        assert len(_SCORING_IDS) == 99
 
-    def test_ride_the_bus_pair_of_fives_matches_play(self, client: httpx.Client) -> None:
-        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
-        gs = api(client, "add", {"key": "j_ride_the_bus"})["result"]
-        gs = api(client, "add", {"key": "S_5"})["result"]
-        gs = api(client, "add", {"key": "D_5"})["result"]
-        fives = [i for i in range((gs.get("hand") or {}).get("count", 0)) if _hand_rank(gs, i) == "5"]
-        assert len(fives) >= 2, "hand needs two 5s for ride the bus live test"
-        indices = fives[:2]
-        est_line = estimate.score_hand_indices(gs, indices)
-        delta = _play_delta(client, gs, indices)
-        assert delta == est_line["score"], (
-            f"estimate={est_line['score']} actual={delta} idx={indices}"
-        )
-
-    def test_green_joker_pair_matches_play(self, client: httpx.Client) -> None:
-        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
-        gs = api(client, "add", {"key": "j_green_joker"})["result"]
-        gs = api(client, "add", {"key": "S_5"})["result"]
-        gs = api(client, "add", {"key": "D_5"})["result"]
-        fives = [i for i in range((gs.get("hand") or {}).get("count", 0)) if _hand_rank(gs, i) == "5"]
-        assert len(fives) >= 2, "hand needs two 5s for green joker live test"
-        indices = fives[:2]
-        est_line = estimate.score_hand_indices(gs, indices)
-        delta = _play_delta(client, gs, indices)
-        assert delta == est_line["score"], (
-            f"estimate={est_line['score']} actual={delta} idx={indices}"
-        )
-
-    def test_baseball_mime_pair_matches_play(self, client: httpx.Client) -> None:
-        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
-        gs = api(client, "add", {"key": "j_mime"})["result"]
-        gs = api(client, "add", {"key": "j_baseball"})["result"]
-        gs = api(client, "add", {"key": "S_5"})["result"]
-        gs = api(client, "add", {"key": "D_5"})["result"]
-        fives = [i for i in range((gs.get("hand") or {}).get("count", 0)) if _hand_rank(gs, i) == "5"]
-        assert len(fives) >= 2, "hand needs two 5s for baseball+mime live test"
-        indices = fives[:2]
-        est_line = estimate.score_hand_indices(gs, indices)
-        delta = _play_delta(client, gs, indices)
-        assert delta == est_line["score"], (
-            f"estimate={est_line['score']} actual={delta} idx={indices}"
-        )
-        gs = load_fixture(client, "gamestate", "state-SELECTING_HAND")
-        gs = api(client, "add", {"key": "j_jolly"})["result"]
-        gs = api(client, "add", {"key": "j_brainstorm"})["result"]
-        gs = api(client, "add", {"key": "H_J"})["result"]
-        gs = api(client, "add", {"key": "S_J"})["result"]
-        jacks = [i for i in range((gs.get("hand") or {}).get("count", 0)) if _hand_rank(gs, i) == "J"]
-        assert len(jacks) >= 2, "hand needs two Jacks for brainstorm+jolly live test"
-        indices = jacks[:2]
-        est_line = estimate.score_hand_indices(gs, indices)
-        delta = _play_delta(client, gs, indices)
-        assert delta == est_line["score"], (
-            f"estimate={est_line['score']} actual={delta} idx={indices}"
-        )
+    def test_buff_recipe_count(self) -> None:
+        assert len(_BUFF_IDS) == 9
