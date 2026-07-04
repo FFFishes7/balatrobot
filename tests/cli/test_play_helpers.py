@@ -916,3 +916,49 @@ def test_estimate_blue_joker_adds_deck_remaining_chips() -> None:
     assert top[0]["hand_type"] == "Pair"
     assert top[0]["score"] == 268
     assert est["estimate"]["unmodeled_jokers"] == []
+
+
+@pytest.fixture
+def cheats_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BALATROBOT_ALLOW_CHEATS", "1")
+
+
+def test_add_requires_cheats_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BALATROBOT_ALLOW_CHEATS", raising=False)
+    with pytest.raises(ValueError, match="BALATROBOT_ALLOW_CHEATS"):
+        build_params("add", ["joker", "j_dusk"])
+
+
+def test_set_requires_cheats_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BALATROBOT_ALLOW_CHEATS", raising=False)
+    with pytest.raises(ValueError, match="BALATROBOT_ALLOW_CHEATS"):
+        build_params("set", ["hands", "1"])
+
+
+def test_build_params_add_joker(cheats_on: None) -> None:
+    assert build_params("add", ["joker", "j_dusk"]) == {"key": "j_dusk"}
+
+
+def test_build_params_add_card_with_flags(cheats_on: None) -> None:
+    assert build_params("add", ["card", "D_4", "enhancement=MULT", "seal=RED"]) == {
+        "key": "D_4",
+        "enhancement": "MULT",
+        "seal": "RED",
+    }
+
+
+def test_build_params_add_rejects_voucher_kind(cheats_on: None) -> None:
+    with pytest.raises(ValueError, match="joker, card, or consumable"):
+        build_params("add", ["voucher", "v_overstock_norm"])
+
+
+def test_build_params_set_round_fields(cheats_on: None) -> None:
+    assert build_params("set", ["hands_left", "1", "chips", "0"]) == {
+        "hands": 1,
+        "chips": 0,
+    }
+
+
+def test_build_params_set_rejects_money(cheats_on: None) -> None:
+    with pytest.raises(ValueError, match="not allowed"):
+        build_params("set", ["money", "100"])

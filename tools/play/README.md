@@ -67,6 +67,27 @@ No JSON, no quoting — `bot.ps1` forwards these to `act.py`, which parses posit
 | `menu`                         | —                                      | return to main menu                                                                               |
 | `save` / `load` / `screenshot` | `PATH`                                 |                                                                                                   |
 
+### Debug: `add` / `set` (estimate testing only)
+
+Gated by **`BALATROBOT_ALLOW_CHEATS=1`**. Not listed in normal `actions:` during play. Do not use in normal runs.
+
+```powershell
+$env:BALATROBOT_ALLOW_CHEATS = "1"
+.\tools\play\bot.ps1 add joker j_dusk
+.\tools\play\bot.ps1 add card D_4 enhancement=MULT seal=RED
+.\tools\play\bot.ps1 add consumable c_fool
+.\tools\play\bot.ps1 set hands 1 discards 0 chips 0
+```
+
+Restrictions:
+
+- **`add`**: `joker` / `card` / `consumable` only (no voucher/pack — use `exec` for those).
+- **`add card`**: only in `SELECTING_HAND` (API rule); key format `D_4`, `H_A`, …
+- Optional flags: `enhancement=`, `seal=`, `edition=`, `eternal=`, `perishable=`, `rental=`
+- **`set`**: `hands`, `discards`, `chips` only (aliases: `hands_left`, `discards_left`, `score`)
+
+Typical estimate lab: `select` → `add`/`set` → `estimate` → `play` → compare score.
+
 ### `estimate` — score estimator
 
 `bot.ps1 estimate` is only available in `SELECTING_HAND`; other states return `INVALID_STATE`. It enumerates playable hands from the current hand, classifies each poker
@@ -125,6 +146,7 @@ payloads for each.
 - `exec.py` — raw JSON-RPC action, returns envelope
 - `know.py` — knowledge base lookups (preflight table by default; `--json` for raw)
 - `commands.py` — friendly-command → RPC params parser
+- `cheats.py` — gated `add`/`set` parsers (requires `BALATROBOT_ALLOW_CHEATS=1`)
 - `actions.py` — state-aware action list builder
 - `layers.py`, `envelope.py`, `start_options.py`, `bot_client.py` — core logic
 - `serve.example.ps1` — copy to `serve.ps1` and set your Balatro Steam path (`serve.ps1` is gitignored)

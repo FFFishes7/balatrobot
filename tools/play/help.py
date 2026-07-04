@@ -25,15 +25,15 @@ def hidden_actions() -> list[dict]:
         },
         {
             "command": "add",
-            "description": "Add a card (debug/cheat)",
+            "description": "Add joker/card/consumable (debug; requires BALATROBOT_ALLOW_CHEATS=1)",
             "params": {},
-            "example": {"command": "add", "params": {"joker": "j_joker"}},
+            "example": {"command": "add", "params": {"key": "j_dusk"}},
         },
         {
             "command": "set",
-            "description": "Set in-game values (debug/cheat)",
+            "description": "Set hands/discards/chips (debug; requires BALATROBOT_ALLOW_CHEATS=1)",
             "params": {},
-            "example": {"command": "set", "params": {"money": 100}},
+            "example": {"command": "set", "params": {"hands": 1, "chips": 0}},
         },
         {
             "command": "screenshot",

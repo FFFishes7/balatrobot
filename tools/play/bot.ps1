@@ -9,6 +9,8 @@
 #   .\bot.ps1 buy card 0                  # buy shop card / voucher / pack
 #   .\bot.ps1 pack 0                      # take pack card (or: pack skip)
 #   .\bot.ps1 cash_out / next_round / reroll / menu / sort rank / sell joker 0
+# Debug (estimate testing only; requires $env:BALATROBOT_ALLOW_CHEATS=1):
+#   .\bot.ps1 add joker j_dusk | add card D_4 enhancement=MULT | set hands 1 chips 0
 # JSON / advanced:
 #   .\bot.ps1 state                       # full JSON envelope
 #   .\bot.ps1 query deck                  # Layer-2 query

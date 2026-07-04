@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from cheats import build_add_params, build_set_params
+
 NO_PARAMS = frozenset(
     {
         "select",
@@ -110,6 +112,10 @@ def build_params(method: str, args: list[str]) -> dict:
         if len(args) != 1:
             raise ValueError("screenshot needs: PATH")
         return {"path": args[0]}
+    if method == "add":
+        return build_add_params(args)
+    if method == "set":
+        return build_set_params(args)
     raise ValueError(f"unknown method: {method}")
 
 

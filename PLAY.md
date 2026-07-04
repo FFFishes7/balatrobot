@@ -99,6 +99,12 @@ Command arg cheatsheet:
 - `sort MODE` — `rank` / `rank-desc` / `rank-asc` / `suit` / `suit-desc` / `suit-asc` (aliases `r`,`s`,`rd`...).
 - `sell joker|consumable IDX` · `rearrange hand|jokers|consumables FULL_ORDER` (e.g. `rearrange hand 2 0 1 3`).
 
+Debug (estimate testing only — not for normal play; requires `$env:BALATROBOT_ALLOW_CHEATS=1`):
+
+- `add joker j_dusk` · `add card D_4 enhancement=MULT seal=RED` · `add consumable c_fool`
+- `set hands 1 discards 0 chips 0` — only `hands` / `discards` / `chips` (no money/ante)
+- Not listed in normal `actions:`; see `tools/play/README.md` for restrictions
+
 ### Tag semantics (skip rewards)
 
 `blinds.{small,big}.tag_name` / `tag_effect` are **skip rewards** — they only trigger
