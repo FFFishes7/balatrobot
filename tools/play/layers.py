@@ -17,6 +17,7 @@ LAYER1_KEYS_BY_STATE: dict[str, frozenset[str]] = {
         {
             "state",
             "money",
+            "bankrupt_at",
             "round_num",
             "ante_num",
             "deck",
@@ -32,6 +33,7 @@ LAYER1_KEYS_BY_STATE: dict[str, frozenset[str]] = {
         {
             "state",
             "money",
+            "bankrupt_at",
             "round_num",
             "ante_num",
             "deck",
@@ -48,6 +50,7 @@ LAYER1_KEYS_BY_STATE: dict[str, frozenset[str]] = {
         {
             "state",
             "money",
+            "bankrupt_at",
             "round_num",
             "ante_num",
             "deck",
@@ -64,6 +67,7 @@ LAYER1_KEYS_BY_STATE: dict[str, frozenset[str]] = {
         {
             "state",
             "money",
+            "bankrupt_at",
             "round_num",
             "ante_num",
             "deck",
@@ -94,12 +98,25 @@ LAYER1_KEYS_BY_STATE: dict[str, frozenset[str]] = {
         }
     ),
     "GAME_OVER": frozenset(
-        {"state", "won", "seed", "ante_num", "round_num", "run_summary"}
+        {
+            "state",
+            "won",
+            "seed",
+            "ante_num",
+            "round_num",
+            "deck",
+            "stake",
+            "run_summary",
+        }
     ),
 }
 
 RUN_QUERIES = [
-    {"name": "deck", "description": "Full remaining draw pile", "command": "query deck"},
+    {
+        "name": "deck",
+        "description": "Full remaining draw pile",
+        "command": "query deck",
+    },
     {
         "name": "hands",
         "description": "Poker hand level table",

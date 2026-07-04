@@ -27,20 +27,39 @@ See the root [README](../../README.md#local-play) and [`PLAY.md`](../../PLAY.md)
 
 ### What `glance` shows
 
-- **Header:** `state`, `ante`, `round`, `money`, `deck`, `stake`.
+- **Header:** `state`, `ante`, `round`, `money`, `deck`, `stake`. In **SHOP** with
+    Credit Card (`bankrupt_at != 0`), also **`buy_power=`** (`money - bankrupt_at`).
+- **MENU:** `→ start DECK STAKE [SEED]` plus compact `decks:` / `stakes:` lists; `actions:` with friendly examples (e.g. `start RED WHITE` from envelope example).
 - **BLIND_SELECT:** all three blinds (small/big/boss) with target, status, boss
     effect, and any skip-reward tag; the selectable blind is marked `(current, select)`.
-- **SELECTING_HAND:** `hands_left` / `discards_left` / `score=X/target`, the
-    current blind, jokers and consumables with slot count `jokers (N/5)`, the hand
-    (with modifier tags — see below), an `economy:` line when interest / Delayed
-    Gratification / **rental** pending, and the `actions:` line.
+- **SELECTING_HAND:** `hands_left` / `discards_left` / `score=X/target` with
+    **`need=N`** when below the blind target or **`beaten`** when at/above it; the
+    current blind (boss `effect=` only — no skip-reward tag while playing), jokers
+    and consumables with slot count `jokers (N/5)`, the hand (with modifier tags —
+    see below), an `economy:` line when interest / Delayed Gratification /
+    **rental** pending, and the `actions:` line.
+- **SHOP:** each shop row shows price plus **`[ok]`**, **`[need $N]`**, or
+    **`[slots full]`** (joker/consumable slots full — same check as `buy.lua`).
+    Reroll uses affordability only. Header may include **`buy_power=`** when
+    `bankrupt_at != 0`. Unaffordable buys show **`(unaffordable)`**; slot-blocked
+    buys show **`(slots full)`** (takes priority over unaffordable).
+- **SMODS_BOOSTER_OPENED:** pack rows show target hints such as **`(needs 1-2 targets)`**
+    from API `target_min`/`target_max` (Tarot/Spectral).
+- **GAME_OVER:** restart hint uses the ended run's deck/stake, e.g.
+    **`→ menu  then  start RED WHITE [SEED]`**.
+- **ROUND_EVAL:** `round won, score=…` plus a **`pending:`** line (hands-left $,
+    interest, Delayed Gratification) and **`→ cash_out`**.
+- **Transient states** (`HAND_PLAYED`, `DRAW_TO_HAND`, `NEW_ROUND`, `PLAY_TAROT`):
+    **`→ transient: wait for stable state, then glance again`** and `actions: (none)`.
+- **`actions:` folding:** consecutive `sell joker 0`, `sell joker 1`, … collapse to
+    `sell joker 0..N` (same for consumables / consecutive `buy card` indices). Long
+    lists prioritize play/discard/select/cash_out/buy/pack/menu before truncating.
 - **Card modifier tags** (so buffs are visible without a separate query):
     `e:Mult`, `e:Bonus`, `e:Glass`, `e:Stone`, `e:Wild`, `e:Lucky`, `e:Gold`,
     `e:Steel` (enhancement); `d:Foil`, `d:Holo`, `d:Poly`, `d:Neg` (edition);
     `s:Red`, `s:Blue`, `s:Gold`, `s:Purple` (seal). Example: `4♦[e:Mult,s:Red]`.
     Debuffed cards are wrapped in parentheses: `(7♣)`.
-- **Joker / consumable stickers** inline: `[0] (perishable 3r) (rental -$1/round)
-    (+10 mult) Holographic Jolly Joker — ...`. Shop rows use the same sticker
+- **Joker / consumable stickers** inline: `[0] (perishable 3r) (rental -$1/round)   (+10 mult) Holographic Jolly Joker — ...`. Shop rows use the same sticker
     prefix when a card has edition/perishable/rental.
 - **Joker editions** are decoded inline: `[0] (+10 mult) Holographic Joker — ...`.
     Joker-internal category codes (e.g. `SUIT MULT`) are dropped; the effect text
@@ -141,8 +160,9 @@ Anything else → `unmodeled` (treat score as lower bound only).
 
 *(Optional, not recommended: `estimate` — partial score model for dev/regression only.)*
 
-Every `glance` / action output ends with an `actions:` line listing the
-commands valid in the current state. The full envelope (from `state` /
+Every `glance` / action output ends with an `actions:` line listing **friendly
+subcommand examples** (e.g. `buy card 0 · buy pack 1 · next_round`), deduplicated
+and truncated if very long. The full envelope (from `state` /
 `exec` / `<action> --json`) includes an `actions[]` array with `example`
 payloads for each.
 
@@ -164,4 +184,3 @@ payloads for each.
 - `actions.py` — state-aware action list builder
 - `layers.py`, `envelope.py`, `start_options.py`, `bot_client.py` — core logic
 - `serve.example.ps1` — copy to `serve.ps1` and set your Balatro Steam path (`serve.ps1` is gitignored)
-

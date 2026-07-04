@@ -336,6 +336,8 @@ Buy a card, voucher, or pack from the shop.
 
 **Required State:** `SHOP`
 
+**Affordability:** A purchase succeeds only when `cost <= money - bankrupt_at` (see [`GameState`](#gamestate-schema)). Credit Card and similar jokers raise `bankrupt_at`, so raw `money` can overstate what you can spend.
+
 **Example:**
 
 ```bash
@@ -427,6 +429,8 @@ Reroll the shop items (costs money).
 **Returns:** [GameState](#gamestate-schema)
 
 **Errors:** `INVALID_STATE`, `NOT_ALLOWED`
+
+**Affordability:** Same as [`buy`](#buy) — reroll cost must be `<= money - bankrupt_at`.
 
 **Required State:** `SHOP`
 
@@ -726,6 +730,7 @@ The complete game state returned by most methods.
   "round_num": 1,
   "ante_num": 1,
   "money": 4,
+  "bankrupt_at": 0,
   "deck": "RED",
   "stake": "WHITE",
   "seed": "ABC123",
@@ -747,6 +752,13 @@ The complete game state returned by most methods.
 ```
 
 `run` ([RunCounters](#runcounters)) is present during an active run. Joker cards may include `value.stats` ([JokerStats](#jokerstats)) and `value.rarity` — see [Joker card example](#card).
+
+| Field         | Type    | Description                                                                                                                                              |
+| ------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `money`       | integer | Current dollars                                                                                                                                          |
+| `bankrupt_at` | integer | Credit Card and similar effects can make this negative; **buying power** is `money - bankrupt_at` (same check [`buy`](#buy) and [`reroll`](#reroll) use) |
+
+`bankrupt_at` is present during an active run (omitted on `MENU`).
 
 ### Area
 
@@ -842,6 +854,8 @@ All other fields use placeholder values: empty `key`/`label`, `set: "DEFAULT"`, 
 ```
 
 `value.stats` fields vary by joker (e.g. `x_mult`, `chips`, `loyalty_remaining`, `caino_xmult`). See [JokerStats](#jokerstats). `value.rarity` is one of `COMMON`, `UNCOMMON`, `RARE`, `LEGENDARY`.
+
+Consumables (Tarot/Planet/Spectral) may include `value.target_min` / `value.target_max` (hand cards required when using or selecting from a pack) or `value.requires_joker` (e.g. Ankh). Derived from game `G.P_CENTERS` config — same rules as the [`pack`](#pack) endpoint.
 
 **Hidden (face-down) card example:**
 

@@ -133,6 +133,13 @@ class TestGamestateTopLevel:
         response = api(client, "set", {"money": 42})
         assert response["result"]["seed"] == "TEST123"
 
+    def test_bankrupt_at_extraction(self, client: httpx.Client) -> None:
+        """Test bankrupt_at field is exposed during an active run."""
+        fixture_name = "state-BLIND_SELECT--deck-BLUE--stake-RED"
+        gamestate = load_fixture(client, "gamestate", fixture_name)
+        assert "bankrupt_at" in gamestate
+        assert isinstance(gamestate["bankrupt_at"], int)
+
     def test_ante_num_extractions(self, client: httpx.Client) -> None:
         """Test ante_num field after using `set` to modify it."""
         fixture_name = "state-BLIND_SELECT--deck-BLUE--stake-RED"
@@ -837,6 +844,17 @@ class TestGamestateCards:
                 == "(lvl.1) Level up High Card +1 Mult and +10 chips"
             )
 
+        def test_card_value_consumable_target_requirements(
+            self, client: httpx.Client
+        ) -> None:
+            """Test tarot target_min/target_max from G.P_CENTERS (Magician)."""
+            fixture_name = "state-SELECTING_HAND"
+            load_fixture(client, "gamestate", fixture_name)
+            response = api(client, "add", {"key": "c_magician"})
+            tarot = response["result"]["consumables"]["cards"][0]
+            assert tarot["value"].get("target_min") == 1
+            assert tarot["value"].get("target_max") == 2
+
     class TestGamestateCardModifier:
         """Test gamestate card modifier."""
 
@@ -909,7 +927,9 @@ class TestGamestateJokerStats:
         assert joker["key"] == "j_ice_cream"
         assert joker["value"]["stats"]["chips"] == 100
 
-    def test_swashbuckler_exposes_sell_sum_as_stats_mult(self, client: httpx.Client) -> None:
+    def test_swashbuckler_exposes_sell_sum_as_stats_mult(
+        self, client: httpx.Client
+    ) -> None:
         load_fixture(client, "gamestate", "state-SELECTING_HAND")
         api(client, "add", {"key": "j_gros_michel"})
         response = api(client, "add", {"key": "j_swashbuckler"})
@@ -943,7 +963,21 @@ class TestGamestateJokerStats:
         gamestate = load_fixture(client, "gamestate", "state-SELECTING_HAND")
         rnd = gamestate["round"]
         assert rnd.get("ancient_suit") in {"H", "D", "C", "S"}
-        assert rnd.get("idol_rank") in {"A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"}
+        assert rnd.get("idol_rank") in {
+            "A",
+            "K",
+            "Q",
+            "J",
+            "T",
+            "9",
+            "8",
+            "7",
+            "6",
+            "5",
+            "4",
+            "3",
+            "2",
+        }
         assert rnd.get("idol_suit") in {"H", "D", "C", "S"}
 
     def test_loyalty_card_exposes_loyalty_stats(self, client: httpx.Client) -> None:

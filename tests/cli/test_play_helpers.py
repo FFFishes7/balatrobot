@@ -13,9 +13,13 @@ import sys  # noqa: E402
 sys.path.insert(0, str(PLAY_ROOT))
 
 import act  # noqa: E402  # type: ignore[unresolved-import]
-from actions import build_actions  # noqa: E402  # type: ignore[unresolved-import]
+from actions import (  # noqa: E402  # type: ignore[unresolved-import]
+    build_actions,
+    consumable_target_hint,
+)
 from commands import (  # noqa: E402  # type: ignore[unresolved-import]
     build_params,
+    format_friendly_action,
     normalize_sort_mode,
 )
 from envelope import (  # noqa: E402  # type: ignore[unresolved-import]
@@ -30,7 +34,12 @@ from start_options import (  # noqa: E402  # type: ignore[unresolved-import]
     build_stakes,
 )
 from view import (  # noqa: E402  # type: ignore[unresolved-import]
+    _blind_line,
+    _blinds_block,
+    _compress_actions,
+    _header,
     _joker_line,
+    _round_line,
     card_label,
     print_summary,
 )
@@ -345,7 +354,229 @@ def test_print_summary_menu(capsys: pytest.CaptureFixture[str]) -> None:
     )
     out = capsys.readouterr().out
     assert "state=MENU" in out
-    assert "start RED WHITE" in out
+    assert "→ start DECK STAKE [SEED]" in out
+    assert "decks:" in out
+    assert "stakes:" in out
+    assert "actions:" in out
+    assert "→ start RED WHITE" not in out.split("actions:")[0]
+
+
+def test_format_friendly_action_buy() -> None:
+    action = {
+        "command": "buy",
+        "example": {"command": "buy", "params": {"card": 0}},
+    }
+    assert format_friendly_action(action) == "buy card 0"
+
+
+def test_format_friendly_action_play() -> None:
+    action = {
+        "command": "play",
+        "example": {"command": "play", "params": {"cards": [0, 1, 2, 3, 4]}},
+    }
+    assert format_friendly_action(action) == "play 0 1 2 3 4"
+
+
+def test_blind_line_no_skip_tag_in_hand() -> None:
+    blind = {
+        "name": "Small Blind",
+        "status": "CURRENT",
+        "score": 300,
+        "tag_name": "Investment Tag",
+        "tag_effect": "gain $25",
+    }
+    line = _blind_line(blind, show_skip_tag=False)
+    assert "skip reward" not in line
+    assert "blind=Small Blind" in line
+
+
+def test_blinds_block_defeated_no_skip_tag() -> None:
+    raw = {
+        "state": "BLIND_SELECT",
+        "blinds": {
+            "small": {
+                "status": "DEFEATED",
+                "name": "Small Blind",
+                "score": 300,
+                "tag_name": "Investment Tag",
+                "tag_effect": "gain $25",
+            },
+            "big": {"status": "CURRENT", "name": "Big Blind", "score": 450},
+            "boss": {"status": "UPCOMING", "name": "The Hook", "score": 600},
+        },
+    }
+    out = _blinds_block(raw)
+    assert "small:" in out
+    assert "skip reward" not in out.split("big:")[0]
+    assert "skip reward" not in out.split("boss:")[0]
+
+
+def test_round_line_need() -> None:
+    state = {"round": {"hands_left": 1, "discards_left": 0, "chips": 406}}
+    assert "need=194" in _round_line(state, target=600)
+    state2 = {"round": {"hands_left": 0, "discards_left": 0, "chips": 650}}
+    assert "beaten" in _round_line(state2, target=600)
+
+
+def test_shop_affordability(capsys: pytest.CaptureFixture[str]) -> None:
+    raw = {
+        "state": "SHOP",
+        "money": 3,
+        "bankrupt_at": 0,
+        "round_num": 1,
+        "ante_num": 1,
+        "deck": "RED",
+        "stake": "WHITE",
+        "round": {"reroll_cost": 5},
+        "cards": {"count": 44, "limit": 52},
+        "jokers": {"count": 0, "limit": 5, "cards": []},
+        "consumables": {"count": 0, "limit": 2, "cards": []},
+        "shop": {
+            "count": 1,
+            "limit": 2,
+            "cards": [
+                {
+                    "label": "Cheap",
+                    "key": "j_joker",
+                    "set": "JOKER",
+                    "cost": {"buy": 2},
+                    "value": {"effect": "cheap"},
+                },
+                {
+                    "label": "Pricey",
+                    "key": "j_jolly",
+                    "set": "JOKER",
+                    "cost": {"buy": 6},
+                    "value": {"effect": "pricey"},
+                },
+            ],
+        },
+        "vouchers": {"count": 0, "limit": 1, "cards": []},
+        "packs": {"count": 0, "limit": 2, "cards": []},
+    }
+    print_summary(_envelope(raw))
+    out = capsys.readouterr().out
+    assert "shop[0]" in out and "[ok]" in out
+    assert "shop[1]" in out and "[need $3]" in out
+    assert "reroll=$5 [need $2]" in out
+    assert "(unaffordable)" in out
+
+
+def test_shop_slots_full_joker(capsys: pytest.CaptureFixture[str]) -> None:
+    jokers = [
+        {"label": f"J{i}", "key": f"j_j{i}", "value": {"effect": ""}} for i in range(5)
+    ]
+    raw = {
+        "state": "SHOP",
+        "money": 20,
+        "bankrupt_at": 0,
+        "round_num": 1,
+        "ante_num": 1,
+        "deck": "RED",
+        "stake": "WHITE",
+        "round": {"reroll_cost": 5},
+        "jokers": {"count": 5, "limit": 5, "cards": jokers},
+        "consumables": {"count": 0, "limit": 2, "cards": []},
+        "shop": {
+            "count": 1,
+            "limit": 2,
+            "cards": [
+                {
+                    "label": "New Joker",
+                    "key": "j_greedy",
+                    "set": "JOKER",
+                    "cost": {"buy": 4},
+                    "value": {"effect": "full slots"},
+                },
+            ],
+        },
+        "vouchers": {"count": 0, "limit": 1, "cards": []},
+        "packs": {"count": 0, "limit": 2, "cards": []},
+    }
+    print_summary(_envelope(raw))
+    out = capsys.readouterr().out
+    assert "jokers (5/5)" in out
+    assert "shop[0]" in out and "[slots full]" in out
+    assert "(slots full)" in out
+    assert "buy card 0 (unaffordable)" not in out
+
+
+def test_actions_slots_full_over_unaffordable() -> None:
+    raw = {
+        "state": "SHOP",
+        "money": 1,
+        "bankrupt_at": 0,
+        "round": {"reroll_cost": 5},
+        "jokers": {
+            "count": 5,
+            "limit": 5,
+            "cards": [{"label": "J", "key": "j_joker", "value": {"effect": ""}}] * 5,
+        },
+        "consumables": {"count": 0, "limit": 2, "cards": []},
+        "shop": {
+            "count": 1,
+            "limit": 2,
+            "cards": [
+                {
+                    "label": "Blocked",
+                    "key": "j_greedy",
+                    "set": "JOKER",
+                    "cost": {"buy": 10},
+                    "value": {"effect": ""},
+                },
+            ],
+        },
+        "vouchers": {"count": 0, "limit": 1, "cards": []},
+        "packs": {"count": 0, "limit": 2, "cards": []},
+    }
+    buy_action = next(a for a in build_actions(raw) if a["command"] == "buy")
+    assert buy_action.get("slots_full") is True
+    assert "affordable" not in buy_action
+
+
+def test_header_buy_power() -> None:
+    state = {
+        "state": "SHOP",
+        "money": 8,
+        "bankrupt_at": -5,
+        "ante_num": 2,
+        "round_num": 5,
+        "deck": "RED",
+        "stake": "WHITE",
+    }
+    header = _header(state)
+    assert "buy_power=13" in header
+    assert _header({**state, "bankrupt_at": 0, "state": "SHOP"}) == (
+        "state=SHOP ante=2 round=5 money=8 deck=RED stake=WHITE"
+    )
+
+
+def test_pack_target_hint_range() -> None:
+    card = {
+        "key": "c_magician",
+        "value": {"target_min": 1, "target_max": 2, "effect": ""},
+    }
+    assert consumable_target_hint(card) == "needs 1-2 targets"
+    assert (
+        consumable_target_hint({"value": {"target_min": 1, "target_max": 1}})
+        == "needs 1 target"
+    )
+    assert (
+        consumable_target_hint({"value": {"requires_joker": True}})
+        == "needs joker target"
+    )
+
+
+def test_actions_compress_sell_jokers() -> None:
+    seen = ["sell joker 0", "sell joker 1", "sell joker 2", "play 0 1"]
+    assert _compress_actions(seen) == ["sell joker 0..2", "play 0 1"]
+
+
+def test_print_summary_transient(capsys: pytest.CaptureFixture[str]) -> None:
+    print_summary(_envelope({"state": "HAND_PLAYED"}))
+    out = capsys.readouterr().out
+    assert "transient" in out
+    assert "glance again" in out
 
 
 def test_print_summary_blind_select(capsys: pytest.CaptureFixture[str]) -> None:
@@ -483,12 +714,12 @@ def test_print_summary_selecting_hand(capsys: pytest.CaptureFixture[str]) -> Non
     assert "state=SELECTING_HAND" in out
     assert "hands_left=3" in out
     assert "discards_left=4" in out
-    assert "score=180/300" in out
+    assert "score=180/300 need=120" in out
     assert "K♠" in out
     assert "??" in out
     assert "jokers (1/5)" in out
     assert "Seltzer" in out
-    assert "actions: play discard sort" in out
+    assert "actions: play 0 1 2 3 4 · discard 0 1 · sort rank" in out
 
 
 def test_print_summary_round_eval(capsys: pytest.CaptureFixture[str]) -> None:
@@ -516,6 +747,8 @@ def test_print_summary_round_eval(capsys: pytest.CaptureFixture[str]) -> None:
     print_summary(_envelope(raw))
     out = capsys.readouterr().out
     assert "state=ROUND_EVAL" in out
+    assert "pending:" in out
+    assert "→ cash_out" in out
     assert "cash_out" in out
 
 
@@ -561,11 +794,8 @@ def test_print_summary_shop(capsys: pytest.CaptureFixture[str]) -> None:
     out = capsys.readouterr().out
     assert "state=SHOP" in out
     assert "shop[0] Joker" in out
-    assert "pack[0] Arcana Pack" in out
-    assert "actions:" in out
-
-
-def test_print_summary_shop_shows_joker_edition(capsys: pytest.CaptureFixture[str]) -> None:
+    assert "[ok]" in out
+    assert "actions: buy card 0 · buy pack 0 · reroll · next_round" in out
     raw = {
         "state": "SHOP",
         "money": 10,
@@ -620,7 +850,11 @@ def test_print_summary_pack_opened(capsys: pytest.CaptureFixture[str]) -> None:
                 {
                     "label": "The Magician",
                     "key": "c_magician",
-                    "value": {"effect": "convert 2 cards"},
+                    "value": {
+                        "effect": "convert 2 cards",
+                        "target_min": 1,
+                        "target_max": 2,
+                    },
                 },
                 {
                     "label": "The Fool",
@@ -639,13 +873,17 @@ def test_print_summary_pack_opened(capsys: pytest.CaptureFixture[str]) -> None:
     out = capsys.readouterr().out
     assert "state=SMODS_BOOSTER_OPENED" in out
     assert "The Magician" in out
-    assert "actions: pack" in out
+    assert "needs 1-2 targets" in out
+    assert "pack 0" in out
+    assert "pack skip" in out
 
 
 def test_print_summary_game_over(capsys: pytest.CaptureFixture[str]) -> None:
     raw = {
         "state": "GAME_OVER",
         "won": False,
+        "deck": "RED",
+        "stake": "WHITE",
         "seed": "ABC",
         "ante_num": 3,
         "round_num": 7,
@@ -658,7 +896,9 @@ def test_print_summary_game_over(capsys: pytest.CaptureFixture[str]) -> None:
     print_summary(_envelope(raw))
     out = capsys.readouterr().out
     assert "GAME_OVER" in out
-    assert "menu" in out
+    assert "money=None" not in out
+    assert "→ menu  then  start RED WHITE [SEED]" in out
+    assert "actions: menu" in out
 
 
 def test_print_summary_error_envelope(capsys: pytest.CaptureFixture[str]) -> None:
@@ -977,7 +1217,11 @@ def test_estimate_blackboard_includes_kicker_in_play_indices() -> None:
         {"label": "Blackboard", "key": "j_blackboard", "value": {}},
         {"label": "Riff-raff", "key": "j_riff_raff", "value": {}},
         {"label": "Mystic Summit", "key": "j_mystic_summit", "value": {}},
-        {"label": "Swashbuckler", "key": "j_swashbuckler", "value": {"stats": {"mult": 12}}},
+        {
+            "label": "Swashbuckler",
+            "key": "j_swashbuckler",
+            "value": {"stats": {"mult": 12}},
+        },
         {"label": "Dusk", "key": "j_dusk", "value": {}},
     ]
     est = estimate.estimate(
@@ -1008,7 +1252,11 @@ def test_estimate_blue_joker_adds_deck_remaining_chips() -> None:
         ("2", "S", {}),
     )
     jokers = [
-        {"label": "Blue Joker", "key": "j_blue_joker", "value": {"effect": "+104 chips"}}
+        {
+            "label": "Blue Joker",
+            "key": "j_blue_joker",
+            "value": {"effect": "+104 chips"},
+        }
     ]
     est = estimate.estimate(_est_state(hand, jokers=jokers, deck_remaining=52))
     top = est["estimate"]["top"]
@@ -1124,8 +1372,20 @@ def test_estimate_card_sharp_on_second_pair_of_round() -> None:
     )
     jokers = [{"label": "Card Sharp", "key": "j_card_sharp", "value": {}}]
     hands = {
-        "Pair": {"order": 11, "chips": 10, "mult": 2, "level": 1, "played_this_round": 1},
-        "High Card": {"order": 12, "chips": 5, "mult": 1, "level": 1, "played_this_round": 0},
+        "Pair": {
+            "order": 11,
+            "chips": 10,
+            "mult": 2,
+            "level": 1,
+            "played_this_round": 1,
+        },
+        "High Card": {
+            "order": 12,
+            "chips": 5,
+            "mult": 1,
+            "level": 1,
+            "played_this_round": 0,
+        },
     }
     est = estimate.estimate(_est_state(hand, jokers=jokers, hands_levels=hands))
     top = est["estimate"]["top"]
@@ -1433,7 +1693,9 @@ def test_estimate_photochad_glass_red_no_red_lower() -> None:
         ("2", "D", {}),
     )
     optimal = estimate.score_hand_indices(_est_state(hand_red, jokers=jokers), [0, 1])
-    suboptimal = estimate.score_hand_indices(_est_state(hand_plain, jokers=jokers), [0, 1])
+    suboptimal = estimate.score_hand_indices(
+        _est_state(hand_plain, jokers=jokers), [0, 1]
+    )
     assert suboptimal["score"] < optimal["score"]
     assert optimal["score"] == 30720
     assert suboptimal["score"] == 6400
@@ -1449,14 +1711,23 @@ def test_estimate_mime_holo_adds_joker_main_mult() -> None:
     )
     with_holo = [
         {"label": "Jolly Joker", "key": "j_jolly", "value": {}},
-        {"label": "Mime", "key": "j_mime", "value": {}, "modifier": {"edition": "HOLO"}},
+        {
+            "label": "Mime",
+            "key": "j_mime",
+            "value": {},
+            "modifier": {"edition": "HOLO"},
+        },
     ]
     plain = [
         {"label": "Jolly Joker", "key": "j_jolly", "value": {}},
         {"label": "Mime", "key": "j_mime", "value": {}},
     ]
-    holo_score = estimate.score_hand_indices(_est_state(hand, jokers=with_holo), [0, 1])["score"]
-    plain_score = estimate.score_hand_indices(_est_state(hand, jokers=plain), [0, 1])["score"]
+    holo_score = estimate.score_hand_indices(
+        _est_state(hand, jokers=with_holo), [0, 1]
+    )["score"]
+    plain_score = estimate.score_hand_indices(_est_state(hand, jokers=plain), [0, 1])[
+        "score"
+    ]
     assert holo_score > plain_score
     assert holo_score - plain_score == 200  # +10 mult on mime slot * 20 chips
 
@@ -1473,7 +1744,12 @@ def test_estimate_mime_holo_held_steel_not_multiplied() -> None:
     )
     with_holo = [
         {"label": "Baron", "key": "j_baron", "value": {}},
-        {"label": "Mime", "key": "j_mime", "value": {}, "modifier": {"edition": "HOLO"}},
+        {
+            "label": "Mime",
+            "key": "j_mime",
+            "value": {},
+            "modifier": {"edition": "HOLO"},
+        },
     ]
     plain = [
         {"label": "Baron", "key": "j_baron", "value": {}},
@@ -1746,7 +2022,9 @@ def test_estimate_square_joker_four_card_play() -> None:
         ("5", "D", {}),
         ("3", "C", {}),
     )
-    jokers = [{"label": "Square Joker", "key": "j_square", "value": {"stats": {"chips": 8}}}]
+    jokers = [
+        {"label": "Square Joker", "key": "j_square", "value": {"stats": {"chips": 8}}}
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
@@ -1796,7 +2074,13 @@ def test_estimate_trousers_two_pair_growth() -> None:
         ("5", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Spare Trousers", "key": "j_trousers", "value": {"stats": {"mult": 4}}}]
+    jokers = [
+        {
+            "label": "Spare Trousers",
+            "key": "j_trousers",
+            "value": {"stats": {"mult": 4}},
+        }
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Two Pair"
@@ -1812,7 +2096,9 @@ def test_estimate_vampire_enhanced_scoring_cards() -> None:
         ("3", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Vampire", "key": "j_vampire", "value": {"stats": {"x_mult": 1.2}}}]
+    jokers = [
+        {"label": "Vampire", "key": "j_vampire", "value": {"stats": {"x_mult": 1.2}}}
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
@@ -1859,11 +2145,41 @@ def test_estimate_obelisk_grows_off_most_played_hand() -> None:
         ("3", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Obelisk", "key": "j_obelisk", "value": {"stats": {"x_mult": 1.4, "obelisk_step": 0.2}}}]
+    jokers = [
+        {
+            "label": "Obelisk",
+            "key": "j_obelisk",
+            "value": {"stats": {"x_mult": 1.4, "obelisk_step": 0.2}},
+        }
+    ]
     hands = {
-        "Pair": {"order": 11, "chips": 10, "mult": 2, "level": 1, "played": 4, "played_this_round": 0, "visible": True},
-        "Flush": {"order": 7, "chips": 35, "mult": 4, "level": 1, "played": 5, "played_this_round": 0, "visible": True},
-        "High Card": {"order": 12, "chips": 5, "mult": 1, "level": 1, "played": 2, "played_this_round": 0, "visible": True},
+        "Pair": {
+            "order": 11,
+            "chips": 10,
+            "mult": 2,
+            "level": 1,
+            "played": 4,
+            "played_this_round": 0,
+            "visible": True,
+        },
+        "Flush": {
+            "order": 7,
+            "chips": 35,
+            "mult": 4,
+            "level": 1,
+            "played": 5,
+            "played_this_round": 0,
+            "visible": True,
+        },
+        "High Card": {
+            "order": 12,
+            "chips": 5,
+            "mult": 1,
+            "level": 1,
+            "played": 2,
+            "played_this_round": 0,
+            "visible": True,
+        },
     }
     state = _est_state(hand, jokers=jokers, hands_levels=hands)
     est = estimate.estimate(state)
@@ -1882,11 +2198,38 @@ def test_estimate_obelisk_resets_on_most_played_hand() -> None:
         ("3", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Obelisk", "key": "j_obelisk", "value": {"stats": {"x_mult": 1.8, "obelisk_step": 0.2}}}]
+    jokers = [
+        {
+            "label": "Obelisk",
+            "key": "j_obelisk",
+            "value": {"stats": {"x_mult": 1.8, "obelisk_step": 0.2}},
+        }
+    ]
     hands = {
-        "Pair": {"order": 11, "chips": 10, "mult": 2, "level": 1, "played": 10, "played_this_round": 0},
-        "Flush": {"order": 7, "chips": 35, "mult": 4, "level": 1, "played": 3, "played_this_round": 0},
-        "High Card": {"order": 12, "chips": 5, "mult": 1, "level": 1, "played": 2, "played_this_round": 0},
+        "Pair": {
+            "order": 11,
+            "chips": 10,
+            "mult": 2,
+            "level": 1,
+            "played": 10,
+            "played_this_round": 0,
+        },
+        "Flush": {
+            "order": 7,
+            "chips": 35,
+            "mult": 4,
+            "level": 1,
+            "played": 3,
+            "played_this_round": 0,
+        },
+        "High Card": {
+            "order": 12,
+            "chips": 5,
+            "mult": 1,
+            "level": 1,
+            "played": 2,
+            "played_this_round": 0,
+        },
     }
     state = _est_state(hand, jokers=jokers, hands_levels=hands)
     est = estimate.estimate(state)
@@ -1905,7 +2248,13 @@ def test_estimate_obelisk_first_play_resets() -> None:
         ("3", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Obelisk", "key": "j_obelisk", "value": {"stats": {"obelisk_step": 0.2}}}]
+    jokers = [
+        {
+            "label": "Obelisk",
+            "key": "j_obelisk",
+            "value": {"stats": {"obelisk_step": 0.2}},
+        }
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
@@ -1921,7 +2270,13 @@ def test_estimate_ride_the_bus_grows_without_scoring_face() -> None:
         ("7", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Ride the Bus", "key": "j_ride_the_bus", "value": {"stats": {"mult": 2, "ride_the_bus_step": 1}}}]
+    jokers = [
+        {
+            "label": "Ride the Bus",
+            "key": "j_ride_the_bus",
+            "value": {"stats": {"mult": 2, "ride_the_bus_step": 1}},
+        }
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
@@ -1937,7 +2292,13 @@ def test_estimate_ride_the_bus_resets_on_scoring_face() -> None:
         ("3", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Ride the Bus", "key": "j_ride_the_bus", "value": {"stats": {"mult": 5, "ride_the_bus_step": 1}}}]
+    jokers = [
+        {
+            "label": "Ride the Bus",
+            "key": "j_ride_the_bus",
+            "value": {"stats": {"mult": 5, "ride_the_bus_step": 1}},
+        }
+    ]
     line = estimate.score_hand_indices(_est_state(hand, jokers=jokers), [0, 1])
     assert line["hand_type"] == "Pair"
     assert line["mult"] == 2
@@ -1970,7 +2331,13 @@ def test_estimate_hit_the_road_uses_stats_xmult() -> None:
         ("3", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Hit the Road", "key": "j_hit_the_road", "value": {"stats": {"x_mult": 2.0}}}]
+    jokers = [
+        {
+            "label": "Hit the Road",
+            "key": "j_hit_the_road",
+            "value": {"stats": {"x_mult": 2.0}},
+        }
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
@@ -2024,7 +2391,9 @@ def test_estimate_hologram_uses_stats_xmult() -> None:
         ("3", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Hologram", "key": "j_hologram", "value": {"stats": {"x_mult": 2.0}}}]
+    jokers = [
+        {"label": "Hologram", "key": "j_hologram", "value": {"stats": {"x_mult": 2.0}}}
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
@@ -2128,7 +2497,12 @@ def test_estimate_joker_foil_before_effect() -> None:
         ("2", "S", {}),
     )
     jokers = [
-        {"label": "Jolly Joker", "key": "j_jolly", "value": {}, "modifier": {"edition": "FOIL"}},
+        {
+            "label": "Jolly Joker",
+            "key": "j_jolly",
+            "value": {},
+            "modifier": {"edition": "FOIL"},
+        },
     ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
@@ -2147,7 +2521,12 @@ def test_estimate_joker_holo_before_effect() -> None:
         ("2", "S", {}),
     )
     jokers = [
-        {"label": "Jolly Joker", "key": "j_jolly", "value": {}, "modifier": {"edition": "HOLO"}},
+        {
+            "label": "Jolly Joker",
+            "key": "j_jolly",
+            "value": {},
+            "modifier": {"edition": "HOLO"},
+        },
     ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
@@ -2188,7 +2567,12 @@ def test_estimate_joker_edition_on_per_card_joker() -> None:
         ("2", "S", {}),
     )
     jokers = [
-        {"label": "Greedy Joker", "key": "j_greedy_joker", "value": {}, "modifier": {"edition": "HOLO"}},
+        {
+            "label": "Greedy Joker",
+            "key": "j_greedy_joker",
+            "value": {},
+            "modifier": {"edition": "HOLO"},
+        },
     ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
@@ -2206,7 +2590,12 @@ def test_estimate_blueprint_edition_copies_effect() -> None:
         ("2", "S", {}),
     )
     jokers = [
-        {"label": "Blueprint", "key": "j_blueprint", "value": {}, "modifier": {"edition": "FOIL"}},
+        {
+            "label": "Blueprint",
+            "key": "j_blueprint",
+            "value": {},
+            "modifier": {"edition": "FOIL"},
+        },
         {"label": "Jolly Joker", "key": "j_jolly", "value": {}},
     ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
@@ -2225,7 +2614,9 @@ def test_estimate_ice_cream_uses_stats_chips() -> None:
         ("7", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Ice Cream", "key": "j_ice_cream", "value": {"stats": {"chips": 100}}}]
+    jokers = [
+        {"label": "Ice Cream", "key": "j_ice_cream", "value": {"stats": {"chips": 100}}}
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
@@ -2241,7 +2632,9 @@ def test_estimate_popcorn_uses_stats_mult() -> None:
         ("7", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Popcorn", "key": "j_popcorn", "value": {"stats": {"mult": 20}}}]
+    jokers = [
+        {"label": "Popcorn", "key": "j_popcorn", "value": {"stats": {"mult": 20}}}
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
@@ -2273,7 +2666,9 @@ def test_estimate_red_card_uses_stats_mult() -> None:
         ("7", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Red Card", "key": "j_red_card", "value": {"stats": {"mult": 9}}}]
+    jokers = [
+        {"label": "Red Card", "key": "j_red_card", "value": {"stats": {"mult": 9}}}
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
@@ -2289,7 +2684,13 @@ def test_estimate_trousers_zero_stats_grows_on_two_pair() -> None:
         ("5", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Spare Trousers", "key": "j_trousers", "value": {"stats": {"mult": 0}}}]
+    jokers = [
+        {
+            "label": "Spare Trousers",
+            "key": "j_trousers",
+            "value": {"stats": {"mult": 0}},
+        }
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Two Pair"
@@ -2325,7 +2726,11 @@ def test_estimate_swashbuckler_uses_stats_mult() -> None:
     )
     jokers = [
         {"label": "Gros Michel", "key": "j_gros_michel", "value": {}},
-        {"label": "Swashbuckler", "key": "j_swashbuckler", "value": {"stats": {"mult": 2}}},
+        {
+            "label": "Swashbuckler",
+            "key": "j_swashbuckler",
+            "value": {"stats": {"mult": 2}},
+        },
     ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
@@ -2342,7 +2747,9 @@ def test_estimate_madness_uses_stats_xmult() -> None:
         ("7", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Madness", "key": "j_madness", "value": {"stats": {"x_mult": 1.5}}}]
+    jokers = [
+        {"label": "Madness", "key": "j_madness", "value": {"stats": {"x_mult": 1.5}}}
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
@@ -2435,7 +2842,9 @@ def test_estimate_caino_uses_stats_caino_xmult() -> None:
         ("7", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Caino", "key": "j_caino", "value": {"stats": {"caino_xmult": 2.0}}}]
+    jokers = [
+        {"label": "Caino", "key": "j_caino", "value": {"stats": {"caino_xmult": 2.0}}}
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
@@ -2451,7 +2860,9 @@ def test_estimate_yorick_uses_stats_xmult() -> None:
         ("7", "C", {}),
         ("2", "S", {}),
     )
-    jokers = [{"label": "Yorick", "key": "j_yorick", "value": {"stats": {"x_mult": 3.0}}}]
+    jokers = [
+        {"label": "Yorick", "key": "j_yorick", "value": {"stats": {"x_mult": 3.0}}}
+    ]
     est = estimate.estimate(_est_state(hand, jokers=jokers))
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"

@@ -2,6 +2,7 @@
 
 ---@type BB_LOGGER
 local BB_LOGGER = assert(SMODS.load_file("src/lua/utils/logger.lua"))()
+local consumable = assert(SMODS.load_file("src/lua/utils/consumable.lua"))()
 
 -- ==========================================================================
 -- Pack Select Endpoint Params
@@ -11,42 +12,6 @@ local BB_LOGGER = assert(SMODS.load_file("src/lua/utils/logger.lua"))()
 ---@field card integer? 0-based index of card to select from pack
 ---@field targets integer[]? 0-based indices of hand cards to target (for consumables requiring targets)
 ---@field skip boolean? Skip pack selection
-
--- ==========================================================================
--- Consumable Target Requirements
--- ==========================================================================
-
---- Get target requirements for a consumable card from G.P_CENTERS configuration
---- @param card_key string Card key (e.g., "c_magician")
---- @return table|nil { min = number, max = number } or { requires_joker = boolean } or nil if no requirements
-local function get_consumable_target_requirements(card_key)
-  -- Special cases that don't follow the standard max_highlighted pattern
-  if card_key == "c_aura" then
-    -- Aura has empty config but uses exactly 1 highlighted card
-    return { min = 1, max = 1 }
-  end
-
-  if card_key == "c_ankh" then
-    -- Ankh requires at least 1 joker instead of hand card targets
-    return { requires_joker = true }
-  end
-
-  -- Look up configuration from G.P_CENTERS
-  local center = G.P_CENTERS[card_key]
-  if not center or not center.config then
-    return nil
-  end
-
-  local config = center.config
-  if config.max_highlighted then
-    return {
-      min = config.min_highlighted or 1, -- Default min to 1 if not specified
-      max = config.max_highlighted,
-    }
-  end
-
-  return nil
-end
 
 -- ==========================================================================
 -- Pack Select Endpoint
@@ -153,7 +118,7 @@ return {
 
       -- Validate consumable target requirements
       if card_key then
-        local req = get_consumable_target_requirements(card_key)
+        local req = consumable.get_consumable_target_requirements(card_key)
         if req then
           -- Check joker requirement for cards like Ankh
           if req.requires_joker then

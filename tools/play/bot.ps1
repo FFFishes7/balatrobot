@@ -2,7 +2,7 @@
 # Friendly action subcommands (no JSON quoting needed):
 #   .\bot.ps1 glance                      # compact state summary
 #   .\bot.ps1 estimate                    # top playable hands + score estimate
-#   .\bot.ps1 start RED WHITE             # start a run
+#   .\bot.ps1 start DECK STAKE [SEED]      # e.g. start RED WHITE (glance lists options)
 #   .\bot.ps1 select                      # select current blind
 #   .\bot.ps1 play 0 1 2 3 4              # play cards at hand indices
 #   .\bot.ps1 discard 0 1                 # discard cards
@@ -35,7 +35,7 @@ if ($BotArgs.Count -eq 0) {
     Write-Host 'Usage:'
     Write-Host '  .\bot.ps1 glance                      (compact state summary)'
     Write-Host '  .\bot.ps1 estimate                    (top playable hands + score estimate)'
-    Write-Host '  .\bot.ps1 start RED WHITE             (friendly action subcommands)'
+    Write-Host '  .\bot.ps1 start DECK STAKE [SEED]     (e.g. start RED WHITE; glance lists decks/stakes)'
     Write-Host '  .\bot.ps1 play 0 1 2 3 4'
     Write-Host '  .\bot.ps1 buy card 0'
     Write-Host '  .\bot.ps1 state | query | know | exec | help   (JSON / advanced)'

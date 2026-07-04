@@ -123,3 +123,75 @@ def move_before(order: list[int], source: int, target: int) -> list[int]:
     order.remove(source)
     order.insert(order.index(target), source)
     return order
+
+
+def format_friendly_action(action: dict) -> str | None:
+    """Render an envelope action's ``example`` as a ``bot.ps1`` friendly subcommand."""
+    cmd = action.get("command")
+    if not cmd:
+        return None
+    example = action.get("example") or {}
+    params = example.get("params") or {}
+
+    if cmd in NO_PARAMS:
+        return cmd
+    if cmd in ("play", "discard"):
+        cards = params.get("cards") or []
+        return f"{cmd} " + " ".join(str(c) for c in cards)
+    if cmd == "buy":
+        for kind in ("card", "voucher", "pack"):
+            if kind in params:
+                return f"buy {kind} {params[kind]}"
+        return "buy card|voucher|pack IDX"
+    if cmd == "pack":
+        if params.get("skip"):
+            return "pack skip"
+        card = params.get("card")
+        if card is None:
+            return "pack IDX"
+        targets = params.get("targets") or []
+        parts = ["pack", str(card), *[str(t) for t in targets]]
+        return " ".join(parts)
+    if cmd == "use":
+        idx = params.get("consumable")
+        if idx is None:
+            return "use CONSUMABLE_IDX"
+        cards = params.get("cards") or []
+        if cards:
+            return "use " + " ".join(str(x) for x in [idx, *cards])
+        return f"use {idx}"
+    if cmd == "death":
+        parts = [params.get("consumable"), params.get("source"), params.get("target")]
+        if all(p is not None for p in parts):
+            return "death " + " ".join(str(p) for p in parts)
+        return "death CONSUMABLE SOURCE TARGET"
+    if cmd == "rearrange":
+        for area in ("hand", "jokers", "consumables"):
+            order = params.get(area)
+            if order is not None:
+                return f"rearrange {area} " + " ".join(str(i) for i in order)
+        return "rearrange hand|jokers|consumables ORDER"
+    if cmd == "sort":
+        return f"sort {params.get('mode', 'rank')}"
+    if cmd == "sell":
+        for kind in ("joker", "consumable"):
+            if kind in params:
+                return f"sell {kind} {params[kind]}"
+        return "sell joker|consumable IDX"
+    if cmd == "start":
+        deck = params.get("deck", "DECK")
+        stake = params.get("stake", "STAKE")
+        seed = params.get("seed")
+        if seed:
+            return f"start {deck} {stake} {seed}"
+        return f"start {deck} {stake}"
+    if cmd in ("load", "save", "screenshot"):
+        path = params.get("path", "PATH")
+        return f"{cmd} {path}"
+    if cmd == "add":
+        key = params.get("key", "KEY")
+        return f"add {key}"
+    if cmd == "set":
+        pairs = [f"{k}={v}" for k, v in params.items()]
+        return "set " + " ".join(pairs) if pairs else "set"
+    return cmd

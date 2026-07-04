@@ -7,11 +7,20 @@ the current state at a glance instead of scanning the full JSON envelope.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
-from actions import _consumable_needs_hand, build_actions
+from actions import (
+    build_actions,
+    buy_blocked_by_slots,
+    buy_power,
+    consumable_target_hint,
+)
 from bot_client import APIError
+from commands import format_friendly_action
 from envelope import build_error_envelope, build_play_envelope
+from layers import TRANSITION_STATES
+from start_options import build_decks, build_stakes
 from state import fetch_stable_gamestate
 
 SUIT_SYMBOL = {"S": "♠", "H": "♥", "D": "♦", "C": "♣"}
@@ -135,7 +144,7 @@ def _joker_line(idx: int, card: dict[str, Any]) -> str:
     return f"{prefix} {name} — {effect}" if effect else f"{prefix} {name}"
 
 
-def _blind_line(blind: dict[str, Any]) -> str:
+def _blind_line(blind: dict[str, Any], *, show_skip_tag: bool = True) -> str:
     name = blind.get("name") or "?"
     status = blind.get("status") or "?"
     score = blind.get("score")
@@ -146,9 +155,16 @@ def _blind_line(blind: dict[str, Any]) -> str:
     if effect:
         parts.append(f"effect={effect}")
     line = " ".join(parts)
-    if tag_name or tag_effect:
+    if show_skip_tag and (tag_name or tag_effect):
         line += f"\n  tag={tag_name} ({tag_effect}) [skip reward: only triggers if you skip this blind]"
     return line
+
+
+def _show_blind_skip_tag(status: str) -> bool:
+    normalized = (status or "").upper()
+    if normalized == "DEFEATED":
+        return False
+    return normalized in ("CURRENT", "SELECT", "UPCOMING")
 
 
 def _blinds_block(state: dict[str, Any]) -> str:
@@ -181,7 +197,7 @@ def _blinds_block(state: dict[str, Any]) -> str:
         if effect:
             parts.append(f"— {effect}")
         line = " ".join(parts)
-        if tag_name or tag_effect:
+        if _show_blind_skip_tag(status) and (tag_name or tag_effect):
             line += f" [skip reward: {tag_name}"
             if tag_effect:
                 line += f" — {tag_effect}"
@@ -198,12 +214,15 @@ def _current_blind(state: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _header(state: dict[str, Any]) -> str:
-    fields = [
-        f"state={state.get('state', 'UNKNOWN')}",
-        f"ante={state.get('ante_num')}",
-        f"round={state.get('round_num')}",
-        f"money={state.get('money')}",
-    ]
+    fields = [f"state={state.get('state', 'UNKNOWN')}"]
+    if state.get("ante_num") is not None:
+        fields.append(f"ante={state['ante_num']}")
+    if state.get("round_num") is not None:
+        fields.append(f"round={state['round_num']}")
+    if state.get("money") is not None:
+        fields.append(f"money={state['money']}")
+    if state.get("state") == "SHOP" and state.get("bankrupt_at", 0) != 0:
+        fields.append(f"buy_power={buy_power(state)}")
     if state.get("deck"):
         fields.append(f"deck={state['deck']}")
     if state.get("stake"):
@@ -216,7 +235,14 @@ def _round_line(state: dict[str, Any], target: int | None = None) -> str:
     chips = r.get("chips", 0)
     hands = r.get("hands_left", 0)
     discards = r.get("discards_left", 0)
-    score_part = f"score={chips}/{target}" if target is not None else f"score={chips}"
+    if target is not None:
+        score_part = f"score={chips}/{target}"
+        if chips < target:
+            score_part += f" need={target - chips}"
+        else:
+            score_part += " beaten"
+    else:
+        score_part = f"score={chips}"
     return f"round: hands_left={hands} discards_left={discards} {score_part}"
 
 
@@ -224,18 +250,46 @@ INTEREST_CAP_DEFAULT = 5
 INTEREST_PER = 5  # $1 per $5 held, capped
 
 
+def _economy_parts(state: dict[str, Any], *, include_hands: bool = False) -> list[str]:
+    """Pending round-end economy fragments (interest, DG, rental, unused hands)."""
+    parts: list[str] = []
+    money = state.get("money", 0)
+    if money > 0:
+        interest = min(money // INTEREST_PER, INTEREST_CAP_DEFAULT)
+        if interest > 0:
+            parts.append(f"+${interest} interest (cap ${INTEREST_CAP_DEFAULT})")
+    jokers = (state.get("jokers") or {}).get("cards") or []
+    has_dg = any((j.get("key") or "") == "j_delayed_grat" for j in jokers)
+    if has_dg:
+        r = state.get("round") or {}
+        discards_left = r.get("discards_left", 0)
+        discards_used_total = r.get("discards_used", 0)
+        if discards_used_total == 0 and discards_left > 0:
+            parts.append(f"+${2 * discards_left} delayed_grat if 0 discards used")
+    if include_hands:
+        r = state.get("round") or {}
+        hands_left = r.get("hands_left", 0)
+        if hands_left > 0:
+            parts.append(f"+${hands_left} unused hands")
+    rental_count = sum(
+        1
+        for j in jokers
+        if isinstance((j.get("modifier") or {}), dict)
+        and (j.get("modifier") or {}).get("rental")
+    )
+    if rental_count > 0:
+        parts.append(f"-${rental_count}/round rental")
+    return parts
+
+
 def _economy_line(state: dict[str, Any]) -> str | None:
     """Pending interest + Delayed Gratification bonus, if any info to show."""
     parts: list[str] = []
     money = state.get("money", 0)
-    # Interest: $1 per $5 held, default cap $5. Vouchers (e.g. Grabber/Seed
-    # Money) can raise the cap; we only model the default cap here and note the
-    # raw amount so the AI isn't misled.
     if money > 0:
         interest = min(money // INTEREST_PER, INTEREST_CAP_DEFAULT)
         if interest > 0:
             parts.append(f"interest=+${interest} (cap ${INTEREST_CAP_DEFAULT})")
-    # Delayed Gratification: $2 per remaining discard if 0 used at round end.
     jokers = (state.get("jokers") or {}).get("cards") or []
     has_dg = any((j.get("key") or "") == "j_delayed_grat" for j in jokers)
     if has_dg:
@@ -247,11 +301,40 @@ def _economy_line(state: dict[str, Any]) -> str | None:
     rental_count = sum(
         1
         for j in jokers
-        if isinstance((j.get("modifier") or {}), dict) and (j.get("modifier") or {}).get("rental")
+        if isinstance((j.get("modifier") or {}), dict)
+        and (j.get("modifier") or {}).get("rental")
     )
     if rental_count > 0:
         parts.append(f"rental_due=-${rental_count}/round")
     return "economy: " + " ".join(parts) if parts else None
+
+
+def _round_eval_block(state: dict[str, Any]) -> list[str]:
+    r = state.get("round") or {}
+    chips = r.get("chips", 0)
+    lines = [f"round won, score={chips}"]
+    pending = _economy_parts(state, include_hands=True)
+    if pending:
+        lines.append("  pending: " + " · ".join(pending))
+    lines.append("→ cash_out")
+    return lines
+
+
+def _afford_suffix(cost: int | str, state: dict[str, Any]) -> str:
+    if not isinstance(cost, int):
+        return ""
+    power = buy_power(state)
+    if cost <= power:
+        return " [ok]"
+    return f" [need ${cost - power}]"
+
+
+def _shop_buy_suffix(
+    card: dict[str, Any], cost: int | str, state: dict[str, Any]
+) -> str:
+    if buy_blocked_by_slots(card, state):
+        return " [slots full]"
+    return _afford_suffix(cost, state)
 
 
 def _hand_line(state: dict[str, Any]) -> str:
@@ -261,13 +344,121 @@ def _hand_line(state: dict[str, Any]) -> str:
     return "hand: " + " ".join(f"[{i}] {card_label(c)}" for i, c in enumerate(cards))
 
 
+ACTIONS_MAX_LEN = 120
+ACTION_PRIORITY_PREFIXES = (
+    "play ",
+    "discard ",
+    "select",
+    "skip",
+    "cash_out",
+    "buy ",
+    "pack ",
+    "menu",
+    "next_round",
+    "reroll",
+)
+
+
+def _compress_index_run(seen: list[str], prefix: str) -> list[str]:
+    """Fold consecutive ``prefix N`` entries into ``prefix A..B``."""
+    pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
+    out: list[str] = []
+    i = 0
+    while i < len(seen):
+        match = pattern.match(seen[i])
+        if not match:
+            out.append(seen[i])
+            i += 1
+            continue
+        start = int(match.group(1))
+        j = i + 1
+        while j < len(seen):
+            m2 = pattern.match(seen[j])
+            if m2 and int(m2.group(1)) == start + (j - i):
+                j += 1
+            else:
+                break
+        if j - i > 1:
+            out.append(f"{prefix}{start}..{start + j - i - 1}")
+        else:
+            out.append(seen[i])
+        i = j
+    return out
+
+
+def _compress_actions(seen: list[str]) -> list[str]:
+    for prefix in (
+        "sell joker ",
+        "sell consumable ",
+        "buy card ",
+        "buy pack ",
+        "buy voucher ",
+    ):
+        seen = _compress_index_run(seen, prefix)
+    return seen
+
+
+def _prioritize_actions(seen: list[str]) -> list[str]:
+    priority: list[str] = []
+    rest: list[str] = []
+    for item in seen:
+        if any(item == p or item.startswith(p) for p in ACTION_PRIORITY_PREFIXES):
+            priority.append(item)
+        else:
+            rest.append(item)
+    return priority + rest
+
+
 def _actions_line(envelope: dict[str, Any]) -> str:
     seen: list[str] = []
     for a in envelope.get("actions") or []:
-        cmd = a.get("command")
-        if cmd and cmd not in seen:
-            seen.append(cmd)
-    return "actions: " + (" ".join(seen) if seen else "(none)")
+        friendly = format_friendly_action(a)
+        if not friendly:
+            continue
+        if a.get("slots_full"):
+            friendly += " (slots full)"
+        elif a.get("affordable") is False:
+            friendly += " (unaffordable)"
+        if friendly not in seen:
+            seen.append(friendly)
+    if not seen:
+        return "actions: (none)"
+    seen = _prioritize_actions(_compress_actions(seen))
+    joined = " · ".join(seen)
+    if len(joined) > ACTIONS_MAX_LEN:
+        joined = joined[: ACTIONS_MAX_LEN - 1].rsplit(" · ", 1)[0] + " · …"
+    return f"actions: {joined}"
+
+
+def _option_ids(envelope: dict[str, Any], key: str, fallback_fn) -> list[str]:
+    items = envelope.get(key)
+    if items:
+        return [item["id"] for item in items if item.get("id")]
+    return [item["id"] for item in fallback_fn()]
+
+
+def _game_over_hint(state: dict[str, Any]) -> str:
+    deck = state.get("deck") or "DECK"
+    stake = state.get("stake") or "STAKE"
+    return f"→ menu  then  start {deck} {stake} [SEED]"
+
+
+def _menu_hint(envelope: dict[str, Any]) -> list[str]:
+    lines = ["→ start DECK STAKE [SEED]"]
+    deck_ids = _option_ids(envelope, "decks", build_decks)
+    stake_ids = _option_ids(envelope, "stakes", build_stakes)
+    if deck_ids:
+        lines.append(f"  decks: {' '.join(deck_ids)} ({len(deck_ids)} total)")
+    if stake_ids:
+        lines.append(f"  stakes: {' '.join(stake_ids)} ({len(stake_ids)} total)")
+    for a in envelope.get("actions") or []:
+        if a.get("command") == "load":
+            example = (a.get("example") or {}).get("params") or {}
+            path = example.get("path")
+            if path:
+                lines.append(f"→ load {path}")
+            break
+    return lines
 
 
 def print_summary(envelope: dict[str, Any]) -> None:
@@ -282,7 +473,8 @@ def print_summary(envelope: dict[str, Any]) -> None:
     lines: list[str] = [_header(state)]
 
     if name == "MENU":
-        lines.append("→ start RED WHITE  (or: start RED WHITE SEED)")
+        lines.extend(_menu_hint(envelope))
+        lines.append(_actions_line(envelope))
     elif name == "BLIND_SELECT":
         lines.append(_blinds_block(state))
         lines.extend(_joker_lines(state))
@@ -292,7 +484,7 @@ def print_summary(envelope: dict[str, Any]) -> None:
         target = blind.get("score") if blind else None
         lines.append(_round_line(state, target))
         if blind:
-            lines.append(_blind_line(blind))
+            lines.append(_blind_line(blind, show_skip_tag=False))
         lines.extend(_joker_lines(state))
         lines.append(_hand_line(state))
         econ = _economy_line(state)
@@ -300,9 +492,7 @@ def print_summary(envelope: dict[str, Any]) -> None:
             lines.append(econ)
         lines.append(_actions_line(envelope))
     elif name == "ROUND_EVAL":
-        r = state.get("round") or {}
-        chips = r.get("chips", 0)
-        lines.append(f"round won, score={chips}")
+        lines.extend(_round_eval_block(state))
         lines.append(_actions_line(envelope))
     elif name == "SHOP":
         lines.append(_shop_block(state))
@@ -322,6 +512,10 @@ def print_summary(envelope: dict[str, Any]) -> None:
         if summary.get("most_played_hand"):
             mp = summary["most_played_hand"]
             lines.append(f"  most_played: {mp.get('name')} x{mp.get('count')}")
+        lines.append(_game_over_hint(state))
+        lines.append(_actions_line(envelope))
+    elif name in TRANSITION_STATES:
+        lines.append("→ transient: wait for stable state, then glance again")
         lines.append(_actions_line(envelope))
     else:
         lines.append(_actions_line(envelope))
@@ -358,7 +552,7 @@ def _joker_lines(state: dict[str, Any]) -> list[str]:
     return out
 
 
-def _shop_card_line(slot: str, card: dict[str, Any]) -> str:
+def _shop_card_line(slot: str, card: dict[str, Any], state: dict[str, Any]) -> str:
     """Shop row with modifier stickers when present."""
     label = card.get("label") or "?"
     cost = (card.get("cost") or {}).get("buy", "?")
@@ -366,28 +560,33 @@ def _shop_card_line(slot: str, card: dict[str, Any]) -> str:
     mod = card.get("modifier") or {}
     sticker = _sticker_prefix(mod) if isinstance(mod, dict) else ""
     name_part = f"{sticker} {label}".strip() if sticker else label
-    return f"  {slot} {name_part} ${cost} — {effect}" if effect else f"  {slot} {name_part} ${cost}"
+    afford = _shop_buy_suffix(card, cost, state)
+    if effect:
+        return f"  {slot} {name_part} ${cost}{afford} — {effect}"
+    return f"  {slot} {name_part} ${cost}{afford}"
 
 
 def _shop_block(state: dict[str, Any]) -> str:
     parts: list[str] = []
     shop = (state.get("shop") or {}).get("cards") or []
     for i, c in enumerate(shop):
-        parts.append(_shop_card_line(f"shop[{i}]", c))
+        parts.append(_shop_card_line(f"shop[{i}]", c, state))
     vouchers = (state.get("vouchers") or {}).get("cards") or []
     for i, c in enumerate(vouchers):
         label = c.get("label") or "?"
         cost = (c.get("cost") or {}).get("buy", "?")
         effect = (c.get("value") or {}).get("effect") or ""
-        parts.append(f"  voucher[{i}] {label} ${cost} — {effect}")
+        afford = _afford_suffix(cost, state)
+        parts.append(f"  voucher[{i}] {label} ${cost}{afford} — {effect}")
     packs = (state.get("packs") or {}).get("cards") or []
     for i, c in enumerate(packs):
         label = c.get("label") or "?"
         cost = (c.get("cost") or {}).get("buy", "?")
         effect = (c.get("value") or {}).get("effect") or ""
-        parts.append(f"  pack[{i}] {label} ${cost} — {effect}")
+        afford = _afford_suffix(cost, state)
+        parts.append(f"  pack[{i}] {label} ${cost}{afford} — {effect}")
     reroll = (state.get("round") or {}).get("reroll_cost", "?")
-    parts.append(f"  reroll=${reroll}")
+    parts.append(f"  reroll=${reroll}{_afford_suffix(reroll, state)}")
     return "shop:\n" + "\n".join(parts) if parts else "shop: (empty)"
 
 
@@ -397,8 +596,9 @@ def _pack_block(state: dict[str, Any]) -> str:
     for i, c in enumerate(cards):
         label = card_label(c)
         effect = (c.get("value") or {}).get("effect", "")
-        hint = " (needs hand targets)" if _consumable_needs_hand(c) else ""
-        parts.append(f"  pack[{i}] {label} — {effect}{hint}")
+        hint = consumable_target_hint(c)
+        hint_suffix = f" ({hint})" if hint else ""
+        parts.append(f"  pack[{i}] {label} — {effect}{hint_suffix}")
     return "pack:\n" + "\n".join(parts) if parts else "pack: (empty)"
 
 

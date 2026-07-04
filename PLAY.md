@@ -54,12 +54,12 @@ repeat:
 until state == GAME_OVER
 ```
 
-After `GAME_OVER`: `bot.ps1 menu`, then `bot.ps1 start RED WHITE`.
+After `GAME_OVER`: `bot.ps1 menu`, then `bot.ps1 start DECK STAKE` (e.g. `start RED WHITE`).
 
 ### The `actions:` line is your navigation
 
-Every `glance` and action output ends with an `actions:` line listing the commands
-valid in the current state (e.g. `actions: play discard sort rearrange`). The full
+Every `glance` and action output ends with an `actions:` line listing friendly
+subcommand examples valid in the current state (e.g. `actions: play 0 1 2 3 4 · discard 0 1 · sort rank`). The full
 JSON envelope (from `bot.ps1 state`, `bot.ps1 exec ...`, or any action with `--json`)
 includes an `actions[]` array where each entry has a ready-to-use `example` payload.
 When you don't know what to do, read `actions:`.
@@ -68,6 +68,19 @@ When you don't know what to do, read `actions:`.
 
 - **BLIND_SELECT:** all three blinds (small/big/boss) with target, status, boss
     effect, and skip-reward tag; the selectable blind is marked `(current, select)`.
+    Defeated blinds omit skip-reward text.
+- **SELECTING_HAND:** `score=X/target` includes **`need=N`** until you beat the
+    blind, then **`beaten`**. Skip-reward tags are not repeated on the current blind
+    line (you already chose to play).
+- **SHOP:** prices show **`[ok]`**, **`[need $N]`**, or **`[slots full]`**; header
+    adds **`buy_power=`** when Credit Card raises `bankrupt_at`. Actions:
+    **`(unaffordable)`** or **`(slots full)`** (slot full wins when both apply).
+- **Pack open:** Tarot/Spectral candidates show **`(needs 1-2 targets)`** etc.
+- **GAME_OVER:** **`→ menu  then  start RED WHITE [SEED]`** uses the run's deck/stake.
+- **ROUND_EVAL:** pending round-end money (hands left, interest, Delayed
+    Gratification) before **`→ cash_out`**.
+- **Transient states** (`HAND_PLAYED`, etc.): wait and **`glance`** again — no
+    actions until stable.
 - **Hand cards and eligible pack candidates carry modifier tags:** `4♦[e:Mult,s:Red]` = Mult enhancement + Red
     seal. Legend: enhancement `e:Mult/Bonus/Glass/Stone/Wild/Lucky/Gold/Steel`,
     edition `d:Foil/Holo/Poly/Neg`, seal `s:Red/Blue/Gold/Purple`. Debuffed cards
@@ -80,7 +93,7 @@ When you don't know what to do, read `actions:`.
 
 | State                  | What to do                                      | Command                                                                                                                          |
 | ---------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `MENU`                 | Start a run                                     | `bot.ps1 start RED WHITE` (optional seed: `start RED WHITE SEED`)                                                                |
+| `MENU`                 | Start a run                                     | `bot.ps1 start DECK STAKE` (e.g. `start RED WHITE`; optional seed: `start DECK STAKE SEED`)                                      |
 | `BLIND_SELECT`         | Play or skip the blind                          | `bot.ps1 select` · or `bot.ps1 skip` (Small/Big only)                                                                            |
 | `SELECTING_HAND`       | Play / discard / use / sort (estimate optional) | `bot.ps1 play 0 1 2 3 4` · `bot.ps1 discard 0 1` · `bot.ps1 use 0 [1 2]` · `bot.ps1 sort rank` · *(optional)* `bot.ps1 estimate` |
 | `HAND_PLAYED`          | Transient — just poll                           | `bot.ps1 glance`                                                                                                                 |
@@ -117,7 +130,7 @@ lists pending tags with verified effects.
 
 ```powershell
 .\tools\play\bot.ps1 glance              # see current state
-.\tools\play\bot.ps1 start RED WHITE     # start a run (deck, stake, optional seed)
+.\tools\play\bot.ps1 start RED WHITE     # example: start DECK STAKE (see glance for deck/stake list)
 .\tools\play\bot.ps1 select              # select current blind
 # optional: .\tools\play\bot.ps1 estimate   # score helper (incomplete; not recommended for normal play)
 .\tools\play\bot.ps1 sort rank           # sort hand for easier reading
@@ -155,7 +168,7 @@ Equivalent raw JSON-RPC (fallback when `bot.ps1` isn't available):
 - **PowerShell eats JSON quotes.** Never call `bot.ps1 exec '{"command":...}'` with bare `"` — PowerShell strips them. Use the friendly subcommands (§2/§3), or escape as `\"` if you must use `exec`.
 - **`pack` `targets` only for Tarot/Spectral.** Buffoon/Celestial/Standard packs don't need targets. The endpoint validates target count against the card's requirement and returns `BAD_REQUEST` if wrong.
 - **Boss blinds hide card faces.** Cards with `state.hidden == true` return no rank/suit (shown as `??` in `glance`) — do not try to "read" them; decide based on what's visible.
-- **`buy` affordability is checked against `dollars - bankrupt_at`**, not raw `dollars`. If a buy fails with `BAD_REQUEST`, you don't have enough.
+- **`buy` / `reroll` affordability is `money - bankrupt_at`**, not raw `money` (Credit Card raises `bankrupt_at`). `glance` shows `[ok]` / `[need $N]` on shop rows; if a buy still fails with `BAD_REQUEST`, slots may be full or cost changed after reroll.
 - **Joker/consumable slots can be full.** `buy` returns `BAD_REQUEST` when slots are full — `sell` something first or skip.
 - **`skip` only works on Small/Big blinds**, not boss. Skip collects a tag reward (see §2 tag semantics).
 - **Connection failure ≠ bug.** During state transitions the server may briefly not respond. Retry `glance` once before investigating.

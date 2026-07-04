@@ -8,6 +8,44 @@ from envelope import detect_save_path
 from start_options import build_decks, build_stakes
 
 
+def buy_power(state: dict[str, Any]) -> int:
+    """Spendable dollars for shop buy/reroll (matches buy.lua / reroll.lua)."""
+    return state.get("money", 0) - state.get("bankrupt_at", 0)
+
+
+def _area_full(area: dict[str, Any]) -> bool:
+    count, limit = area.get("count"), area.get("limit")
+    return limit is not None and count is not None and count >= limit
+
+
+def buy_blocked_by_slots(card: dict[str, Any], state: dict[str, Any]) -> bool:
+    """True when buy.lua would reject for full joker/consumable slots."""
+    card_set = (card.get("set") or "").upper()
+    if card_set == "JOKER":
+        return _area_full(state.get("jokers") or {})
+    if card_set in ("TAROT", "PLANET", "SPECTRAL"):
+        return _area_full(state.get("consumables") or {})
+    return False
+
+
+def _shop_buy_action(
+    action: dict[str, Any], item: dict[str, Any], cost: int, state: dict[str, Any]
+) -> dict[str, Any]:
+    if buy_blocked_by_slots(item, state):
+        action["slots_full"] = True
+    elif cost > buy_power(state):
+        action["affordable"] = False
+    return action
+
+
+def _affordable_action(
+    action: dict[str, Any], cost: int, state: dict[str, Any]
+) -> dict[str, Any]:
+    if cost > buy_power(state):
+        action["affordable"] = False
+    return action
+
+
 def _example(command: str, params: dict | None = None) -> dict:
     return {"command": command, "params": params or {}}
 
@@ -46,6 +84,34 @@ def _consumable_needs_hand(card: dict) -> bool:
     if key == "c_death":
         return True
     return "select" in effect.lower() and "hand" in effect.lower()
+
+
+def consumable_needs_hand_targets(card: dict) -> bool:
+    """True when pack/use needs hand card indices (not joker-only targets)."""
+    value = card.get("value") or {}
+    if value.get("requires_joker"):
+        return False
+    if value.get("target_min") is not None:
+        return True
+    return _consumable_needs_hand(card)
+
+
+def consumable_target_hint(card: dict) -> str | None:
+    """Human hint for pack glance lines."""
+    value = card.get("value") or {}
+    if value.get("requires_joker"):
+        return "needs joker target"
+    tmin = value.get("target_min")
+    tmax = value.get("target_max")
+    if isinstance(tmin, int) and isinstance(tmax, int):
+        if tmin == tmax == 1:
+            return "needs 1 target"
+        if tmin == tmax:
+            return f"needs {tmin} targets"
+        return f"needs {tmin}-{tmax} targets"
+    if _consumable_needs_hand(card):
+        return "needs hand targets"
+    return None
 
 
 def _menu_actions() -> list[dict[str, Any]]:
@@ -118,23 +184,38 @@ def _use_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _shop_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
     actions: list[dict[str, Any]] = []
-    for idx, _item in enumerate(state.get("shop", {}).get("cards", [])):
+    for idx, item in enumerate(state.get("shop", {}).get("cards", [])):
+        cost = (item.get("cost") or {}).get("buy", 0)
         actions.append(
-            _action("buy", f"Buy shop card {idx}", example_params={"card": idx})
+            _shop_buy_action(
+                _action("buy", f"Buy shop card {idx}", example_params={"card": idx}),
+                item,
+                cost,
+                state,
+            )
         )
-    for idx, _item in enumerate(state.get("vouchers", {}).get("cards", [])):
+    for idx, item in enumerate(state.get("vouchers", {}).get("cards", [])):
+        cost = (item.get("cost") or {}).get("buy", 0)
         actions.append(
-            _action("buy", f"Buy voucher {idx}", example_params={"voucher": idx})
+            _affordable_action(
+                _action("buy", f"Buy voucher {idx}", example_params={"voucher": idx}),
+                cost,
+                state,
+            )
         )
-    for idx, _item in enumerate(state.get("packs", {}).get("cards", [])):
+    for idx, item in enumerate(state.get("packs", {}).get("cards", [])):
+        cost = (item.get("cost") or {}).get("buy", 0)
         actions.append(
-            _action("buy", f"Buy booster pack {idx}", example_params={"pack": idx})
+            _affordable_action(
+                _action("buy", f"Buy booster pack {idx}", example_params={"pack": idx}),
+                cost,
+                state,
+            )
         )
     actions.extend(_sell_actions(state))
-    money = state.get("money", 0)
     reroll_cost = (state.get("round") or {}).get("reroll_cost", 0)
     reroll = _action("reroll", "Reroll shop offers", example_params={})
-    if reroll_cost > money:
+    if reroll_cost > buy_power(state):
         reroll["affordable"] = False
     actions.append(reroll)
     actions.append(
@@ -146,9 +227,12 @@ def _shop_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _pack_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
     actions: list[dict[str, Any]] = []
-    for idx, _card in enumerate(state.get("pack", {}).get("cards", [])):
+    for idx, card in enumerate(state.get("pack", {}).get("cards", [])):
+        params: dict[str, Any] = {"card": idx}
+        if consumable_needs_hand_targets(card):
+            params["targets"] = [0]
         actions.append(
-            _action("pack", f"Select pack card {idx}", example_params={"card": idx})
+            _action("pack", f"Select pack card {idx}", example_params=params)
         )
     actions.append(_action("pack", "Skip pack", example_params={"skip": True}))
     actions.extend(_sell_actions(state))

@@ -10,6 +10,8 @@
 ---@field ensure_bosses_used fun()
 local gamestate = {}
 
+local consumable = assert(SMODS.load_file("src/lua/utils/consumable.lua"))()
+
 -- ==========================================================================
 -- State Name Mapping
 -- ==========================================================================
@@ -468,6 +470,19 @@ local function extract_card_value(card)
     if card.config and card.config.center and type(card.config.center.rarity) == "number" then
       local rarity_names = { [1] = "COMMON", [2] = "UNCOMMON", [3] = "RARE", [4] = "LEGENDARY" }
       value.rarity = rarity_names[card.config.center.rarity]
+    end
+  end
+
+  local center_key = card.config and card.config.center_key
+  if center_key then
+    local req = consumable.get_consumable_target_requirements(center_key)
+    if req then
+      if req.requires_joker then
+        value.requires_joker = true
+      elseif req.min and req.max then
+        value.target_min = req.min
+        value.target_max = req.max
+      end
     end
   end
 
@@ -1034,6 +1049,7 @@ function gamestate.get_gamestate()
     state_data.round_num = G.GAME.round or 0
     state_data.ante_num = (G.GAME.round_resets and G.GAME.round_resets.ante) or 0
     state_data.money = G.GAME.dollars or 0
+    state_data.bankrupt_at = G.GAME.bankrupt_at or 0
     state_data.won = G.GAME.won
 
     -- Deck (optional)

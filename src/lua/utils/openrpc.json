@@ -995,6 +995,10 @@
             "type": "integer",
             "description": "Current money amount"
           },
+          "bankrupt_at": {
+            "type": "integer",
+            "description": "Money floor from Credit Card etc.; buy/reroll affordability uses money - bankrupt_at"
+          },
           "deck": {
             "$ref": "#/components/schemas/Deck",
             "description": "Current selected deck"
@@ -1409,6 +1413,18 @@
             "type": "string",
             "enum": ["COMMON", "UNCOMMON", "RARE", "LEGENDARY"],
             "description": "Joker rarity (jokers only)"
+          },
+          "target_min": {
+            "type": "integer",
+            "description": "Minimum hand cards to target when using/selecting this consumable"
+          },
+          "target_max": {
+            "type": "integer",
+            "description": "Maximum hand cards to target when using/selecting this consumable"
+          },
+          "requires_joker": {
+            "type": "boolean",
+            "description": "Consumable targets a joker slot instead of hand cards (e.g. Ankh)"
           }
         },
         "required": [
