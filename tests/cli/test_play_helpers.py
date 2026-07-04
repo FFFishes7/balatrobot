@@ -867,7 +867,7 @@ def test_estimate_dusk_active_on_last_hand() -> None:
     assert top[0]["score"] == 260  # Dusk active
 
 
-def test_estimate_pair_indices_exclude_kickers() -> None:
+def test_estimate_pair_play_indices_match_scoring_without_kickers() -> None:
     # Pair of Kings + 3 kickers: play only the two Kings (indices 0,1).
     hand = _hand_cards(
         ("K", "S", {}),
@@ -880,10 +880,11 @@ def test_estimate_pair_indices_exclude_kickers() -> None:
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Pair"
     assert top[0]["indices"] == [0, 1]
+    assert top[0]["scoring_indices"] == [0, 1]
     assert len(top[0]["cards"]) == 2
 
 
-def test_estimate_three_of_a_kind_indices_exclude_kickers() -> None:
+def test_estimate_three_of_a_kind_play_indices_match_scoring() -> None:
     hand = _hand_cards(
         ("K", "S", {}),
         ("K", "H", {}),
@@ -895,7 +896,45 @@ def test_estimate_three_of_a_kind_indices_exclude_kickers() -> None:
     top = est["estimate"]["top"]
     assert top[0]["hand_type"] == "Three of a Kind"
     assert top[0]["indices"] == [0, 1, 2]
+    assert top[0]["scoring_indices"] == [0, 1, 2]
     assert len(top[0]["cards"]) == 3
+
+
+def test_estimate_blackboard_includes_kicker_in_play_indices() -> None:
+    # Two Pair with J♥ held blocks Blackboard; playing J♥ as kicker leaves only black cards held.
+    hand = _hand_cards(
+        ("K", "S", {}),
+        ("Q", "C", {}),
+        ("J", "H", {}),
+        ("T", "S", {}),
+        ("8", "S", {}),
+        ("8", "D", {}),
+        ("5", "H", {}),
+        ("5", "C", {}),
+    )
+    jokers = [
+        {"label": "Abstract Joker", "key": "j_abstract", "value": {"effect": "+18"}},
+        {"label": "Blackboard", "key": "j_blackboard", "value": {}},
+        {"label": "Riff-raff", "key": "j_riff_raff", "value": {}},
+        {"label": "Mystic Summit", "key": "j_mystic_summit", "value": {}},
+        {"label": "Swashbuckler", "key": "j_swashbuckler", "value": {"effect": "当前为+12倍率"}},
+        {"label": "Dusk", "key": "j_dusk", "value": {}},
+    ]
+    est = estimate.estimate(
+        _est_state(
+            hand,
+            jokers=jokers,
+            hands_levels={
+                "Two Pair": {"chips": 40, "mult": 3, "level": 2},
+                "Pair": {"chips": 10, "mult": 2, "level": 1},
+            },
+        )
+    )
+    top = est["estimate"]["top"]
+    assert top[0]["hand_type"] == "Two Pair"
+    assert top[0]["indices"] == [2, 4, 5, 6, 7]
+    assert top[0]["scoring_indices"] == [4, 5, 6, 7]
+    assert top[0]["score"] == 4950.0
 
 
 def test_estimate_blue_joker_adds_deck_remaining_chips() -> None:

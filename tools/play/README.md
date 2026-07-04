@@ -90,23 +90,24 @@ Typical estimate lab: `select` → `add`/`set` → `estimate` → `play` → com
 
 ### `estimate` — score estimator
 
-`bot.ps1 estimate` is only available in `SELECTING_HAND`; other states return `INVALID_STATE`. It enumerates playable hands from the current hand, classifies each poker
-hand, and scores it with the verified formula: current hand level (base
-chips/mult from `query hands`) + scoring-card chips + on-score
-enhancement/edition/seal + retriggers + modeled jokers (left-to-right, +Mult
-before XMult) + boss debuff (The Flint halves base) + Plasma balancing. Prints
-the top-3 playable actions (`idx` = cards to play; usually scoring cards, but may include non-scoring kickers for modeled effects such as held-card jokers) with
-card labels, chips/mult/score, and whether each beats the current blind target
-(`[BEATS]` / `[short]`). Retriggers (Seltzer, Dusk on `hands_left == 1`, Red
-Seal, etc.) are folded into the score silently.
+**Deterministic only:** models effects fixed by current state + your card choice.
+RNG jokers (Misprint, 8 Ball, Bloodstone, …) stay `unmodeled`. Full registry:
+[`estimate_registry.md`](estimate_registry.md). Verify new jokers in
+`%APPDATA%\Balatro\Mods\lovely\game-dump\card.lua` before porting.
 
-Modeled jokers: `j_joker`, the suit-mult family (`j_greedy_joker` /
-`j_lusty_joker` / `j_wrathful_joker` / `j_gluttenous_joker`), `j_walkie_talkie`,
-`j_fibonacci`, `j_even_steven`, `j_odd_todd`, `j_onyx_agate`, `j_abstract`,
-`j_mystic_summit`, `j_blackboard`, `j_swashbuckler`, `j_flower_pot`, `j_family`, `j_seltzer`, `j_dusk`, `j_hanging_chad`, `j_splash`, `j_blue_joker`,
-plus economy/utility jokers treated as no-ops. **Any other joker is listed as
-`unmodeled`** — treat its effect as unknown and don't trust the base-only
-number for that case. `--json` prints a compact envelope with `target`, `top`, `beats_target`, and `unmodeled_jokers`; it omits debug-only fields such as boss/plasma flags and hand-size counters.
+`bot.ps1 estimate` is only available in `SELECTING_HAND`. It enumerates 1–5 card
+plays, classifies each poker hand, and scores: hand level + scoring-card chips +
+enhancement/edition/seal + retriggers + modeled jokers (+Mult before ×Mult) +
+boss debuff (The Flint) + Plasma balancing.
+
+Prints top-3 lines with **`idx`** = full `bot.ps1 play` indices (includes kickers
+when they change held-card jokers like Blackboard); optional **`scoring=`** when
+kickers differ from scorers; `[BEATS]` / `[short]` vs blind target. Dusk uses API
+`hands_left == 1` (= game's internal `0` after decrement). `--json` adds
+`scoring_indices`, `scoring_cards`, `unmodeled_jokers`.
+
+Modeled jokers: see registry. Economy jokers (Riff-raff, Egg, …) are no-ops.
+Anything else → `unmodeled` (treat score as lower bound only).
 
 ### JSON / advanced
 
@@ -141,6 +142,7 @@ payloads for each.
 - `view.py` — compact summary formatter + `glance` command (`card_label`, `print_summary`)
 - `act.py` — friendly action dispatcher (`build_params` → `execute` → compact summary, `--json` for envelope)
 - `estimate.py` — score estimator (`estimate` command, top playable hands + modeled-joker scoring)
+- `estimate_registry.md` — modeled / no-op / never-RNG joker list + source refs
 - `state.py` — full JSON gamestate envelope
 - `query.py` — Layer 2 queries (table output by default; `--json` for raw)
 - `exec.py` — raw JSON-RPC action, returns envelope

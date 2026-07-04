@@ -1,14 +1,27 @@
 """Score estimator: `bot.ps1 estimate` — top playable hands + estimated score.
 
-Read-only local computation over the current gamestate. Enumerates 5-card
-combos from the hand, classifies each poker hand, and scores it with the
-verified formula (current hand levels + card enhancements/editions/seals +
-retriggers + modeled jokers + boss debuff + Plasma balancing). Prints the top
-plays and whether each beats the current blind target.
+Read-only local computation over the current gamestate. Enumerates 1–5 card plays
+from the hand, classifies each poker hand, and scores with hand levels + card
+buffs + retriggers + modeled jokers + boss debuff + Plasma balancing.
 
-This is an ESTIMATE. It models common, mechanically-precise jokers and card
-modifiers; any joker not in the registry is reported as `unmodeled` so the AI
-never trusts a silent underestimate. See PLAY.md for the legend.
+Deterministic-only principle
+----------------------------
+Only model effects whose outcome is **fixed** once you choose which cards to play.
+RNG jokers (Misprint, 8 Ball, Bloodstone, …) stay `unmodeled`. Do not guess random
+procs or expected values.
+
+Mechanics should be verified against Balatro source when adding jokers:
+  ``%APPDATA%\\Balatro\\Mods\\lovely\\game-dump\\card.lua``
+  ``…/functions/state_events.lua``
+
+Registry (modeled / no-op / never-RNG / TODO): ``tools/play/estimate_registry.md``
+
+Output
+------
+- ``indices`` — pass directly to ``bot.ps1 play`` (includes kickers when they change
+  held-card jokers such as Blackboard).
+- ``scoring_indices`` — cards that contribute to the poker hand type only.
+- ``unmodeled_jokers`` — present but not modeled; treat score as lower bound only.
 
 Usage:
     bot.ps1 estimate          # compact top-3 summary
@@ -503,8 +516,8 @@ def estimate(state: dict) -> dict:
     ]
 
     results: list[dict] = []
-    # Dusk triggers on the final allotted hand of the round (hands_left == 1),
-    # NOT on the winning hand. This is deterministic before playing.
+    # Dusk: game checks hands_left == 0 during evaluate_play (after
+    # ease_hands_played(-1)); API still shows hands_left == 1 before you play.
     dusk_now = cfg.get("dusk_owned", False) and ctx.get("hands_left") == 1
     for combo in combos:
         cards = [parsed[i] for i in combo]
@@ -526,13 +539,16 @@ def estimate(state: dict) -> dict:
             dusk_active=dusk_now,
         )
         scoring_play_indices = [parsed[combo[i]]["hand_index"] for i in scoring_idx]
+        play_indices = [parsed[i]["hand_index"] for i in combo]
         scoring_labels = [parsed[combo[i]]["label"] for i in scoring_idx]
+        play_labels = [parsed[i]["label"] for i in combo]
         results.append(
             {
                 "hand_type": hand_type,
-                "indices": scoring_play_indices,
-                "cards": scoring_labels,
+                "indices": play_indices,
+                "cards": play_labels,
                 "scoring_indices": scoring_play_indices,
+                "scoring_cards": scoring_labels,
                 "chips": chips,
                 "mult": mult,
                 "score": score,
@@ -549,7 +565,10 @@ def estimate(state: dict) -> dict:
         if (
             prev is None
             or r["score"] > prev["score"]
-            or (r["score"] == prev["score"] and len(r["indices"]) < len(prev["indices"]))
+            or (
+                r["score"] == prev["score"]
+                and len(r["indices"]) < len(prev["indices"])
+            )
         ):
             deduped[key] = r
     results = list(deduped.values())
@@ -575,9 +594,12 @@ def _format(est: dict) -> str:
     target = e["target"]
     for k, r in enumerate(e["top"]):
         beat = "BEATS" if r["score"] >= (target or 0) else "short"
+        score_part = ""
+        if r.get("scoring_indices") and r["scoring_indices"] != r["indices"]:
+            score_part = f" scoring={r['scoring_indices']}"
         lines.append(
             f"  #{k + 1} {r['hand_type']} (lvl {r['level']}) "
-            f"idx={r['indices']} {r['cards']}  "
+            f"idx={r['indices']} {r['cards']}{score_part}  "
             f"chips={r['chips']} mult={r['mult']} score={r['score']} [{beat}]"
         )
     if e["unmodeled_jokers"]:
