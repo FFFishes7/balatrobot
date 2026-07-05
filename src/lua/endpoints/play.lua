@@ -83,11 +83,19 @@ return {
     local hand_played = false
     local draw_to_hand = false
 
-    -- NOTE: GAME_OVER detection cannot happen inside this event function
-    -- because when G.STATE becomes GAME_OVER, the game sets G.SETTINGS.paused = true,
-    -- which stops all event processing. This callback is set so that love.update
-    -- (which runs even when paused) can detect GAME_OVER immediately.
-    BB_GAMESTATE.on_game_over = send_response
+    -- NOTE: GAME_OVER and final-run win detection cannot happen reliably inside
+    -- this event function because win_game() sets G.SETTINGS.paused = true,
+    -- which stops E_MANAGER. love.update polls these callbacks instead.
+    local function finish_play()
+      BB_GAMESTATE.clear_play_callbacks()
+      send_response(BB_GAMESTATE.get_gamestate())
+    end
+
+    BB_GAMESTATE.on_game_over = finish_play
+    BB_GAMESTATE.on_victory_overlay = function()
+      sendDebugMessage("Return play() - won (poll)", "BB.ENDPOINTS")
+      finish_play()
+    end
 
     G.E_MANAGER:add_event(Event({
       trigger = "condition",
@@ -116,16 +124,19 @@ return {
         -- end
 
         if G.STATE == G.STATES.ROUND_EVAL then
-          -- Early exit if basic conditions not met
-          if not G.round_eval or not G.STATE_COMPLETE or G.CONTROLLER.locked then
+          -- Final run win: never wait for cash_out UI (may not appear when paused).
+          if G.GAME.won then
+            if BB_GAMESTATE.has_victory_overlay() or G.STATE_COMPLETE then
+              sendDebugMessage("Return play() - won", "BB.ENDPOINTS")
+              finish_play()
+              return true
+            end
             return false
           end
 
-          -- Game is won
-          if G.GAME.won then
-            sendDebugMessage("Return play() - won", "BB.ENDPOINTS")
-            send_response(BB_GAMESTATE.get_gamestate())
-            return true
+          -- Early exit if basic conditions not met
+          if not G.round_eval or not G.STATE_COMPLETE or G.CONTROLLER.locked then
+            return false
           end
 
           -- Wait for first scoring row (blind1) to be added to the UI
@@ -141,19 +152,17 @@ return {
             end
           end
 
-          -- Both first and last scoring rows must be present
+          -- Normal round: wait for eval rows through cash_out button.
           if has_blind1 and has_cash_out_button then
-            local state_data = BB_GAMESTATE.get_gamestate()
             sendDebugMessage("Return play() - cash out", "BB.ENDPOINTS")
-            send_response(state_data)
+            finish_play()
             return true
           end
         end
 
         if draw_to_hand and hand_played and G.buttons and G.STATE == G.STATES.SELECTING_HAND then
           sendDebugMessage("Return play() - same round", "BB.ENDPOINTS")
-          local state_data = BB_GAMESTATE.get_gamestate()
-          send_response(state_data)
+          finish_play()
           return true
         end
 

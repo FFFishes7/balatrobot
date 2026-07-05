@@ -90,7 +90,8 @@ See the root [README](../../README.md#quick-start-windows) and [PLAY.md](../../P
 - **GAME_OVER:** restart hint uses the ended run's deck/stake/seed, e.g.
     **`→ menu  then  start RED WHITE ABC123`**.
 
-- **ROUND_EVAL:** `round won, score=…` plus **`pending:`** (income rows + **`total +$N`**).
+- **ROUND_EVAL:** `round won, score=…` plus **`pending:`** (income rows + **`total +$N`** for remaining **`cash_out`** bundle).
+    **Investment Tag** on boss defeat: **`received: +$N Investment Tag (boss defeat)`** — already in **`money=`**; not listed under **`pending:`**.
     If **`victory_overlay`**, **`→ endless`** then **`→ menu`** only — **`actions:`** and API allow **`endless`** / **`menu`** only (no **`cash_out`**, **`sell`**, **`use`**, or **`save`** until overlay dismissed). Example:
 
     ```text

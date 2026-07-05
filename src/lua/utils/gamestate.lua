@@ -4,7 +4,10 @@
 
 ---@class GameStateModule
 ---@field on_game_over (fun(state: GameState))?
+---@field on_victory_overlay (fun(state: GameState))?
 ---@field check_game_over fun()
+---@field check_victory_overlay fun()
+---@field clear_play_callbacks fun()
 ---@field get_blinds_info fun(): table<string, Blind>
 ---@field get_gamestate fun(): GameState
 ---@field ensure_bosses_used fun()
@@ -1416,10 +1419,19 @@ function gamestate.has_victory_overlay()
   if not G.GAME or not G.GAME.won or G.STATE ~= G.STATES.ROUND_EVAL then
     return false
   end
-  if G.OVERLAY_MENU and G.OVERLAY_MENU.get_UIE_by_ID then
-    return G.OVERLAY_MENU:get_UIE_by_ID("from_game_won") ~= nil or G.OVERLAY_MENU:get_UIE_by_ID("from_deck_won") ~= nil
+  if not G.OVERLAY_MENU then
+    return false
   end
-  return G.OVERLAY_MENU ~= nil
+  if G.OVERLAY_MENU.get_UIE_by_ID then
+    if G.OVERLAY_MENU:get_UIE_by_ID("from_game_won") then
+      return true
+    end
+    if G.OVERLAY_MENU:get_UIE_by_ID("from_deck_won") then
+      return true
+    end
+  end
+  -- Won run with any overlay menu is the victory screen (Endless / New Run / Menu).
+  return true
 end
 
 ---Error response when the post-win overlay blocks other ROUND_EVAL actions
@@ -1555,6 +1567,44 @@ function gamestate.get_gamestate()
 
   state_data.held_tags = gamestate.extract_held_tags()
   state_data.held_tags_ready = gamestate.tags_stack_stable()
+
+  if state_data.state == "ROUND_EVAL" and G.GAME then
+    local investment = 0
+    if state_data.round and state_data.round.cashout_preview then
+      investment = state_data.round.cashout_preview.investment_received or 0
+    end
+    if investment == 0 and state_data.victory_overlay then
+      for _, tag in ipairs(state_data.held_tags) do
+        if tag.key == "tag_investment" then
+          local unit = 25
+          if G.P_TAGS and G.P_TAGS.tag_investment and G.P_TAGS.tag_investment.config then
+            unit = G.P_TAGS.tag_investment.config.dollars or unit
+          end
+          investment = investment + unit
+        end
+      end
+      if investment > 0 then
+        if not state_data.round then
+          state_data.round = {}
+        end
+        if not state_data.round.cashout_preview then
+          state_data.round.cashout_preview = { lines = {}, total = 0 }
+        end
+        state_data.round.cashout_preview.investment_received = investment
+      end
+    end
+    if investment > 0 then
+      state_data.money = (G.GAME.dollars or 0) + investment
+      -- Final win may skip evaluate_round; tag stays in G.GAME.tags but is spent.
+      local filtered = {}
+      for _, tag in ipairs(state_data.held_tags) do
+        if tag.key ~= "tag_investment" then
+          filtered[#filtered + 1] = tag
+        end
+      end
+      state_data.held_tags = filtered
+    end
+  end
 
   return state_data
 end
@@ -1731,18 +1781,44 @@ end
 -- GAME_OVER Callback Support
 -- ==========================================================================
 
--- Callback set by endpoints that need immediate GAME_OVER notification
--- This is necessary because when G.STATE becomes GAME_OVER, the game pauses
--- (G.SETTINGS.paused = true) which stops event processing, preventing
--- normal event-based detection from working.
+-- Callbacks set by play() for states where G.SETTINGS.paused stops E_MANAGER.
 gamestate.on_game_over = nil
+gamestate.on_victory_overlay = nil
+
+---Clear play() completion callbacks (avoid double response).
+function gamestate.clear_play_callbacks()
+  gamestate.on_game_over = nil
+  gamestate.on_victory_overlay = nil
+end
+
+---Whether play() should return on a final run win at ROUND_EVAL.
+---@return boolean
+local function play_won_round_eval_ready()
+  if not G.GAME or not G.GAME.won or G.STATE ~= G.STATES.ROUND_EVAL then
+    return false
+  end
+  if gamestate.has_victory_overlay() then
+    return true
+  end
+  -- win_game() can pause before overlay UI; don't wait for cash_out rows.
+  return G.STATE_COMPLETE == true
+end
 
 ---Check and trigger GAME_OVER callback if state is GAME_OVER
 ---Called from love.update before game logic runs
 function gamestate.check_game_over()
   if gamestate.on_game_over and G.STATE == G.STATES.GAME_OVER then
     gamestate.on_game_over(gamestate.get_gamestate())
-    gamestate.on_game_over = nil
+    gamestate.clear_play_callbacks()
+  end
+end
+
+---Check and trigger victory-overlay callback for final run wins.
+---Called from love.update before game logic runs (runs when paused).
+function gamestate.check_victory_overlay()
+  if gamestate.on_victory_overlay and play_won_round_eval_ready() then
+    gamestate.on_victory_overlay(gamestate.get_gamestate())
+    gamestate.clear_play_callbacks()
   end
 end
 

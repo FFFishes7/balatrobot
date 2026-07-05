@@ -1433,7 +1433,11 @@
           },
           "total": {
             "type": "integer",
-            "description": "Dollars applied on cash_out (pre-modifier; uses G.GAME.current_round.dollars when set)"
+            "description": "Pending cash_out dollars (excludes investment_received on boss defeat)"
+          },
+          "investment_received": {
+            "type": "integer",
+            "description": "Investment Tag dollars already received on boss defeat (not in total or lines)"
           }
         },
         "required": [

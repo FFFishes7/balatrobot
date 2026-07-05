@@ -86,7 +86,8 @@
 
 ---@class CashoutPreview
 ---@field lines CashoutLine[]
----@field total integer
+---@field total integer Pending cash_out dollars (excludes investment_received)
+---@field investment_received integer? Investment Tag paid on boss defeat (not in total)
 
 ---@class Blind
 ---@field type Blind.Type Type of the blind

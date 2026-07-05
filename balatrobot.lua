@@ -91,8 +91,9 @@ end
 local love_update = love.update
 love.update = function(dt) ---@diagnostic disable-line: duplicate-set-field
   hook_get_new_boss()
-  -- Check for GAME_OVER before game logic runs
+  -- Check for GAME_OVER / victory overlay before game logic runs (paused-safe)
   BB_GAMESTATE.check_game_over()
+  BB_GAMESTATE.check_victory_overlay()
   love_update(dt)
   BB_SERVER.update(BB_DISPATCHER)
 end

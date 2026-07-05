@@ -329,6 +329,11 @@ def _round_eval_block(state: dict[str, Any]) -> list[str]:
     lines = [f"round won, score={chips}"]
     preview = r.get("cashout_preview")
     if isinstance(preview, dict):
+        inv = preview.get("investment_received")
+        if isinstance(inv, int) and inv > 0:
+            lines.append(
+                f"  received: {_format_cashout_dollars(inv)} Investment Tag (boss defeat)"
+            )
         pending = _cashout_pending_parts(preview)
         if pending:
             lines.append("  pending: " + " · ".join(pending))

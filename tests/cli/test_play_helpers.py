@@ -1298,15 +1298,10 @@ def test_print_summary_round_eval_investment_tag(
             "cashout_preview": {
                 "lines": [
                     {"kind": "blind", "label": "blind", "dollars": 3},
-                    {
-                        "kind": "tag",
-                        "label": "Investment Tag",
-                        "dollars": 25,
-                        "key": "tag_investment",
-                    },
                     {"kind": "interest", "label": "interest", "dollars": 1},
                 ],
-                "total": 29,
+                "total": 4,
+                "investment_received": 25,
             },
         },
         "jokers": {"count": 0, "limit": 5, "cards": []},
@@ -1316,9 +1311,13 @@ def test_print_summary_round_eval_investment_tag(
     }
     print_summary(_envelope(raw))
     out = capsys.readouterr().out
-    assert "Investment Tag" in out
+    assert "received:" in out
+    assert "Investment Tag (boss defeat)" in out
     assert "+$25" in out
-    assert "total +$29" in out
+    assert "total +$4" in out
+    assert "pending:" in out
+    pending_block = out.split("pending:", 1)[1].split("\n", 1)[0]
+    assert "Investment Tag" not in pending_block
 
 
 def test_print_summary_pack_death_hint(capsys: pytest.CaptureFixture[str]) -> None:

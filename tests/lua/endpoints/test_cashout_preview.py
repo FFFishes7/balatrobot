@@ -2,10 +2,22 @@
 
 from __future__ import annotations
 
+import time
+
 import httpx
 import pytest
 
 from tests.lua.conftest import api, assert_gamestate_response, load_fixture
+
+
+def _wait_for_victory_overlay(client: httpx.Client, *, attempts: int = 100) -> dict:
+    """Poll gamestate until the post-win overlay is visible."""
+    for _ in range(attempts):
+        gamestate = api(client, "gamestate", {})["result"]
+        if gamestate.get("victory_overlay"):
+            return gamestate
+        time.sleep(0.1)
+    raise AssertionError("victory_overlay never appeared after winning the run")
 
 
 def _preview_lines(gamestate: dict) -> list[dict]:
@@ -74,13 +86,25 @@ class TestCashoutPreviewLive:
 
     def test_total_matches_cash_out(self, client: httpx.Client) -> None:
         gamestate = load_fixture(client, "cash_out", "state-ROUND_EVAL")
+        preview = gamestate["round"]["cashout_preview"]
         money_before = gamestate["money"]
-        total = gamestate["round"]["cashout_preview"]["total"]
+        pending = preview["total"]
         after = assert_gamestate_response(api(client, "cash_out", {}), state="SHOP")
-        assert after["money"] == money_before + total
+        assert after["money"] == money_before + pending
 
-    def test_investment_tag_on_boss_round(self, client: httpx.Client) -> None:
-        """Boss win with Investment Tag held adds a tag eval row."""
+    def test_boss_win_without_investment_no_received_field(
+        self, client: httpx.Client
+    ) -> None:
+        """Non-boss or no Investment Tag: no investment_received on preview."""
+        gamestate = load_fixture(client, "play", "state-SELECTING_HAND")
+        gamestate = _win_from_selecting_hand(client)
+        preview = gamestate["round"]["cashout_preview"]
+        assert not preview.get("investment_received")
+        tag_lines = _line_by_kind(gamestate, "tag")
+        assert not any(line.get("key") == "tag_investment" for line in tag_lines)
+
+    def test_investment_tag_probe_on_boss_round(self, client: httpx.Client) -> None:
+        """Boss win with Investment Tag: paid on defeat, excluded from pending."""
         gamestate = load_fixture(
             client,
             "play",
@@ -91,9 +115,34 @@ class TestCashoutPreviewLive:
         has_investment = any(t.get("key") == "tag_investment" for t in held)
         if not has_investment:
             pytest.skip("Investment Tag not held on this boss fixture path")
+        money_before_play = gamestate["money"]
         gamestate = assert_gamestate_response(
             api(client, "play", {"cards": [0]}),
             state="ROUND_EVAL",
         )
+        preview = gamestate["round"]["cashout_preview"]
+        investment = preview.get("investment_received")
+        assert investment == 25
         tag_lines = _line_by_kind(gamestate, "tag")
-        assert any(line.get("dollars") == 25 for line in tag_lines)
+        assert not any(line.get("key") == "tag_investment" for line in tag_lines)
+        held_after = gamestate.get("held_tags") or []
+        assert not any(t.get("key") == "tag_investment" for t in held_after)
+        assert gamestate["money"] == money_before_play + investment
+        pending = preview["total"]
+        if gamestate.get("won"):
+            if not gamestate.get("victory_overlay"):
+                gamestate = _wait_for_victory_overlay(client)
+            gamestate = assert_gamestate_response(
+                api(client, "endless", {}),
+                state="ROUND_EVAL",
+                won=True,
+            )
+            assert not gamestate.get("victory_overlay")
+            preview = gamestate["round"]["cashout_preview"]
+            pending = preview["total"]
+        after = assert_gamestate_response(api(client, "cash_out", {}), state="SHOP")
+        assert after["money"] == gamestate["money"] + pending
+
+    def test_investment_tag_on_boss_round(self, client: httpx.Client) -> None:
+        """Alias for investment boss-round assertions (kept for -k investment)."""
+        self.test_investment_tag_probe_on_boss_round(client)
