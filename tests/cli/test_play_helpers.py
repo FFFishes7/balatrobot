@@ -258,25 +258,127 @@ def test_build_actions_blind_select(selecting_hand_state: dict) -> None:
         "consumables": {
             "count": 1,
             "limit": 2,
-            "cards": [{"label": "The Hermit", "key": "c_hermit"}],
+            "cards": [
+                {
+                    "label": "The Hermit",
+                    "key": "c_hermit",
+                    "value": {"target_min": 1, "target_max": 1},
+                }
+            ],
         },
     }
     commands = {a["command"] for a in build_actions(blind_state)}
     assert {"select", "sell", "use"}.issubset(commands)
 
 
+def test_build_actions_use_hidden_without_hand(selecting_hand_state: dict) -> None:
+    """Hand-target consumables omit use when hand is missing or too small."""
+    base = {
+        **selecting_hand_state,
+        "hand": {"count": 0, "limit": 8, "cards": []},
+    }
+    blind_magician = {
+        **base,
+        "state": "BLIND_SELECT",
+        "consumables": {
+            "count": 1,
+            "limit": 2,
+            "cards": [
+                {
+                    "label": "The Magician",
+                    "key": "c_magician",
+                    "value": {"target_min": 1, "target_max": 2},
+                }
+            ],
+        },
+    }
+    assert "use" not in {a["command"] for a in build_actions(blind_magician)}
+
+    blind_fool = {
+        **base,
+        "state": "BLIND_SELECT",
+        "consumables": {
+            "count": 1,
+            "limit": 2,
+            "cards": [
+                {"label": "The Fool", "key": "c_fool", "value": {"effect": "..."}}
+            ],
+        },
+    }
+    assert "use" in {a["command"] for a in build_actions(blind_fool)}
+
+    blind_ankh = {
+        **base,
+        "state": "BLIND_SELECT",
+        "jokers": {
+            "count": 1,
+            "limit": 5,
+            "cards": [{"label": "Joker", "key": "j_joker"}],
+        },
+        "consumables": {
+            "count": 1,
+            "limit": 2,
+            "cards": [
+                {
+                    "label": "Ankh",
+                    "key": "c_ankh",
+                    "value": {"random_joker_effect": True},
+                }
+            ],
+        },
+    }
+    assert "use" in {a["command"] for a in build_actions(blind_ankh)}
+
+    death_one_card = {
+        **selecting_hand_state,
+        "state": "SELECTING_HAND",
+        "hand": {
+            "count": 1,
+            "limit": 8,
+            "cards": [{"label": "7♣", "value": {"rank": "7", "suit": "C"}}],
+        },
+        "consumables": {
+            "count": 1,
+            "limit": 2,
+            "cards": [{"label": "Death", "key": "c_death", "value": {"effect": "..."}}],
+        },
+    }
+    assert "use" not in {a["command"] for a in build_actions(death_one_card)}
+
+    death_two_cards = {
+        **death_one_card,
+        "hand": {
+            "count": 2,
+            "limit": 8,
+            "cards": [
+                {"label": "7♣", "value": {"rank": "7", "suit": "C"}},
+                {"label": "K♠", "value": {"rank": "K", "suit": "S"}},
+            ],
+        },
+    }
+    assert "use" in {a["command"] for a in build_actions(death_two_cards)}
+
+
 def test_build_actions_round_eval(selecting_hand_state: dict) -> None:
     round_eval_state = {
         **selecting_hand_state,
         "state": "ROUND_EVAL",
+        "hand": {"count": 0, "limit": 8, "cards": []},
         "consumables": {
             "count": 1,
             "limit": 2,
-            "cards": [{"label": "The Hermit", "key": "c_hermit"}],
+            "cards": [
+                {
+                    "label": "The Hermit",
+                    "key": "c_hermit",
+                    "value": {"target_min": 1, "target_max": 1},
+                }
+            ],
         },
     }
     commands = {a["command"] for a in build_actions(round_eval_state)}
-    assert {"cash_out", "sell", "use"}.issubset(commands)
+    assert {"cash_out", "sell"}.issubset(commands)
+    assert "use" not in commands
 
 
 def test_build_actions_round_eval_victory_overlay(selecting_hand_state: dict) -> None:

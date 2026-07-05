@@ -64,13 +64,40 @@ def _visible_cards(area: dict | None) -> list[dict]:
     return [c for c in area.get("cards", []) if not c.get("state", {}).get("hidden")]
 
 
-def _consumable_needs_hand(card: dict) -> bool:
+def _consumable_effect_needs_hand(card: dict) -> bool:
+    """Fallback when gamestate has no target_min: effect text mentions hand selection."""
     effect = (card.get("value") or {}).get("effect") or ""
-    # Fallback: tarots (incl. Death) that mention "hand" in effect text need targets.
+    return "select" in effect.lower() and "hand" in effect.lower()
+
+
+def _consumable_needs_hand_targets(card: dict) -> bool:
+    """True when use.lua requires visible hand cards (matches pack target rules)."""
+    if is_random_joker_consumable(card):
+        return False
     key = card.get("key") or ""
     if key == "c_death":
         return True
-    return "select" in effect.lower() and "hand" in effect.lower()
+    value = card.get("value") or {}
+    tmin = value.get("target_min")
+    if isinstance(tmin, int) and tmin > 0:
+        return True
+    return _consumable_effect_needs_hand(card)
+
+
+def _min_hand_targets(card: dict) -> int:
+    """Minimum visible hand cards required to use a hand-target consumable."""
+    if card.get("key") == "c_death":
+        return 2
+    value = card.get("value") or {}
+    tmin = value.get("target_min")
+    if isinstance(tmin, int) and tmin > 0:
+        return tmin
+    return 1
+
+
+def _consumable_needs_hand(card: dict) -> bool:
+    """Alias kept for consumable_target_hint fallback paths."""
+    return _consumable_needs_hand_targets(card)
 
 
 _RANDOM_JOKER_KEYS = frozenset({"c_ankh", "c_hex", "c_ectoplasm"})
@@ -159,13 +186,14 @@ def _sell_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
 def _use_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
     actions: list[dict[str, Any]] = []
     hand_cards = _visible_cards(state.get("hand"))
+    hand_len = len(hand_cards)
     for idx, card in enumerate(state.get("consumables", {}).get("cards", [])):
-        needs_hand = _consumable_needs_hand(card)
-        if needs_hand and not hand_cards:
-            continue
+        if _consumable_needs_hand_targets(card):
+            if hand_len < _min_hand_targets(card):
+                continue
         params: dict[str, Any] = {"consumable": idx}
-        if needs_hand:
-            params["cards"] = [0]
+        if _consumable_needs_hand_targets(card):
+            params["cards"] = _pack_target_example(card, hand_len)
         actions.append(
             _action(
                 "use",
@@ -241,13 +269,7 @@ def _shop_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _pack_card_needs_targets(card: dict) -> bool:
-    if is_random_joker_consumable(card):
-        return False
-    value = card.get("value") or {}
-    tmin = value.get("target_min")
-    if isinstance(tmin, int) and tmin > 0:
-        return True
-    return _consumable_needs_hand(card)
+    return _consumable_needs_hand_targets(card)
 
 
 def _pack_target_example(card: dict, hand_len: int) -> list[int]:

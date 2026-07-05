@@ -212,7 +212,7 @@ Follow [PLAY.md §2 Loop and hard rules](../../PLAY.md#2-loop-and-hard-rules). S
 5. Repeat until `state == GAME_OVER`, then `menu` + `start DECK STAKE SEED` (seed from summary restart hint)
 
 Every `glance` / action output ends with an `actions:` line listing **command
-names** valid in the current state (deduplicated, e.g. `actions: play discard sort buy reroll next_round`). Use `bot.ps1 help` (catalog + descriptions), `bot.ps1 help --now` (valid now), or [PLAY.md §4–§5](../../PLAY.md#4-state--command) for argument syntax.
+names** valid in the current state (deduplicated, e.g. `actions: play discard sort buy reroll next_round`). **`use`** appears only when each owned consumable can actually be used: Tarot/Spectral cards that need hand targets require enough **visible** hand cards (`target_min`, or 2 for Death); random-joker Spectrals (Ankh/Hex/Ectoplasm) and no-target cards (Planet, Fool, …) may still show `use` without a hand. Use `bot.ps1 help` (catalog + descriptions), `bot.ps1 help --now` (valid now), or [PLAY.md §4–§5](../../PLAY.md#4-state--command) for argument syntax.
 
 For full JSON state (`state`, `exec`, or `<action> --json`), the same commands appear in an `actions[]` array with `example` payloads for each.
 
