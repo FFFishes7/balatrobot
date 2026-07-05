@@ -876,6 +876,33 @@ class TestGamestateCards:
                 == "(lvl.1) Level up High Card +1 Mult and +10 chips"
             )
 
+        def test_stake_sticker_blacklist_non_empty(self, client: httpx.Client) -> None:
+            """Stake win sticker blacklist has vanilla stakes (English in CI)."""
+            response = api(client, "test_sticker_blacklist", {})
+            assert response["result"]["success"] is True
+            lines = response["result"]["lines"]
+            count = response["result"]["count"]
+            assert count >= 8
+            assert count == len(lines)
+            white_line = next(
+                (line for line in lines if "White" in line and "Stake" in line),
+                None,
+            )
+            assert white_line is not None, f"expected White stake line in {lines!r}"
+
+        def test_joker_effect_excludes_blacklisted_sticker_lines(
+            self, client: httpx.Client
+        ) -> None:
+            """value.effect omits profile stake win sticker info lines."""
+            blacklist = api(client, "test_sticker_blacklist", {})["result"]["lines"]
+            fixture_name = "state-SELECTING_HAND"
+            load_fixture(client, "gamestate", fixture_name)
+            response = api(client, "add", {"key": "j_mime"})
+            effect = response["result"]["jokers"]["cards"][0]["value"]["effect"]
+            for line in blacklist:
+                assert line not in effect, f"sticker line leaked into effect: {line!r}"
+            assert "Retrigger" in effect
+
         def test_card_value_consumable_target_requirements(
             self, client: httpx.Client
         ) -> None:

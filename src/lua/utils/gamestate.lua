@@ -23,6 +23,7 @@
 ---@field extract_held_tags fun(): table[]
 ---@field extract_cashout_preview fun(): CashoutPreview|nil
 ---@field get_reported_state_name fun(): string
+---@field get_stake_sticker_blacklist fun(): { lines: string[], count: integer }
 local gamestate = {}
 
 gamestate.BOSS_REROLL_COST = 10
@@ -425,6 +426,106 @@ local function collect_ui_texts(nodes, out)
   end
 end
 
+local function normalize_profile_line(text)
+  if not text then
+    return ""
+  end
+  return (text:gsub("^%s+", ""):gsub("%s+$", ""):gsub("%s+", " "))
+end
+
+---@param key string Other-table key (e.g. white_sticker)
+---@return string|nil
+local function localize_sticker_line(key)
+  local nodes = {}
+  local ok = pcall(function()
+    localize({ type = "descriptions", key = key, set = "Other", nodes = nodes })
+  end)
+  if not ok or #nodes == 0 then
+    return nil
+  end
+  local parts = {}
+  collect_ui_texts(nodes, parts)
+  if #parts == 0 then
+    return nil
+  end
+  return normalize_profile_line(table.concat(parts, ""))
+end
+
+local _stake_sticker_blacklist = nil
+
+---Lazy cache of localized stake win sticker info lines (profile achievement text).
+---@return table<string, true>
+local function build_stake_sticker_blacklist()
+  if _stake_sticker_blacklist then
+    return _stake_sticker_blacklist
+  end
+
+  local blacklist = {}
+  local seen_keys = {}
+
+  local function register_sticker(name)
+    if not name or seen_keys[name] then
+      return
+    end
+    seen_keys[name] = true
+    local key = string.lower(name) .. "_sticker"
+    local text = localize_sticker_line(key)
+    if text and text ~= "" then
+      blacklist[text] = true
+    end
+  end
+
+  local sticker_names = {}
+  if G.sticker_map then
+    for _, name in ipairs(G.sticker_map) do
+      sticker_names[name] = true
+      register_sticker(name)
+    end
+    for name, _ in pairs(G.sticker_map) do
+      if type(name) == "string" then
+        sticker_names[name] = true
+        register_sticker(name)
+      end
+    end
+  end
+
+  if G.P_STAKES then
+    for _, stake in pairs(G.P_STAKES) do
+      if stake.key and sticker_names[stake.key] then
+        register_sticker(stake.key)
+      end
+    end
+  end
+
+  _stake_sticker_blacklist = blacklist
+  return blacklist
+end
+
+---@param line string
+---@return boolean
+local function is_profile_sticker_line(line)
+  if not line or line == "" then
+    return false
+  end
+  local normalized = normalize_profile_line(line)
+  if normalized == "" then
+    return false
+  end
+  return build_stake_sticker_blacklist()[normalized] == true
+end
+
+---Debug/test helper: sorted list of blacklisted stake sticker lines.
+---@return { lines: string[], count: integer }
+function gamestate.get_stake_sticker_blacklist()
+  local blacklist = build_stake_sticker_blacklist()
+  local lines = {}
+  for text, _ in pairs(blacklist) do
+    lines[#lines + 1] = text
+  end
+  table.sort(lines)
+  return { lines = lines, count = #lines }
+end
+
 local function get_card_ui_description(card)
   -- Generate UI structure directly (no hover side effects)
   local ui_table = card:generate_UIBox_ability_table()
@@ -450,7 +551,10 @@ local function get_card_ui_description(card)
       local line_texts = {}
       collect_ui_texts(line, line_texts)
       if #line_texts > 0 then
-        texts[#texts + 1] = table.concat(line_texts, "")
+        local line_str = table.concat(line_texts, "")
+        if not is_profile_sticker_line(line_str) then
+          texts[#texts + 1] = line_str
+        end
       end
     end
   end

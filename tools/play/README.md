@@ -110,7 +110,9 @@ See the root [README](../../README.md#quick-start-windows) and [PLAY.md](../../P
 
 - **Joker editions** are decoded inline: `[0] (+$2 sell) (+10 mult) Holographic Joker — ...`.
     Joker-internal category codes (e.g. `SUIT MULT`) are dropped; the effect text
-    carries that meaning.
+    carries that meaning. The `— effect` suffix is **mechanism description only** —
+    profile stake win sticker sentences (e.g. “win on White Stake”) are omitted from
+    `value.effect` / glance.
 
 ### Friendly action subcommands
 
