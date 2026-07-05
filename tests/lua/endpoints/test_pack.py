@@ -460,10 +460,13 @@ class TestPackEndpointMegaPack:
         load_fixture(
             client, "pack", "state-SMODS_BOOSTER_OPENED--pack.key-p_celestial_mega_1"
         )
+        gamestate = assert_gamestate_response(api(client, "gamestate", {}))
+        assert gamestate["pack"]["choices_remaining"] == 2
         result = api(client, "pack", {"card": 0})
         gamestate = assert_gamestate_response(result, state="SMODS_BOOSTER_OPENED")
         assert "pack" in gamestate
         assert gamestate["pack"]["count"] > 0
+        assert gamestate["pack"]["choices_remaining"] == 1
 
     def test_mega_pack_second_selection_closes(self, client: httpx.Client) -> None:
         """Test that second selection in mega pack closes pack."""

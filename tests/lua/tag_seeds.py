@@ -10,6 +10,7 @@ Re-discover:
     python scripts/find_economy_seed.py    → ECONOMY_SMALL
     python scripts/find_boss_seed.py       → BOSS_SMALL
     python scripts/find_tag_pair_seed.py   → DOUBLE_THEN_FOIL
+    python scripts/find_double_charm_seed.py → DOUBLE_THEN_CHARM
 """
 
 from __future__ import annotations
@@ -25,6 +26,9 @@ FOIL_SMALL = "S00010"
 
 # ante 1: small=Economy Tag (consumed immediately on skip)
 ECONOMY_SMALL = "S00011"
+
+# ante 1: small=Double Tag, big=Charm Tag (two consecutive Arcana packs on second skip)
+DOUBLE_THEN_CHARM = "INB3JIA8"
 
 # ante 1: small=Double Tag, big=Foil Tag
 DOUBLE_THEN_FOIL = "S00062"

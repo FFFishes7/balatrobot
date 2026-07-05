@@ -15,13 +15,14 @@ Tests that need a specific blind tag or multi-blind layout **must not** loop ran
 2. **Commit** — add the constant to [`tag_seeds.py`](tag_seeds.py).
 3. **Use** — import in the test; assert tags at start so version drift fails loudly.
 
-| Script                          | Constant           |
-| ------------------------------- | ------------------ |
-| `scripts/find_charm_seed.py`    | `CHARM_SMALL`      |
-| `scripts/find_foil_seed.py`     | `FOIL_SMALL`       |
-| `scripts/find_economy_seed.py`  | `ECONOMY_SMALL`    |
-| `scripts/find_boss_seed.py`     | `BOSS_SMALL`       |
-| `scripts/find_tag_pair_seed.py` | `DOUBLE_THEN_FOIL` |
+| Script                              | Constant            |
+| ----------------------------------- | ------------------- |
+| `scripts/find_charm_seed.py`        | `CHARM_SMALL`       |
+| `scripts/find_foil_seed.py`         | `FOIL_SMALL`        |
+| `scripts/find_economy_seed.py`      | `ECONOMY_SMALL`     |
+| `scripts/find_boss_seed.py`         | `BOSS_SMALL`        |
+| `scripts/find_tag_pair_seed.py`     | `DOUBLE_THEN_FOIL`  |
+| `scripts/find_double_charm_seed.py` | `DOUBLE_THEN_CHARM` |
 
 Example consumer: [`endpoints/test_skip_pack_tag.py`](endpoints/test_skip_pack_tag.py).
 

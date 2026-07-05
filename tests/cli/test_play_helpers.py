@@ -1122,6 +1122,7 @@ def test_print_summary_pack_opened(capsys: pytest.CaptureFixture[str]) -> None:
         "pack": {
             "count": 2,
             "limit": 2,
+            "choices_remaining": 1,
             "cards": [
                 {
                     "label": "The Magician",
@@ -1150,6 +1151,7 @@ def test_print_summary_pack_opened(capsys: pytest.CaptureFixture[str]) -> None:
     assert "state=SMODS_BOOSTER_OPENED" in out
     assert "The Magician" in out
     assert "needs 1-2 targets" in out
+    assert "choices remaining: 1" in out
     assert "actions: pack" in out
     assert "pack skip" not in out or "actions: pack" in out
 

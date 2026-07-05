@@ -105,7 +105,7 @@ MENU ──► BLIND_SELECT ──► SELECTING_HAND ──► ROUND_EVAL ──
 | `SELECTING_HAND`       | Selecting cards to play or discard                                                |
 | `ROUND_EVAL`           | Round complete, ready to cash out                                                 |
 | `SHOP`                 | Shopping phase                                                                    |
-| `SMODS_BOOSTER_OPENED` | Booster pack opened, selecting or skipping pack                                   |
+| `SMODS_BOOSTER_OPENED` | Booster pack opened; `pack.choices_remaining` shows picks still required          |
 | `GAME_OVER`            | Game ended                                                                        |
 
 ---
@@ -384,6 +384,8 @@ After buying a pack with [`buy`](#buy), this method allows you to select a card 
 - **Standard packs**: Selected playing cards are added to your deck
 - **Arcana/Celestial/Spectral packs**: Selected consumables are **used immediately**
 
+The returned [GameState](#gamestate-schema) includes `pack.choices_remaining` (from `G.GAME.pack_choices`) while a booster is open — shop normal Arcana usually **1**; **Charm Tag** skip opens Mega Arcana (**2**, then **1** after the first pick). The play helper shows this as `choices remaining: N` in `glance`. **`skip: true`** forfeits all remaining picks in the current pack.
+
 Some Tarot and Spectral cards require you to select target cards from your hand (e.g., The Magician enhances 1-2 cards to Lucky). **Ankh, Hex, and Ectoplasm** (`random_joker_effect` on the card `value`) pick a **random** joker — `targets` only highlight hand cards and do not select a joker slot. See `requires_jokers_min` on Ankh/Hex (at least one joker must be present).
 
 **Parameters:** (exactly one required)
@@ -392,7 +394,7 @@ Some Tarot and Spectral cards require you to select target cards from your hand 
 | --------- | --------- | -------- | ------------------------------------------------------------------------ |
 | `card`    | integer   | No       | 0-based index of card to select from pack                                |
 | `targets` | integer[] | No       | 0-based indices of hand cards to target (for consumables that need them) |
-| `skip`    | boolean   | No       | Skip pack selection without choosing a card                              |
+| `skip`    | boolean   | No       | Forfeit all remaining picks in the current pack without choosing a card  |
 
 **Returns:** [GameState](#gamestate-schema)
 
@@ -871,14 +873,19 @@ On `GAME_OVER`, `run_summary` ([RunSummary](#runsummary)) is present with modal 
 
 Represents a card area (hand, jokers, consumables, shop, etc.).
 
+When the area is an open booster (`pack`), optional **`choices_remaining`** is the number of selections still required from this pack (from `G.GAME.pack_choices`; omitted when the pack is closed or 0).
+
 ```json
 {
   "count": 8,
   "limit": 8,
   "highlighted_limit": 5,
+  "choices_remaining": 1,
   "cards": [ ... ]
 }
 ```
+
+(`choices_remaining` appears on open `pack` areas only; other areas omit it.)
 
 ### Card
 

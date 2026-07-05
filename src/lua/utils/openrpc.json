@@ -1484,6 +1484,10 @@
             "type": "integer",
             "description": "Maximum number of cards that can be highlighted (hand area only)"
           },
+          "choices_remaining": {
+            "type": "integer",
+            "description": "Selections still required from this open booster (pack area only; from G.GAME.pack_choices)"
+          },
           "cards": {
             "type": "array",
             "description": "Array of cards in this area",

@@ -540,8 +540,12 @@ def _shop_block(state: dict[str, Any]) -> str:
 
 
 def _pack_block(state: dict[str, Any]) -> str:
-    cards = (state.get("pack") or {}).get("cards") or []
+    pack = state.get("pack") or {}
+    cards = pack.get("cards") or []
     parts: list[str] = []
+    choices = pack.get("choices_remaining")
+    if isinstance(choices, int) and choices > 0:
+        parts.append(f"  choices remaining: {choices}")
     has_random_joker = False
     for i, c in enumerate(cards):
         label = card_label(c)

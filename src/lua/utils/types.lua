@@ -87,6 +87,7 @@
 ---@field count integer Current number of cards in this area
 ---@field limit integer Maximum number of cards allowed in this area
 ---@field highlighted_limit integer? Maximum number of cards that can be highlighted (hand area only)
+---@field choices_remaining integer? Selections still required from open booster (pack area only)
 ---@field cards Card[] Array of cards in this area
 
 ---@class Card

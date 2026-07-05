@@ -1,11 +1,14 @@
 """Integration tests for skip tags that open a booster pack immediately."""
 
+import time
+
 import httpx
 
 from tests.lua.conftest import api, assert_gamestate_response
 from tests.lua.tag_seeds import (
     BOSS_SMALL,
     CHARM_SMALL,
+    DOUBLE_THEN_CHARM,
     DOUBLE_THEN_FOIL,
     ECONOMY_SMALL,
     FOIL_SMALL,
@@ -62,6 +65,28 @@ def _assert_small_tag(gamestate: dict, *, seed: str, tag_name: str) -> None:
     )
 
 
+def _pack_pick_params(gamestate: dict, card_idx: int) -> dict:
+    """Build pack params; include hand targets when the card requires them."""
+    card = gamestate["pack"]["cards"][card_idx]
+    params: dict = {"card": card_idx}
+    value = card.get("value") or {}
+    tmin = value.get("target_min")
+    if isinstance(tmin, int):
+        params["targets"] = list(range(tmin))
+    return params
+
+
+def _wait_for_open_pack(client: httpx.Client, *, timeout: float = 60) -> dict:
+    """Poll gamestate until a booster pack is open with choices_remaining set."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        gamestate = assert_gamestate_response(api(client, "gamestate", {}))
+        pack = gamestate.get("pack") or {}
+        if pack.get("cards") and pack.get("choices_remaining"):
+            return gamestate
+    raise AssertionError("timed out waiting for open pack with choices_remaining")
+
+
 class TestSkipPackTag:
     """Skip a blind with a pack-granting tag → reported pack-open state."""
 
@@ -76,6 +101,8 @@ class TestSkipPackTag:
         assert CHARM_TAG not in _pending_tag_names(gamestate)
         pack_cards = (gamestate.get("pack") or {}).get("cards") or []
         assert pack_cards, f"expected open pack cards after Charm skip (seed={seed!r})"
+        # Charm Tag opens Mega Arcana (choose=2)
+        assert gamestate["pack"]["choices_remaining"] == 2
 
 
 class TestSkipHeldTags:
@@ -181,6 +208,46 @@ class TestDoubleTagStack:
             f"expected [Foil, Foil] oldest-first after Double copies Foil "
             f"(seed={seed!r}, got={pending!r})"
         )
+
+    def test_double_charm_opens_two_packs_with_choices_remaining(
+        self, client: httpx.Client
+    ) -> None:
+        """Double Tag copies Charm → two consecutive Mega Arcana packs."""
+        seed = DOUBLE_THEN_CHARM
+        gamestate = _start_blind_select(client, seed)
+        assert gamestate["blinds"]["small"]["tag_name"] == DOUBLE_TAG, (
+            f"seed {seed!r} drifted: expected Double on small, "
+            f"got {gamestate['blinds']['small']['tag_name']!r}"
+        )
+        assert gamestate["blinds"]["big"]["tag_name"] == CHARM_TAG, (
+            f"seed {seed!r} drifted: expected Charm on big, "
+            f"got {gamestate['blinds']['big']['tag_name']!r}"
+        )
+
+        gamestate = assert_gamestate_response(
+            api(client, "skip", {}, timeout=60),
+            state="BLIND_SELECT",
+        )
+        _assert_held_tags_ready(gamestate)
+        assert DOUBLE_TAG in _pending_tag_names(gamestate)
+
+        gamestate = assert_gamestate_response(
+            api(client, "skip", {}, timeout=60),
+            state="SMODS_BOOSTER_OPENED",
+        )
+        assert gamestate["pack"]["choices_remaining"] == 2
+
+        gamestate = assert_gamestate_response(
+            api(client, "pack", _pack_pick_params(gamestate, 0), timeout=60),
+            state="SMODS_BOOSTER_OPENED",
+        )
+        assert gamestate["pack"]["choices_remaining"] == 1
+
+        assert_gamestate_response(
+            api(client, "pack", _pack_pick_params(gamestate, 0), timeout=60),
+        )
+        gamestate = _wait_for_open_pack(client)
+        assert gamestate["pack"]["choices_remaining"] == 2
 
 
 class TestSkipNonPackTag:

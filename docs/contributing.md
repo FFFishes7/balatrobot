@@ -203,13 +203,14 @@ See [`tools/play/estimate_registry.md`](../tools/play/estimate_registry.md) for 
 2. Record the printed seed in [`tests/lua/tag_seeds.py`](../tests/lua/tag_seeds.py).
 3. Import that constant in the live test; fail fast if blind tags no longer match (`seed … drifted`).
 
-| Finder                  | Constant           | Use                         |
-| ----------------------- | ------------------ | --------------------------- |
-| `find_charm_seed.py`    | `CHARM_SMALL`      | Pack opens on skip          |
-| `find_foil_seed.py`     | `FOIL_SMALL`       | Deferred tag / shop trigger |
-| `find_economy_seed.py`  | `ECONOMY_SMALL`    | Immediate tag consume       |
-| `find_boss_seed.py`     | `BOSS_SMALL`       | Non-pack skip smoke         |
-| `find_tag_pair_seed.py` | `DOUBLE_THEN_FOIL` | Two-blind tag combo         |
+| Finder                      | Constant            | Use                              |
+| --------------------------- | ------------------- | -------------------------------- |
+| `find_charm_seed.py`        | `CHARM_SMALL`       | Pack opens on skip               |
+| `find_foil_seed.py`         | `FOIL_SMALL`        | Deferred tag / shop trigger      |
+| `find_economy_seed.py`      | `ECONOMY_SMALL`     | Immediate tag consume            |
+| `find_boss_seed.py`         | `BOSS_SMALL`        | Non-pack skip smoke              |
+| `find_tag_pair_seed.py`     | `DOUBLE_THEN_FOIL`  | Two-blind tag combo              |
+| `find_double_charm_seed.py` | `DOUBLE_THEN_CHARM` | Double + Charm consecutive packs |
 
 Add a **new** `scripts/find_<scenario>_seed.py` for new scenario types; extend `tag_seeds.py` (or a sibling module) — do not bolt scenarios onto an unrelated finder.
 

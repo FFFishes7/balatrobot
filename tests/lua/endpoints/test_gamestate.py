@@ -427,6 +427,12 @@ class TestGamestateAreas:
             gamestate = load_fixture(client, "gamestate", fixture_name)
             assert gamestate["pack"]["highlighted_limit"] == 1
 
+        def test_pack_area_choices_remaining(self, client: httpx.Client) -> None:
+            """Open pack exposes choices_remaining from G.GAME.pack_choices."""
+            fixture_name = "state-SMODS_BOOSTER_OPENED"
+            gamestate = load_fixture(client, "gamestate", fixture_name)
+            assert gamestate["pack"]["choices_remaining"] >= 1
+
     class TestGamestateAreasShop:
         """Test gamestate shop area extraction."""
 

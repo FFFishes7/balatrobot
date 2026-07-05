@@ -33,7 +33,9 @@ See the root [README](../../README.md#quick-start-windows) and [`PLAY.md`](../..
 
 - **Header:** `state`, `ante`, `round`, `money`, `deck`, `stake`. In **SHOP** with
     Credit Card (`bankrupt_at != 0`), also **`buy_power=`** (`money - bankrupt_at`).
+
 - **MENU:** `→ start DECK STAKE [SEED]` plus compact `decks:` / `stakes:` lists; `actions:` lists valid command names (e.g. `start load`).
+
 - **BLIND_SELECT:** all three blinds (small/big/boss) with target, status, boss
     effect, and any skip-reward tag; the selectable blind is marked `(current, select)`.
     When the tag stack is stable, **`held tags (pending): …`** lists untriggered
@@ -43,35 +45,54 @@ See the root [README](../../README.md#quick-start-windows) and [`PLAY.md`](../..
     With Director's Cut or Retcon at Boss selection, **`reroll_boss=$10 [ok]`** /
     **`[need $N]`** / **`[used this ante]`** may appear; `actions:` includes
     `reroll_boss` when `round.boss_reroll_available`.
+
 - **SELECTING_HAND:** `hands_left` / `discards_left` / `score=X/target` with
     **`need=N`** when below the blind target or **`beaten`** when at/above it; the
     current blind (boss `effect=` only — no skip-reward tag while playing), jokers
     and consumables with slot count `jokers (N/5)`, the hand (with modifier tags —
     see below), an `economy:` line when interest / Delayed Gratification /
     **rental** pending, and the `actions:` line.
+
 - **SHOP:** each shop row shows price plus **`[ok]`**, **`[need $N]`**, or
     **`[slots full]`** (joker/consumable slots full — same check as `buy.lua`).
     Reroll uses affordability only. Header may include **`buy_power=`** when
     `bankrupt_at != 0`. With 2+ jokers/consumables, `actions:` includes
     **`rearrange jokers`** / **`rearrange consumables`** (same API as in-hand).
-- **SMODS_BOOSTER_OPENED:** pack rows show target hints such as **`(needs 1-2 targets)`**
+
+- **SMODS_BOOSTER_OPENED:** first line under `pack:` is **`choices remaining: N`** — picks still required from **this** open booster (from `G.GAME.pack_choices`). **Charm Tag** skip opens **Mega Arcana** (**2**, then **1** after the first pick); shop normal Arcana is **1**; mega packs from shop are **2** → **1**. Pack rows show target hints such as **`(needs 1-2 targets)`**
     from API `target_min`/`target_max` (hand cards). Random-joker Spectrals (Ankh, Hex,
     Ectoplasm) show **`(random joker — pack targets ignored)`** plus a one-line note when any
-    pack card has `random_joker_effect`.
+    pack card has `random_joker_effect`. Example:
+
+    ```text
+    pack:
+      choices remaining: 2
+      pack[0] The Magician — convert 2 cards (needs 1-2 targets)
+      pack[1] The Fool — copy last Tarot
+    actions: pack sell use
+    ```
+
+    While **`choices remaining` > 0**, use **`pack 0`** / **`pack 1`** (with hand targets when shown). **`pack skip`** forfeits all remaining picks in the current pack — not “advance to the next blind”.
+
 - **GAME_OVER:** restart hint uses the ended run's deck/stake, e.g.
     **`→ menu  then  start RED WHITE [SEED]`**.
+
 - **ROUND_EVAL:** `round won, score=…` plus a **`pending:`** line (hands-left $,
     interest, Delayed Gratification). When **`victory_overlay`** is set after
     winning the run, **`→ endless`** then **`→ cash_out`**; otherwise **`→ cash_out`** only.
+
 - **Transient states** (`HAND_PLAYED`, `DRAW_TO_HAND`, `NEW_ROUND`, `PLAY_TAROT`):
     **`→ transient: wait for stable state, then glance again`** and `actions: (none)`.
+
 - **Card modifier tags** (so buffs are visible without a separate query):
     `e:Mult`, `e:Bonus`, `e:Glass`, `e:Stone`, `e:Wild`, `e:Lucky`, `e:Gold`,
     `e:Steel` (enhancement); `d:Foil`, `d:Holo`, `d:Poly`, `d:Neg` (edition);
     `s:Red`, `s:Blue`, `s:Gold`, `s:Purple` (seal). Example: `4♦[e:Mult,s:Red]`.
     Debuffed cards are wrapped in parentheses: `(7♣)`.
+
 - **Joker / consumable stickers** inline: `[0] (perishable 3r) (rental -$1/round)   (+10 mult) Holographic Jolly Joker — ...`. Shop rows use the same sticker
     prefix when a card has edition/perishable/rental.
+
 - **Joker editions** are decoded inline: `[0] (+10 mult) Holographic Joker — ...`.
     Joker-internal category codes (e.g. `SUIT MULT`) are dropped; the effect text
     carries that meaning.
@@ -80,27 +101,27 @@ See the root [README](../../README.md#quick-start-windows) and [`PLAY.md`](../..
 
 No JSON, no quoting — `bot.ps1` forwards these to `act.py`, which parses positional args via `commands.build_params` and prints a compact summary. Append `--json` for full JSON state instead.
 
-| Command                        | Args                                   | Notes                                                                                                                                 |
-| ------------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `start`                        | `DECK STAKE [SEED]`                    | e.g. `start RED WHITE`                                                                                                                |
-| `select`                       | —                                      | select current blind                                                                                                                  |
-| `reroll_boss`                  | —                                      | reroll Boss blind ($10; Director's Cut / Retcon)                                                                                      |
-| `skip`                         | —                                      | skip current blind (Small/Big only) — collects the skip tag                                                                           |
-| `play`                         | `CARD_IDX...`                          | e.g. `play 0 1 2 3 4` (max 5, 0-based)                                                                                                |
-| `discard`                      | `CARD_IDX...`                          | e.g. `discard 0 1`                                                                                                                    |
-| `sort`                         | `MODE`                                 | `rank` / `rank-desc` / `rank-asc` / `suit` / `suit-desc` / `suit-asc` (aliases: `r`,`s`,`rd`,...)                                     |
-| `rearrange`                    | `hand\|jokers\|consumables FULL_ORDER` | e.g. `rearrange hand 2 0 1 3`                                                                                                         |
-| `buy`                          | `card\|voucher\|pack IDX`              | e.g. `buy card 0`, `buy pack 0`                                                                                                       |
-| `sell`                         | `joker\|consumable IDX`                | e.g. `sell joker 0`                                                                                                                   |
-| `reroll`                       | —                                      | reroll shop                                                                                                                           |
-| `cash_out`                     | —                                      | collect round rewards                                                                                                                 |
-| `endless`                      | —                                      | dismiss victory overlay to continue in endless mode (after Ante 8 win)                                                                |
-| `next_round`                   | —                                      | leave shop for blind select                                                                                                           |
-| `pack`                         | `IDX [TARGET_IDX...]` or `skip`        | e.g. `pack 0`, `pack 0 1 2` (hand targets for Tarot/Spectral); Ankh/Hex/Ectoplasm ignore targets (`random_joker_effect`); `pack skip` |
-| `use`                          | `CONSUMABLE_IDX [CARD_IDX...]`         | e.g. `use 0`, `use 0 1 2`                                                                                                             |
-| `death`                        | `CONSUMABLE SOURCE TARGET`             | special: reorders hand then uses Death                                                                                                |
-| `menu`                         | —                                      | return to main menu                                                                                                                   |
-| `save` / `load` / `screenshot` | `PATH`                                 |                                                                                                                                       |
+| Command                        | Args                                   | Notes                                                                                                                                                                                                       |
+| ------------------------------ | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `start`                        | `DECK STAKE [SEED]`                    | e.g. `start RED WHITE`                                                                                                                                                                                      |
+| `select`                       | —                                      | select current blind                                                                                                                                                                                        |
+| `reroll_boss`                  | —                                      | reroll Boss blind ($10; Director's Cut / Retcon)                                                                                                                                                            |
+| `skip`                         | —                                      | skip current blind (Small/Big only) — collects the skip tag                                                                                                                                                 |
+| `play`                         | `CARD_IDX...`                          | e.g. `play 0 1 2 3 4` (max 5, 0-based)                                                                                                                                                                      |
+| `discard`                      | `CARD_IDX...`                          | e.g. `discard 0 1`                                                                                                                                                                                          |
+| `sort`                         | `MODE`                                 | `rank` / `rank-desc` / `rank-asc` / `suit` / `suit-desc` / `suit-asc` (aliases: `r`,`s`,`rd`,...)                                                                                                           |
+| `rearrange`                    | `hand\|jokers\|consumables FULL_ORDER` | e.g. `rearrange hand 2 0 1 3`                                                                                                                                                                               |
+| `buy`                          | `card\|voucher\|pack IDX`              | e.g. `buy card 0`, `buy pack 0`                                                                                                                                                                             |
+| `sell`                         | `joker\|consumable IDX`                | e.g. `sell joker 0`                                                                                                                                                                                         |
+| `reroll`                       | —                                      | reroll shop                                                                                                                                                                                                 |
+| `cash_out`                     | —                                      | collect round rewards                                                                                                                                                                                       |
+| `endless`                      | —                                      | dismiss victory overlay to continue in endless mode (after Ante 8 win)                                                                                                                                      |
+| `next_round`                   | —                                      | leave shop for blind select                                                                                                                                                                                 |
+| `pack`                         | `IDX [TARGET_IDX...]` or `skip`        | e.g. `pack 0`, `pack 0 1 2` (hand targets for Tarot/Spectral); Ankh/Hex/Ectoplasm ignore targets (`random_joker_effect`); **`pack skip`** forfeits all remaining picks (see `choices remaining:` in glance) |
+| `use`                          | `CONSUMABLE_IDX [CARD_IDX...]`         | e.g. `use 0`, `use 0 1 2`                                                                                                                                                                                   |
+| `death`                        | `CONSUMABLE SOURCE TARGET`             | special: reorders hand then uses Death                                                                                                                                                                      |
+| `menu`                         | —                                      | return to main menu                                                                                                                                                                                         |
+| `save` / `load` / `screenshot` | `PATH`                                 |                                                                                                                                                                                                             |
 
 ### Debug: `add` / `set` (estimate testing only)
 

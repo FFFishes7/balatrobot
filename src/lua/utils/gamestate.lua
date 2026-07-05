@@ -1467,6 +1467,10 @@ function gamestate.get_gamestate()
   -- Pack cards area (available during pack opening phases)
   if G.pack_cards and not G.pack_cards.REMOVED then
     state_data.pack = extract_area(G.pack_cards, { free_pick = true })
+    local pack_choices = G.GAME and G.GAME.pack_choices
+    if pack_choices and pack_choices > 0 then
+      state_data.pack.choices_remaining = pack_choices
+    end
   end
 
   if G.GAME and (G.STATE == G.STATES.GAME_OVER or G.GAME.won) then
