@@ -205,11 +205,15 @@ end
 ---Tag stack is stable enough for a held_tags snapshot (no in-flight yep/trigger).
 ---@return boolean
 function gamestate.tags_stack_stable()
-  if G.STATE_COMPLETE ~= true then
-    return false
-  end
   if G.GAME == nil or G.GAME.tags == nil then
     return true
+  end
+  local state_name = gamestate.get_reported_state_name()
+  if state_name == "MENU" or state_name == "SPLASH" or state_name == "GAME_OVER" then
+    return true
+  end
+  if G.STATE_COMPLETE ~= true then
+    return false
   end
   for _, tag in ipairs(G.GAME.tags) do
     if tag.triggered then

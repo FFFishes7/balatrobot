@@ -40,8 +40,10 @@ See the root [README](../../README.md#quick-start-windows) and [PLAY.md Quick st
     effect, and any skip-reward tag; the selectable blind is marked `(current, select)`.
     When the tag stack is stable, **`held tags (pending): …`** lists untriggered
     tags already earned from earlier skips (oldest → newest) — not the skip reward
-    on upcoming blinds (`blinds.*.tag_name`). `glance` waits for `held_tags_ready`
-    before returning (same idea as transient state polling).
+    on upcoming blinds (`blinds.*.tag_name`). During in-run states only
+    (`BLIND_SELECT`, `SELECTING_HAND`, `ROUND_EVAL`, `SHOP`, `SMODS_BOOSTER_OPENED`),
+    `glance` waits for `held_tags_ready` before returning — not at **`MENU`** or
+    **`GAME_OVER`** (same idea as transient state polling).
     With Director's Cut or Retcon at Boss selection, **`reroll_boss=$10 [ok]`** /
     **`[need $N]`** / **`[used this ante]`** may appear; `actions:` includes
     `reroll_boss` when `round.boss_reroll_available`.

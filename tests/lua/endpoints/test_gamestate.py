@@ -15,7 +15,9 @@ class TestGamestateEndpoint:
         """Test that gamestate endpoint from MENU state is valid."""
         api(client, "menu", {})
         response = api(client, "gamestate", {})
-        assert_gamestate_response(response, state="MENU")
+        gamestate = assert_gamestate_response(response, state="MENU")
+        assert gamestate.get("held_tags") == []
+        assert gamestate.get("held_tags_ready") is True
 
     def test_gamestate_from_BLIND_SELECT(self, client: httpx.Client) -> None:
         """Test that gamestate from BLIND_SELECT state is valid."""
@@ -54,6 +56,8 @@ class TestGamestateRunSummary:
         response = api(client, "play", {"cards": [0]}, timeout=60)
         gamestate = assert_gamestate_response(response, state="GAME_OVER")
         assert gamestate.get("won") is False
+        assert gamestate.get("held_tags") == []
+        assert gamestate.get("held_tags_ready") is True
         assert "run_summary" in gamestate
         summary = gamestate["run_summary"]
         assert isinstance(summary["result"], str)

@@ -848,7 +848,9 @@ The complete game state returned by most methods.
 
 `held_tags` ([HeldTag](#heldtag)) lists **pending untriggered** skip tags (oldest
 first). Empty `[]` when none are held. `held_tags_ready: false` means a tag yep or
-trigger is still in flight — wait and poll again before trusting the stack.
+trigger is still in flight — wait and poll again before trusting the stack. On
+**`MENU`**, **`SPLASH`**, and **`GAME_OVER`**, `held_tags_ready` is always **`true`**
+(no active tag stack / not shown in play summary).
 Skip-reward tags on blinds you have **not** skipped yet remain on
 `blinds.{small,big}.tag_name`, not in `held_tags`.
 

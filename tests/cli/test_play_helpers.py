@@ -422,6 +422,8 @@ def test_is_gamestate_stable_requires_held_tags_ready() -> None:
     assert is_gamestate_stable({"state": "BLIND_SELECT", "held_tags_ready": True})
     assert is_gamestate_stable({"state": "BLIND_SELECT"})
     assert not is_gamestate_stable({"state": "HAND_PLAYED", "held_tags_ready": True})
+    assert is_gamestate_stable({"state": "MENU", "held_tags_ready": False})
+    assert is_gamestate_stable({"state": "GAME_OVER", "held_tags_ready": False})
 
 
 def test_poll_until_stable_waits_for_held_tags() -> None:

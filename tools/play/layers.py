@@ -121,6 +121,10 @@ LAYER1_KEYS_BY_STATE: dict[str, frozenset[str]] = {
     ),
 }
 
+HELD_TAGS_STATES = frozenset(
+    s for s, keys in LAYER1_KEYS_BY_STATE.items() if "held_tags" in keys
+)
+
 RUN_QUERIES = [
     {
         "name": "deck",
@@ -284,7 +288,7 @@ def is_gamestate_stable(raw: dict[str, Any]) -> bool:
     state = raw.get("state", "UNKNOWN")
     if state in TRANSITION_STATES:
         return False
-    if raw.get("held_tags_ready") is False:
+    if state in HELD_TAGS_STATES and raw.get("held_tags_ready") is False:
         return False
     return True
 
@@ -304,7 +308,7 @@ def poll_until_stable(
             state = last.get("state", "UNKNOWN")
             if state in TRANSITION_STATES:
                 reason = f"game state stuck in transition {state!r}"
-            elif last.get("held_tags_ready") is False:
+            elif state in HELD_TAGS_STATES and last.get("held_tags_ready") is False:
                 reason = "held_tags not ready"
             else:
                 reason = "game state not stable"

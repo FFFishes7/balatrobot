@@ -1219,7 +1219,7 @@
           },
           "held_tags_ready": {
             "type": "boolean",
-            "description": "True when held_tags snapshot is stable (no tag yep/trigger in flight)"
+            "description": "True when held_tags snapshot is stable (no tag yep/trigger in flight). Always true on MENU, SPLASH, and GAME_OVER."
           }
         },
         "required": [
