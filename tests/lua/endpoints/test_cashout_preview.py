@@ -84,6 +84,21 @@ class TestCashoutPreviewLive:
         # interest_amount=2 (base 1 + To the Moon 1), floor(10/5)=2 → $4
         assert interest_lines[0]["dollars"] == 4
 
+    def test_total_at_least_line_sum_with_interest(self, client: httpx.Client) -> None:
+        """Preview total must not undercount modeled lines (interest vs round_dollars)."""
+        load_fixture(client, "play", "state-SELECTING_HAND")
+        api(client, "set", {"chips": 10000, "money": 15})
+        gamestate = assert_gamestate_response(
+            api(client, "play", {"cards": [0]}),
+            state="ROUND_EVAL",
+        )
+        preview = gamestate["round"]["cashout_preview"]
+        line_sum = sum(line["dollars"] for line in preview["lines"])
+        assert preview["total"] >= line_sum
+        assert preview["total"] == line_sum or any(
+            line.get("kind") == "interest" for line in preview["lines"]
+        )
+
     def test_total_matches_cash_out(self, client: httpx.Client) -> None:
         gamestate = load_fixture(client, "cash_out", "state-ROUND_EVAL")
         preview = gamestate["round"]["cashout_preview"]

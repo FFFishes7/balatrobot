@@ -253,9 +253,11 @@ function cashout_preview.extract()
   local pending_total = line_total
   local round_dollars = G.GAME.current_round and G.GAME.current_round.dollars
   if type(round_dollars) == "number" and round_dollars > 0 then
-    pending_total = round_dollars - investment
-    if pending_total < 0 then
-      pending_total = line_total
+    local adjusted = round_dollars - investment
+    -- round_dollars is authoritative once the cash-out total is known, but it can
+    -- lag behind preview lines (interest) or omit defeated-blind rows we model.
+    if adjusted > line_total then
+      pending_total = adjusted
     end
   end
 
