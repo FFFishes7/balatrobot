@@ -32,11 +32,29 @@ def _line_by_kind(gamestate: dict, kind: str) -> list[dict]:
     return [line for line in _preview_lines(gamestate) if line.get("kind") == kind]
 
 
+def _preview_line_sum(gamestate: dict) -> int:
+    preview = (gamestate.get("round") or {}).get("cashout_preview")
+    assert preview is not None
+    return sum(int(line["dollars"]) for line in preview["lines"])
+
+
 def _win_from_selecting_hand(client: httpx.Client) -> dict:
     api(client, "set", {"chips": 10000})
     return assert_gamestate_response(
         api(client, "play", {"cards": [0]}),
         state="ROUND_EVAL",
+    )
+
+
+def _win_current_blind(client: httpx.Client) -> dict:
+    assert_gamestate_response(api(client, "select", {}), state="SELECTING_HAND")
+    return _win_from_selecting_hand(client)
+
+
+def _cash_out_and_next_round(client: httpx.Client) -> dict:
+    assert_gamestate_response(api(client, "cash_out", {}), state="SHOP")
+    return assert_gamestate_response(
+        api(client, "next_round", {}), state="BLIND_SELECT"
     )
 
 
@@ -84,8 +102,8 @@ class TestCashoutPreviewLive:
         # interest_amount=2 (base 1 + To the Moon 1), floor(10/5)=2 → $4
         assert interest_lines[0]["dollars"] == 4
 
-    def test_total_at_least_line_sum_with_interest(self, client: httpx.Client) -> None:
-        """Preview total must not undercount modeled lines (interest vs round_dollars)."""
+    def test_total_equals_line_sum_with_interest(self, client: httpx.Client) -> None:
+        """Preview total must equal sum(lines); interest may exceed round_dollars."""
         load_fixture(client, "play", "state-SELECTING_HAND")
         api(client, "set", {"chips": 10000, "money": 15})
         gamestate = assert_gamestate_response(
@@ -93,19 +111,80 @@ class TestCashoutPreviewLive:
             state="ROUND_EVAL",
         )
         preview = gamestate["round"]["cashout_preview"]
-        line_sum = sum(line["dollars"] for line in preview["lines"])
-        assert preview["total"] >= line_sum
-        assert preview["total"] == line_sum or any(
-            line.get("kind") == "interest" for line in preview["lines"]
-        )
+        line_sum = _preview_line_sum(gamestate)
+        assert preview["total"] == line_sum
+        assert any(line.get("kind") == "interest" for line in preview["lines"])
+
+    def test_preview_total_equals_line_sum(self, client: httpx.Client) -> None:
+        """Pending total always matches sum of cashout_preview lines."""
+        load_fixture(client, "play", "state-SELECTING_HAND")
+        gamestate = _win_from_selecting_hand(client)
+        preview = gamestate["round"]["cashout_preview"]
+        assert preview["total"] == _preview_line_sum(gamestate)
+
+    def test_blind_line_present_after_defeat(self, client: httpx.Client) -> None:
+        """Blind row survives defeat() clearing blind.dollars on small/big wins."""
+        load_fixture(client, "play", "state-SELECTING_HAND")
+        gamestate = _win_from_selecting_hand(client)
+        blind_lines = _line_by_kind(gamestate, "blind")
+        assert len(blind_lines) == 1
+        assert blind_lines[0]["dollars"] > 0
 
     def test_total_matches_cash_out(self, client: httpx.Client) -> None:
-        gamestate = load_fixture(client, "cash_out", "state-ROUND_EVAL")
+        """Live win path: preview total equals cash_out payout."""
+        load_fixture(client, "play", "state-SELECTING_HAND")
+        gamestate = _win_from_selecting_hand(client)
         preview = gamestate["round"]["cashout_preview"]
+        assert preview["total"] == _preview_line_sum(gamestate)
         money_before = gamestate["money"]
         pending = preview["total"]
         after = assert_gamestate_response(api(client, "cash_out", {}), state="SHOP")
         assert after["money"] == money_before + pending
+
+    def test_red_stake_small_blind_after_paid_round_no_stale_total(
+        self, client: httpx.Client
+    ) -> None:
+        """Red Stake Small Blind reward stays $0 after previous paid cashouts."""
+        assert_gamestate_response(api(client, "menu", {}), state="MENU")
+        assert_gamestate_response(
+            api(client, "start", {"deck": "RED", "stake": "RED", "seed": "TEST123"}),
+            state="BLIND_SELECT",
+            stake="RED",
+        )
+
+        # Ante 1 Small Blind: no blind reward on Red Stake.
+        first_small = _win_current_blind(client)
+        assert not _line_by_kind(first_small, "blind")
+        _cash_out_and_next_round(client)
+
+        # Ante 1 Big and Boss create paid current_round.dollars values first.
+        big = _win_current_blind(client)
+        assert _line_by_kind(big, "blind")[0]["dollars"] > 0
+        _cash_out_and_next_round(client)
+        boss = _win_current_blind(client)
+        assert _line_by_kind(boss, "blind")[0]["dollars"] > 0
+        _cash_out_and_next_round(client)
+
+        # Ante 2 Small Blind should not inherit the prior paid Boss total.
+        small = _win_current_blind(client)
+        assert small["ante_num"] == 2
+        assert small["stake"] == "RED"
+        assert not _line_by_kind(small, "blind")
+        assert not _line_by_kind(small, "bonus")
+        preview = small["round"]["cashout_preview"]
+        assert preview["total"] == _preview_line_sum(small)
+
+        money_before = small["money"]
+        after = assert_gamestate_response(api(client, "cash_out", {}), state="SHOP")
+        assert after["money"] == money_before + preview["total"]
+
+    def test_fixture_load_preview_total_equals_line_sum(
+        self, client: httpx.Client
+    ) -> None:
+        """Loaded ROUND_EVAL fixture: total always equals sum(lines)."""
+        gamestate = load_fixture(client, "cash_out", "state-ROUND_EVAL")
+        preview = gamestate["round"]["cashout_preview"]
+        assert preview["total"] == _preview_line_sum(gamestate)
 
     def test_boss_win_without_investment_no_received_field(
         self, client: httpx.Client

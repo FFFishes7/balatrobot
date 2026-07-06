@@ -148,6 +148,102 @@ local function push_line(lines, line)
   end
 end
 
+---Blind deck type for the round just won (ROUND_EVAL). Uses blind_states, not blind_on_deck
+---(blind_on_deck advances at BLIND_SELECT — see UI_definitions.lua create_UIBox_blind_select).
+---@return string|nil "Small"|"Big"|"Boss"
+local function cashout_blind_deck_type()
+  local states = G.GAME.round_resets and G.GAME.round_resets.blind_states
+  if not states then
+    return G.GAME.blind_on_deck
+  end
+
+  local small = states.Small
+  local big = states.Big
+  local boss = states.Boss
+
+  if boss == "Defeated" and big == "Defeated" and (small == "Defeated" or small == "Skipped") then
+    return "Boss"
+  end
+  if big == "Defeated" and boss ~= "Defeated" then
+    return "Big"
+  end
+  if small == "Defeated" and big ~= "Defeated" and boss ~= "Defeated" then
+    return "Small"
+  end
+  if boss == "Defeated" then
+    return "Boss"
+  end
+
+  return G.GAME.blind_on_deck
+end
+
+---Blind dollars for cashout preview. After defeat(), set_blind(nil) clears blind.dollars.
+---@param blind table|nil
+---@return integer
+local function resolve_blind_cashout_dollars(blind)
+  if
+    blind
+    and type(blind.dollars) == "number"
+    and ((blind.name and blind.name ~= "") or (blind.chips and blind.chips > 0))
+  then
+    return blind.dollars
+  end
+
+  local deck = cashout_blind_deck_type()
+  if not deck then
+    return 0
+  end
+
+  if G.GAME.modifiers.no_blind_reward and G.GAME.modifiers.no_blind_reward[deck] then
+    return 0
+  end
+
+  local choices = G.GAME.round_resets and G.GAME.round_resets.blind_choices
+  local key = choices and choices[deck]
+  if not key then
+    if deck == "Small" then
+      key = "bl_small"
+    elseif deck == "Big" then
+      key = "bl_big"
+    end
+  end
+
+  local pblind = G.P_BLINDS and key and G.P_BLINDS[key]
+  if pblind and type(pblind.dollars) == "number" then
+    return pblind.dollars
+  end
+  return 0
+end
+
+---@return boolean
+local function cashout_total_ready()
+  if not G.I or not G.I.UIBOX then
+    return false
+  end
+
+  for _, box in ipairs(G.I.UIBOX) do
+    if
+      box.config
+      and box.config.major == G.round_eval
+      and box.get_UIE_by_ID
+      and box:get_UIE_by_ID("cash_out_button")
+    then
+      return true
+    end
+  end
+  return false
+end
+
+---@param lines CashoutLine[]
+---@return integer
+local function sum_line_dollars(lines)
+  local sum = 0
+  for _, line in ipairs(lines) do
+    sum = sum + (line.dollars or 0)
+  end
+  return sum
+end
+
 ---@param line_total integer
 ---@return integer
 function cashout_preview.investment_received_on_boss(line_total)
@@ -177,7 +273,7 @@ function cashout_preview.extract()
   local lines = {}
   local total = 0
 
-  local blind_dollars = blind.dollars or 0
+  local blind_dollars = resolve_blind_cashout_dollars(blind)
   push_line(lines, make_line("blind", "blind", blind_dollars))
   total = total + blind_dollars
 
@@ -250,16 +346,14 @@ function cashout_preview.extract()
 
   local line_total = total
   local investment = investment_received_on_boss(line_total)
-  local pending_total = line_total
   local round_dollars = G.GAME.current_round and G.GAME.current_round.dollars
-  if type(round_dollars) == "number" and round_dollars > 0 then
-    local adjusted = round_dollars - investment
-    -- round_dollars is authoritative once the cash-out total is known, but it can
-    -- lag behind preview lines (interest) or omit defeated-blind rows we model.
-    if adjusted > line_total then
-      pending_total = adjusted
+  if cashout_total_ready() and type(round_dollars) == "number" then
+    local expected = round_dollars - investment
+    if expected ~= line_total then
+      push_line(lines, make_line("bonus", "bonus", expected - line_total))
     end
   end
+  local pending_total = sum_line_dollars(lines)
 
   ---@type CashoutPreview
   local result = {

@@ -1397,7 +1397,8 @@
               "joker",
               "tag",
               "interest",
-              "rental"
+              "rental",
+              "bonus"
             ],
             "description": "Source category"
           },
@@ -1433,7 +1434,7 @@
           },
           "total": {
             "type": "integer",
-            "description": "Pending cash_out dollars (excludes investment_received on boss defeat)"
+            "description": "Sum of lines[].dollars (pending cash_out; excludes investment_received on boss defeat)"
           },
           "investment_received": {
             "type": "integer",

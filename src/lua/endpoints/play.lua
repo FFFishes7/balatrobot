@@ -146,7 +146,7 @@ return {
           -- Wait for cash_out_button to ensure the last scoring row (bottom) has been processed
           local has_cash_out_button = false
           for _, b in ipairs(G.I.UIBOX) do
-            if b:get_UIE_by_ID("cash_out_button") then
+            if b.config and b.config.major == G.round_eval and b:get_UIE_by_ID("cash_out_button") then
               has_cash_out_button = true
               break
             end

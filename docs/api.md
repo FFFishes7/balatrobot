@@ -1036,7 +1036,7 @@ Consumables (Tarot/Planet/Spectral) may include `value.target_min` / `value.targ
 
 Scoring-target fields (`ancient_suit`, `idol_rank`, `idol_suit`, `castle_suit`) appear when the corresponding joker is owned. Suit values: `H`, `D`, `C`, `S`. Rank values: `A`, `2`–`10`, `J`, `Q`, `K`.
 
-`cashout_preview` appears on **`ROUND_EVAL`** when the round was won. Lines mirror Balatro's `evaluate_round` cashout (blind → hands → discards → joker `calculate_dollar_bonus` → tag eval → interest). **`total`** is pending **`cash_out`** income only (excludes Investment Tag). **`investment_received`** (when present) is Investment Tag dollars already credited on boss defeat; they are included in reported **`money`** at `ROUND_EVAL` but not in `lines` or `total`. Interest preview uses pre-investment `G.GAME.dollars` (Investment does not boost same-round interest). Not included: mid-round economy jokers, Egg/Gift sell-value bumps, rental, or RNG.
+`cashout_preview` appears on **`ROUND_EVAL`** when the round was won. Lines mirror Balatro's `evaluate_round` cashout (blind → hands → discards → joker `calculate_dollar_bonus` → tag eval → interest). **`total`** always equals the sum of `lines[].dollars` (pending **`cash_out`** income only; excludes Investment Tag). After blind defeat, the blind row is recovered from the defeated blind state + `P_BLINDS` when `blind.dollars` was cleared; `no_blind_reward` (e.g. Red Stake Small Blind) yields **$0** blind with no blind line. Unmodeled eval income may appear as a `bonus` line so `total` still matches `cash_out`. **`investment_received`** (when present) is Investment Tag dollars already credited on boss defeat; they are included in reported **`money`** at `ROUND_EVAL` but not in `lines` or `total`. Interest preview uses pre-investment `G.GAME.dollars` (Investment does not boost same-round interest). Not included: mid-round economy jokers, Egg/Gift sell-value bumps, rental, or RNG.
 
 Boss reroll fields (`boss_reroll_cost`, `boss_reroll_available`, `boss_rerolled`) appear in `BLIND_SELECT`. `boss_reroll_available` is true when the Boss blind is on deck, you own Director's Cut (unused this ante) or Retcon, and `money - bankrupt_at >= 10`.
 
@@ -1044,13 +1044,13 @@ Boss reroll fields (`boss_reroll_cost`, `boss_reroll_available`, `boss_rerolled`
 
 Round-end income preview (`round.cashout_preview` on won `ROUND_EVAL`):
 
-| Field                 | Type            | Description                                                     |
-| --------------------- | --------------- | --------------------------------------------------------------- |
-| `lines`               | `CashoutLine[]` | Pending cash_out income rows in cashout order                   |
-| `total`               | integer         | Pending `cash_out` dollars (excludes `investment_received`)     |
-| `investment_received` | integer         | Investment Tag paid on boss defeat (in `money`, not in `total`) |
+| Field                 | Type            | Description                                                                   |
+| --------------------- | --------------- | ----------------------------------------------------------------------------- |
+| `lines`               | `CashoutLine[]` | Pending cash_out income rows in cashout order                                 |
+| `total`               | integer         | Sum of `lines[].dollars` (pending `cash_out`; excludes `investment_received`) |
+| `investment_received` | integer         | Investment Tag paid on boss defeat (in `money`, not in `total`)               |
 
-**CashoutLine:** `kind` (`blind` | `hands` | `discards` | `joker` | `tag` | `interest` | `rental`), `label`, signed `dollars`, optional `key` (joker/tag id).
+**CashoutLine:** `kind` (`blind` | `hands` | `discards` | `joker` | `tag` | `interest` | `rental` | `bonus`), `label`, signed `dollars`, optional `key` (joker/tag id). `bonus` reconciles unmodeled eval income so `total` matches `cash_out`.
 
 ### RunCounters
 

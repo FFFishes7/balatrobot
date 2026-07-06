@@ -79,7 +79,7 @@
 ---@field cashout_preview CashoutPreview? Round-end income preview (ROUND_EVAL, round won)
 
 ---@class CashoutLine
----@field kind string blind|hands|discards|joker|tag|interest|rental
+---@field kind string blind|hands|discards|joker|tag|interest|rental|bonus
 ---@field label string
 ---@field dollars integer signed (+ income, - cost)
 ---@field key string? joker/tag key when relevant

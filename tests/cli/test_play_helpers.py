@@ -1403,7 +1403,7 @@ def test_print_summary_round_eval(capsys: pytest.CaptureFixture[str]) -> None:
 def test_print_summary_round_eval_total_matches_line_sum(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Pending total must not undercount when lines include interest."""
+    """Pending total equals sum of line dollars (including interest)."""
     raw = {
         "state": "ROUND_EVAL",
         "money": 15,
@@ -1433,6 +1433,41 @@ def test_print_summary_round_eval_total_matches_line_sum(
     assert "total +$11" in out
     assert "+$5 blind" in out
     assert "+$3 interest" in out
+
+
+def test_print_summary_round_eval_blind_and_hands_total_equals_sum(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Red Stake no-reward Small Blind does not show stale blind dollars."""
+    raw = {
+        "state": "ROUND_EVAL",
+        "money": 0,
+        "round_num": 13,
+        "ante_num": 6,
+        "deck": "RED",
+        "stake": "RED",
+        "round": {
+            "hands_left": 2,
+            "discards_left": 0,
+            "chips": 21790,
+            "cashout_preview": {
+                "lines": [
+                    {"kind": "hands", "label": "hands", "dollars": 2},
+                ],
+                "total": 2,
+            },
+        },
+        "jokers": {"count": 0, "limit": 5, "cards": []},
+        "consumables": {"count": 0, "limit": 2, "cards": []},
+        "cards": {"count": 44, "limit": 52},
+    }
+    print_summary(_envelope(raw))
+    out = capsys.readouterr().out
+    assert "+$3 blind" not in out
+    assert "+$2 hands" in out
+    assert "total +$2" in out
+    pending_block = out.split("pending:", 1)[1].split("\n", 1)[0]
+    assert pending_block.count("total") == 1
 
 
 def test_print_summary_round_eval_victory_overlay(
