@@ -909,6 +909,27 @@ def test_joker_line_sell_price_omitted_when_zero() -> None:
     assert "sell)" not in line
 
 
+def test_consumable_line_fool_wraps_copy_preview() -> None:
+    line = _consumable_line(
+        0,
+        {
+            "label": "The Fool",
+            "key": "c_fool",
+            "value": {
+                "effect": (
+                    "Creates the last Tarot or Planet card used during this run "
+                    "The Fool excluded The Devil Enhances 1 selected card into a Gold Card"
+                ),
+                "copy_label": "The Devil",
+            },
+        },
+    )
+    assert line == (
+        "[0] The Fool — Creates the last Tarot or Planet card used during this run "
+        "The Fool excluded (The Devil Enhances 1 selected card into a Gold Card)"
+    )
+
+
 def test_consumable_line_includes_sell_price() -> None:
     line = _consumable_line(
         0,
@@ -1766,7 +1787,12 @@ def test_print_summary_pack_opened(capsys: pytest.CaptureFixture[str]) -> None:
                 {
                     "label": "The Fool",
                     "key": "c_fool",
-                    "value": {"effect": "copy last Tarot"},
+                    "value": {
+                        "effect": (
+                            "Creates last Tarot or Planet The Devil Enhances 1 card"
+                        ),
+                        "copy_label": "The Devil",
+                    },
                 },
             ],
         },
@@ -1781,9 +1807,90 @@ def test_print_summary_pack_opened(capsys: pytest.CaptureFixture[str]) -> None:
     assert "state=SMODS_BOOSTER_OPENED" in out
     assert "The Magician" in out
     assert "needs 1-2 targets" in out
+    assert "The Fool — Creates last Tarot or Planet (The Devil Enhances 1 card)" in out
     assert "choices remaining: 1" in out
     assert "actions: pack" in out
     assert "pack skip" not in out or "actions: pack" in out
+
+
+@pytest.mark.parametrize(
+    ("edition", "expected"),
+    [
+        ("FOIL", "(+50 chips) Jolly Joker"),
+        ("HOLO", "(+10 mult) Jolly Joker"),
+        ("POLYCHROME", "(x1.5 mult) Jolly Joker"),
+        ("NEGATIVE", "(+1 slot) Jolly Joker"),
+    ],
+)
+def test_print_summary_pack_opened_joker_editions(
+    edition: str, expected: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    raw = {
+        "state": "SMODS_BOOSTER_OPENED",
+        "money": 6,
+        "round_num": 1,
+        "ante_num": 1,
+        "deck": "RED",
+        "stake": "WHITE",
+        "round": {"reroll_cost": 5},
+        "cards": {"count": 44, "limit": 52},
+        "jokers": {"count": 0, "limit": 5, "cards": []},
+        "consumables": {"count": 0, "limit": 2, "cards": []},
+        "pack": {
+            "count": 1,
+            "limit": 2,
+            "choices_remaining": 1,
+            "cards": [
+                {
+                    "label": "Jolly Joker",
+                    "key": "j_jolly",
+                    "set": "JOKER",
+                    "value": {"effect": "+8 Mult if played hand contains a Pair"},
+                    "modifier": {"edition": edition},
+                    "cost": {"sell": 3},
+                },
+            ],
+        },
+    }
+    print_summary(_envelope(raw))
+    out = capsys.readouterr().out
+    assert expected in out
+    assert "(+$3 sell)" not in out
+    assert "pack[0]" in out
+    assert "+8 Mult if played hand contains a Pair" in out
+    assert "choices remaining: 1" in out
+
+
+def test_print_summary_pack_opened_playing_card_keeps_modifier_tags(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    raw = {
+        "state": "SMODS_BOOSTER_OPENED",
+        "money": 6,
+        "round_num": 1,
+        "ante_num": 1,
+        "deck": "RED",
+        "stake": "WHITE",
+        "round": {"reroll_cost": 5},
+        "cards": {"count": 44, "limit": 52},
+        "jokers": {"count": 0, "limit": 5, "cards": []},
+        "consumables": {"count": 0, "limit": 2, "cards": []},
+        "pack": {
+            "count": 1,
+            "limit": 3,
+            "cards": [
+                {
+                    "label": "King of Hearts",
+                    "value": {"rank": "K", "suit": "H", "effect": ""},
+                    "modifier": {"edition": "FOIL", "seal": "RED"},
+                },
+            ],
+        },
+    }
+    print_summary(_envelope(raw))
+    out = capsys.readouterr().out
+    assert "pack[0] K♥[d:Foil,s:Red]" in out
+    assert "(+50 chips) King of Hearts" not in out
 
 
 def test_print_summary_game_over(capsys: pytest.CaptureFixture[str]) -> None:

@@ -149,9 +149,35 @@ def _sticker_prefix(mod: dict[str, Any]) -> str:
     return " ".join(parts)
 
 
+def _effect_text(card: dict[str, Any]) -> str:
+    """Card effect text, with The Fool's copied-card preview grouped."""
+    value = card.get("value") or {}
+    effect = value.get("effect") or ""
+    if not isinstance(effect, str) or not effect:
+        return ""
+    if card.get("key") != "c_fool":
+        return effect
+
+    copy_label = value.get("copy_label")
+    if not isinstance(copy_label, str) or not copy_label:
+        return effect
+
+    start = effect.find(copy_label)
+    if start < 0:
+        return effect
+
+    prefix = effect[:start].rstrip()
+    suffix = effect[start:].strip()
+    if not suffix or suffix.startswith("("):
+        return effect
+    if prefix:
+        return f"{prefix} ({suffix})"
+    return f"({suffix})"
+
+
 def _joker_line(idx: int, card: dict[str, Any]) -> str:
     name = card.get("label") or "?"
-    effect = (card.get("value") or {}).get("effect") or ""
+    effect = _effect_text(card)
     prefix = f"[{idx}]"
     sell_tag = _sell_price_prefix(card)
     if sell_tag:
@@ -529,7 +555,7 @@ def _shop_card_line(slot: str, card: dict[str, Any], state: dict[str, Any]) -> s
     """Shop row with modifier stickers when present."""
     label = card.get("label") or "?"
     cost = (card.get("cost") or {}).get("buy", "?")
-    effect = (card.get("value") or {}).get("effect") or ""
+    effect = _effect_text(card)
     mod = card.get("modifier") or {}
     sticker = _sticker_prefix(mod) if isinstance(mod, dict) else ""
     name_part = f"{sticker} {label}".strip() if sticker else label
@@ -537,6 +563,18 @@ def _shop_card_line(slot: str, card: dict[str, Any], state: dict[str, Any]) -> s
     if effect:
         return f"  {slot} {name_part} ${cost}{afford} — {effect}"
     return f"  {slot} {name_part} ${cost}{afford}"
+
+
+def _pack_card_label(card: dict[str, Any]) -> str:
+    """Pack row label with playing-card tags or non-playing-card stickers."""
+    value = card.get("value") or {}
+    if value.get("rank") and value.get("suit"):
+        return card_label(card)
+
+    label = str(card.get("label") or "?")
+    mod = card.get("modifier") or {}
+    sticker = _sticker_prefix(mod) if isinstance(mod, dict) else ""
+    return f"{sticker} {label}".strip() if sticker else label
 
 
 def _shop_block(state: dict[str, Any]) -> str:
@@ -572,8 +610,8 @@ def _pack_block(state: dict[str, Any]) -> str:
         parts.append(f"  choices remaining: {choices}")
     has_random_joker = False
     for i, c in enumerate(cards):
-        label = card_label(c)
-        effect = (c.get("value") or {}).get("effect", "")
+        label = _pack_card_label(c)
+        effect = _effect_text(c)
         hint = consumable_target_hint(c)
         hint_suffix = f" ({hint})" if hint else ""
         parts.append(f"  pack[{i}] {label} — {effect}{hint_suffix}")
