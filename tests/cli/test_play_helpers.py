@@ -908,6 +908,77 @@ def test_joker_line_sell_price_omitted_when_zero() -> None:
     assert "sell)" not in line
 
 
+def test_joker_line_pinned_prefix_follows_eternal() -> None:
+    line = _joker_line(
+        0,
+        {
+            "label": "Ceremonial Dagger",
+            "value": {"effect": "Destroys Joker to the right"},
+            "modifier": {"eternal": True, "pinned": True},
+            "cost": {"sell": 5},
+        },
+    )
+    assert line.startswith("[0] (eternal) (pinned leftmost) Ceremonial Dagger")
+    assert "(+$5 sell)" not in line
+
+
+def test_joker_line_self_destruct_prefix() -> None:
+    line = _joker_line(
+        0,
+        {
+            "label": "Mr. Bones",
+            "value": {
+                "effect": "Prevents Death at 25% of required chips",
+                "self_destructs_on": "SAVES_FROM_GAME_OVER",
+            },
+        },
+    )
+    assert line.startswith("[0] (self-destructs on save) Mr. Bones")
+
+
+def test_joker_line_omits_unset_pinned_and_self_destruct() -> None:
+    line = _joker_line(
+        0,
+        {
+            "label": "Joker",
+            "value": {"effect": "+4 Mult"},
+            "modifier": {},
+        },
+    )
+    assert "pinned" not in line
+    assert "self-destruct" not in line
+
+
+def test_print_summary_joker_status_prefixes(
+    selecting_hand_state: dict, capsys: pytest.CaptureFixture[str]
+) -> None:
+    selecting_hand_state["jokers"] = {
+        "count": 2,
+        "limit": 5,
+        "cards": [
+            {
+                "label": "Ceremonial Dagger",
+                "key": "j_ceremonial",
+                "value": {"effect": "Destroys Joker to the right"},
+                "modifier": {"eternal": True, "pinned": True},
+            },
+            {
+                "label": "Mr. Bones",
+                "key": "j_mr_bones",
+                "value": {
+                    "effect": "Prevents Death at 25% of required chips",
+                    "self_destructs_on": "SAVES_FROM_GAME_OVER",
+                },
+                "modifier": {},
+            },
+        ],
+    }
+    print_summary(_envelope(selecting_hand_state))
+    out = capsys.readouterr().out
+    assert "[0] (eternal) (pinned leftmost) Ceremonial Dagger" in out
+    assert "[1] (self-destructs on save) Mr. Bones" in out
+
+
 def test_consumable_line_fool_wraps_copy_preview() -> None:
     line = _consumable_line(
         0,

@@ -72,3 +72,21 @@ def test_challenge_starts_unlocked_native_setup(client: httpx.Client) -> None:
     finally:
         api(client, "menu", {})
         _set_profile(client, "restore")
+
+
+def test_knife_challenge_exposes_eternal_pinned_dagger(
+    client: httpx.Client,
+) -> None:
+    api(client, "menu", {})
+    try:
+        _set_profile(client, "unlock_all")
+        response = api(client, "challenge", {"id": "c_knife_1"})
+        state = assert_gamestate_response(response, state="BLIND_SELECT", stake="WHITE")
+        dagger = next(
+            card for card in state["jokers"]["cards"] if card["key"] == "j_ceremonial"
+        )
+        assert dagger["modifier"]["eternal"] is True
+        assert dagger["modifier"]["pinned"] is True
+    finally:
+        api(client, "menu", {})
+        _set_profile(client, "restore")

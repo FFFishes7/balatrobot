@@ -1710,6 +1710,10 @@
             ],
             "description": "Joker rarity (jokers only)"
           },
+          "self_destructs_on": {
+            "$ref": "#/components/schemas/SelfDestructTrigger",
+            "description": "Event that deterministically destroys this card after its effect resolves"
+          },
           "target_min": {
             "type": "integer",
             "description": "Minimum hand cards to target when using/selecting this consumable"
@@ -1730,6 +1734,13 @@
         "required": [
           "effect"
         ]
+      },
+      "SelfDestructTrigger": {
+        "type": "string",
+        "enum": [
+          "SAVES_FROM_GAME_OVER"
+        ],
+        "description": "Lifecycle event after which a card deterministically destroys itself"
       },
       "JokerStats": {
         "type": "object",
@@ -1828,6 +1839,10 @@
           "rental": {
             "type": "boolean",
             "description": "If true, card costs money at end of round (jokers only)"
+          },
+          "pinned": {
+            "type": "boolean",
+            "description": "If true, card is pinned to the leftmost Joker position"
           }
         }
       },

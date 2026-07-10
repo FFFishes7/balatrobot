@@ -371,6 +371,13 @@ local UI_EFFECT_FALLBACK = {
   j_8_ball = "1 in 4 chance to spawn a Tarot (random)",
 }
 
+-- Machine-readable lifecycle behavior that is not part of a Joker's main
+-- description text. Keep this source-backed and explicit rather than parsing
+-- localized UI strings.
+local SELF_DESTRUCT_TRIGGERS = {
+  j_mr_bones = "SAVES_FROM_GAME_OVER",
+}
+
 local function is_sparse_effect(text)
   if not text or text:match("^%s*$") then
     return true
@@ -666,6 +673,11 @@ local function extract_card_modifier(card)
     modifier.rental = true
   end
 
+  -- Pinned-left badge (direct Card property, like Balatro's UI badge list)
+  if card.pinned then
+    modifier.pinned = true
+  end
+
   return modifier
 end
 
@@ -894,6 +906,9 @@ local function extract_card_value(card)
 
   local center_key = card.config and card.config.center_key
   if center_key then
+    if SELF_DESTRUCT_TRIGGERS[center_key] then
+      value.self_destructs_on = SELF_DESTRUCT_TRIGGERS[center_key]
+    end
     local req = consumable.get_consumable_target_requirements(center_key)
     if req then
       if req.random_joker_effect then

@@ -120,6 +120,10 @@ JOKER_EDITION_LABEL = {
     "NEGATIVE": "+1 slot",
 }
 
+SELF_DESTRUCT_LABEL = {
+    "SAVES_FROM_GAME_OVER": "(self-destructs on save)",
+}
+
 
 def _sell_price_prefix(card: dict[str, Any]) -> str:
     """Sell value for owned jokers/consumables; omitted for eternal (unsellable)."""
@@ -146,7 +150,17 @@ def _sticker_prefix(mod: dict[str, Any]) -> str:
         parts.append(f"({JOKER_EDITION_LABEL.get(ed, ed)})")
     if mod.get("eternal"):
         parts.append("(eternal)")
+    if mod.get("pinned"):
+        parts.append("(pinned leftmost)")
     return " ".join(parts)
+
+
+def _behavior_prefix(value: dict[str, Any]) -> str:
+    """Machine-readable lifecycle behavior shown beside Joker stickers."""
+    trigger = value.get("self_destructs_on")
+    if not isinstance(trigger, str) or not trigger:
+        return ""
+    return SELF_DESTRUCT_LABEL.get(trigger, "(self-destructs)")
 
 
 def _effect_text(card: dict[str, Any]) -> str:
@@ -190,6 +204,11 @@ def _joker_line(idx: int, card: dict[str, Any]) -> str:
         # Joker-internal enhancement codes (e.g. "SUIT MULT", "DISCARD DOLLARS")
         # are categories already conveyed by the effect text — dropped to avoid
         # leaking raw enum keys.
+    value = card.get("value") or {}
+    if isinstance(value, dict):
+        behavior = _behavior_prefix(value)
+        if behavior:
+            prefix += f" {behavior}"
     return f"{prefix} {name} — {effect}" if effect else f"{prefix} {name}"
 
 

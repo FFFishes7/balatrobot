@@ -901,6 +901,17 @@ class TestGamestateCards:
             response = api(client, "add", {"key": "j_joker"})
             joker = response["result"]["jokers"]["cards"][0]
             assert joker["value"]["effect"] == "+4 Mult"
+            assert "self_destructs_on" not in joker["value"]
+
+        def test_mr_bones_exposes_self_destruct_trigger(
+            self, client: httpx.Client
+        ) -> None:
+            """Mr. Bones exposes its deterministic destruction after saving a run."""
+            load_fixture(client, "gamestate", "state-SELECTING_HAND")
+            response = api(client, "add", {"key": "j_mr_bones"})
+            joker = response["result"]["jokers"]["cards"][-1]
+            assert joker["key"] == "j_mr_bones"
+            assert joker["value"]["self_destructs_on"] == "SAVES_FROM_GAME_OVER"
 
         def test_card_value_effect_tarot(self, client: httpx.Client) -> None:
             """Test tarot effect description."""

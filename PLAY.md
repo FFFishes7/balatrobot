@@ -158,7 +158,7 @@ Per-state line meanings: [tools/play/README.md § What glance shows](tools/play/
 | `d:`   | Edition — `Foil` `Holo` `Poly` `Neg`                                       |
 | `s:`   | Seal — `Red` `Blue` `Gold` `Purple`                                        |
 
-`e:Wild` = all **suits**, rank unchanged (not all ranks). Debuffed cards: `(7♣)`. Joker stickers `(rental …)` / `(perishable …)` are on joker lines, not hand cards.
+`e:Wild` = all **suits**, rank unchanged (not all ranks). Debuffed cards: `(7♣)`. Joker stickers `(rental …)` / `(perishable …)` / `(eternal)` / `(pinned leftmost)` are on joker lines, not hand cards. Source-backed lifecycle warnings such as Mr. Bones `(self-destructs on save)` appear in the same prefix block.
 
 **Shop / buy:** rows show `[ok]` / `[need $N]` / `[slots full]` from `money - bankrupt_at`.
 

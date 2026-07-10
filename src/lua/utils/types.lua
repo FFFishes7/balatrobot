@@ -125,8 +125,10 @@
 ---@field copy_label string? For The Fool: display label of the last Tarot/Planet used
 ---@field stats Card.Value.Stats? Joker scoring snapshot (jokers only; locale-independent)
 ---@field rarity Card.Value.Rarity? Joker rarity (jokers only)
+---@field self_destructs_on Card.Value.SelfDestructTrigger? Event that deterministically destroys this card after its effect resolves
 
 ---@alias Card.Value.Rarity "COMMON" | "UNCOMMON" | "RARE" | "LEGENDARY"
+---@alias Card.Value.SelfDestructTrigger "SAVES_FROM_GAME_OVER"
 
 ---@class Card.Value.Stats
 ---@field mult integer? Additive Mult for joker_main
@@ -158,6 +160,7 @@
 ---@field eternal boolean? If true, card cannot be sold or destroyed (jokers only)
 ---@field perishable integer? Number of rounds remaining (only if > 0) (jokers only)
 ---@field rental boolean? If true, card costs money at end of round (jokers only)
+---@field pinned boolean? If true, card is pinned to the leftmost Joker position
 
 ---@class Card.State
 ---@field debuff boolean? If true, card is debuffed and won't score

@@ -124,6 +124,7 @@ Available make targets:
     - Use `make typecheck` instead of `ty check`
     - Use `make quality` for all checks combined
 3. On Windows, if `make` is unavailable, run the equivalent commands from `.venv` using the same flags and scope as the Makefile. For markdown checks, use repo-wide `mdformat --check .`, matching CI scope.
+4. **Run Balatro live tests outside the sandbox.** Tests under `tests/lua/` launch real Balatro processes and require unsandboxed process/network access; request escalation before running them rather than attempting them in the sandbox first. For commit/push delivery, reuse live-test results already obtained in the current task when no live-relevant source, tests, fixtures, or API fields changed afterward; do not rerun live tests solely because the user requested commit or push. Rerun only when a subsequent relevant change invalidates those results.
 
 ### Change delivery checklist
 
