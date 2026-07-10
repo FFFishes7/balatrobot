@@ -23,14 +23,14 @@ from layers import filter_layer1  # type: ignore[unresolved-import]  # noqa: E40
 
 CATALOG = [
     {
-        "id": "c_omelette",
+        "id": "c_omelette_1",
         "index": 1,
         "name": "The Omelette",
         "unlocked": True,
         "completed": False,
     },
     {
-        "id": "c_city",
+        "id": "c_city_1",
         "index": 2,
         "name": "15 Minute City",
         "unlocked": False,
@@ -43,8 +43,8 @@ def test_format_challenges_includes_ids_and_status() -> None:
     text = challenges.format_challenges(CATALOG)
     assert "1/2 unlocked" in text
     assert "1/2 completed" in text
-    assert "c_omelette — The Omelette (unlocked)" in text
-    assert "c_city — 15 Minute City (locked, completed)" in text
+    assert "c_omelette_1 — The Omelette (unlocked)" in text
+    assert "c_city_1 — 15 Minute City (locked, completed)" in text
 
 
 def test_challenges_json_command(capsys) -> None:
@@ -62,12 +62,12 @@ def test_challenges_json_command(capsys) -> None:
 
 
 def test_challenge_command_params_and_friendly_format() -> None:
-    assert build_params("challenge", ["c_omelette"]) == {"id": "c_omelette"}
+    assert build_params("challenge", ["c_omelette_1"]) == {"id": "c_omelette_1"}
     assert (
         format_friendly_action(
-            {"command": "challenge", "example": {"params": {"id": "c_omelette"}}}
+            {"command": "challenge", "example": {"params": {"id": "c_omelette_1"}}}
         )
-        == "challenge c_omelette"
+        == "challenge c_omelette_1"
     )
     assert (
         format_friendly_action({"command": "challenges", "example": {"params": {}}})
@@ -91,9 +91,9 @@ def test_menu_actions_and_active_challenge_are_exposed() -> None:
 
     running = {
         "state": "BLIND_SELECT",
-        "challenge": {"id": "c_omelette", "name": "The Omelette"},
+        "challenge": {"id": "c_omelette_1", "name": "The Omelette"},
     }
-    assert filter_layer1(running)["challenge"]["id"] == "c_omelette"
+    assert filter_layer1(running)["challenge"]["id"] == "c_omelette_1"
     assert (
         build_play_envelope(running, build_actions(running))["gamestate"]["challenge"][
             "name"

@@ -60,20 +60,23 @@ def cmd_stats() -> dict:
 def cmd_preflight() -> dict:
     state = rpc("gamestate")
     checks, passed, phase = collect_preflight_checks(state, check_kind=check_kind)
-    stake = (state.get("stake") or "WHITE").upper()
-    deck = (state.get("deck") or "RED").upper()
+    context = {
+        "state": state.get("state"),
+        "phase": phase,
+        "ante_num": state.get("ante_num"),
+        "money": state.get("money"),
+    }
+    challenge = state.get("challenge") or {}
+    if challenge.get("id"):
+        context["challenge"] = challenge.get("name") or challenge["id"]
+    else:
+        context["deck"] = (state.get("deck") or "RED").upper()
+        context["stake"] = (state.get("stake") or "WHITE").upper()
     return {
         "preflight": {
             "passed": passed,
             "phase": phase,
-            "context": {
-                "state": state.get("state"),
-                "phase": phase,
-                "ante_num": state.get("ante_num"),
-                "deck": deck,
-                "stake": stake,
-                "money": state.get("money"),
-            },
+            "context": context,
             "checks": checks,
         }
     }
@@ -85,16 +88,22 @@ def _format_preflight(payload: dict) -> str:
     if not checks:
         return ""
     ctx = pre.get("context") or {}
-    lines = [
-        f"preflight state={ctx.get('state')} ante={ctx.get('ante_num')} "
-        f"deck={ctx.get('deck')} stake={ctx.get('stake')} money={ctx.get('money')}"
-    ]
-    lines.append("kind     name                     passed  effect")
+    fields = [f"state={ctx.get('state')}", f"ante={ctx.get('ante_num')}"]
+    if "deck" in ctx:
+        fields.append(f"deck={ctx['deck']}")
+    if "stake" in ctx:
+        fields.append(f"stake={ctx['stake']}")
+    if "challenge" in ctx:
+        fields.append(f"challenge={ctx['challenge']}")
+    fields.append(f"money={ctx.get('money')}")
+    lines = ["preflight " + " ".join(fields)]
+    lines.append("kind      name                     passed  effect")
     for c in pre.get("checks") or []:
         entry = c.get("entry") or {}
         effect = entry.get("effect") or ""
+        name = entry.get("name") or c.get("name", "")
         lines.append(
-            f"{c.get('kind', ''):<9s}{c.get('name', '')[:24]:<25s}"
+            f"{c.get('kind', ''):<10s}{name[:24]:<25s}"
             f"{str(c.get('passed')):<8s}{effect}"
         )
     return "\n".join(lines)
@@ -118,7 +127,7 @@ def main() -> int:
             json.dumps(
                 build_error_envelope(
                     "BAD_REQUEST",
-                    "usage: know.py preflight|check|list|stats ... [--json]",
+                    "usage: know.py preflight|challenge|check|list|stats ... [--json]",
                     fmt=KNOW_FORMAT,
                 ),
                 ensure_ascii=False,
@@ -137,6 +146,30 @@ def main() -> int:
             return 0 if payload["preflight"]["passed"] else 1
         if cmd == "stats":
             print(json.dumps(build_know_envelope(cmd_stats()), ensure_ascii=False))
+            return 0
+        if cmd == "challenge":
+            if len(args) < 2:
+                raise ValueError(
+                    "challenge needs an ID or name, e.g. challenge c_omelette_1"
+                )
+            name = " ".join(args[1:])
+            ok, entry = check_kind("challenge", name)
+            if not ok:
+                print(
+                    json.dumps(
+                        build_know_envelope(
+                            {"kind": "challenge", "name": name, "entry": None}
+                        ),
+                        ensure_ascii=False,
+                    )
+                )
+                return 1
+            print(
+                json.dumps(
+                    build_know_envelope({"kind": "challenge", **entry}),
+                    ensure_ascii=False,
+                )
+            )
             return 0
         if cmd == "list":
             if len(args) < 2:

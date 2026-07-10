@@ -23,27 +23,28 @@ See the root [README](../../README.md#quick-start-windows) and [PLAY.md](../../P
 .\tools\play\bot.ps1 glance              # compact summary (default state read)
 .\tools\play\bot.ps1 estimate            # top playable hands + score estimate
 .\tools\play\bot.ps1 state               # full JSON state + actions + queries
-.\tools\play\bot.ps1 know preflight      # phase-aware verified facts table (deck/stake/jokers/…; --json for raw)
+.\tools\play\bot.ps1 know preflight      # phase-aware verified facts table (run details/jokers/…; --json for raw)
 .\tools\play\bot.ps1 know check joker "Baron"
 .\tools\play\bot.ps1 know check rule scoring_formula
+.\tools\play\bot.ps1 know challenge c_omelette_1  # ID, English, or Simplified Chinese name
 .\tools\play\bot.ps1 know list jokers    # aliases: joker, rules → rule
 .\tools\play\bot.ps1 know stats
 .\tools\play\bot.ps1 query hands         # detail query: poker hand level table
 .\tools\play\bot.ps1 query blinds        # detail query: three-blind summary
 .\tools\play\bot.ps1 challenges          # native IDs, unlock/completion status, and setup
-.\tools\play\bot.ps1 challenge c_omelette # start an unlocked native challenge by ID
+.\tools\play\bot.ps1 challenge c_omelette_1 # start an unlocked native challenge by ID
 .\tools\play\bot.ps1 help                # formatted command catalog + descriptions
 .\tools\play\bot.ps1 help --now          # + valid-now examples when game is running
 .\tools\play\bot.ps1 help --json         # machine-readable help-v2 envelope
 ```
 
-`know check`, `know list`, and `know stats` always print JSON. `know preflight` prints a compact table by default; add `--json` for the raw envelope.
+`know challenge`, `know check`, `know list`, and `know stats` always print JSON. `know preflight` prints a compact table by default; add `--json` for the raw envelope. In Challenge Mode, it replaces deck/stake rows with a verified challenge row; use `know challenge ID_OR_NAME` for the complete static setup and Wiki source.
 
 **Environment:** `BALATROBOT_KNOWLEDGE_DIR` overrides the default `knowledge/balatro/` lookup path (see [knowledge/balatro/README.md](../../knowledge/balatro/README.md)).
 
 ### What `glance` shows
 
-- **Header:** `state`, `ante`, `round`, `money`, `deck`, `stake`, and active `challenge` when applicable. In **SHOP** with
+- **Header:** normal runs show `state`, `ante`, `round`, `money`, `deck`, and `stake`; Challenge Mode shows the active `challenge` instead of deck/stake. In **SHOP** with
     Credit Card (`bankrupt_at != 0`), also **`buy_power=`** (`money - bankrupt_at`).
 
 - **MENU:** `→ start DECK STAKE [SEED]` plus compact `decks:` / `stakes:` lists and `→ challenges then challenge CHALLENGE_ID`. `challenges` prints native IDs, profile unlock/completion state, and setup details; `challenge ID` starts only an unlocked challenge at its built-in White Stake.
@@ -89,18 +90,19 @@ See the root [README](../../README.md#quick-start-windows) and [PLAY.md](../../P
     While **`choices remaining` > 0**, use **`pack 0`** / **`pack 1`** (with hand targets when shown). **`pack skip`** forfeits all remaining picks in the current pack — not “advance to the next blind”. **`sort`** is not available while a pack is open (Balatro's Rank/Suit buttons are hidden by the pack overlay, even in Arcana/Spectral packs where hand cards are visible for targeting).
     `glance` waits for **`pack_ready`** and **`pack_hand_ready`** (Arcana/Spectral deal animation) before snapshotting — avoids empty `pack:` rows between consecutive pack tags.
 
-- **GAME_OVER:** restart hint uses the ended run's deck/stake/seed, e.g.
-    **`→ menu  then  start RED WHITE ABC123`**.
+- **GAME_OVER:** restart hint uses the ended run's deck/stake/seed (e.g. **`→ menu  then  start RED WHITE ABC123`**), or the challenge ID for challenges (e.g. **`→ menu  then  challenge c_omelette_1`**).
 
 - **ROUND_EVAL:** `round won, score=…` plus **`pending:`** (income rows + **`total +$N`** for remaining **`cash_out`** bundle).
     In normal **`ROUND_EVAL`**, **`actions:`** offers **`cash_out`** only; inventory **`sell`** and **`use`** are disabled until the next state.
     **Investment Tag** on boss defeat: **`received: +$N Investment Tag (boss defeat)`** — already in **`money=`**; not listed under **`pending:`**.
-    If **`victory_overlay`**, **`→ endless`** then **`→ menu`** only — **`actions:`** and API allow **`endless`** / **`menu`** only (no **`cash_out`**, **`sell`**, **`use`**, or **`save`** until overlay dismissed). Example:
+    If **`victory_overlay`**, shows **`seed: SEED`** and **`→ endless`** then **`→ menu`** only — **`actions:`** and API allow **`endless`** / **`menu`** only (no **`cash_out`**, **`sell`**, **`use`**, or **`save`** until overlay dismissed). Example:
 
     ```text
     round won, score=500
       pending: +$3 blind · +$3 hands · +$4 Golden Joker · +$2 interest · total +$12
-    → cash_out
+      seed: ABC
+    → endless
+    → menu
     ```
 
 - **Transient states** (`HAND_PLAYED`, `DRAW_TO_HAND`, `NEW_ROUND`, `PLAY_TAROT`):

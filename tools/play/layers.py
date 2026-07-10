@@ -72,6 +72,7 @@ LAYER1_KEYS_BY_STATE: dict[str, frozenset[str]] = {
             "won",
             "victory_overlay",
             "held_tags",
+            "seed",
         }
     ),
     "SHOP": frozenset(

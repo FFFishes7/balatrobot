@@ -1118,6 +1118,23 @@ def test_header_buy_power() -> None:
     )
 
 
+def test_header_challenge_omits_deck_and_stake() -> None:
+    header = _header(
+        {
+            "state": "SELECTING_HAND",
+            "ante_num": 2,
+            "round_num": 5,
+            "money": 8,
+            "deck": "RED",
+            "stake": "WHITE",
+            "challenge": {"id": "c_omelette_1", "name": "The Omelette"},
+        }
+    )
+    assert "challenge=The Omelette" in header
+    assert "deck=" not in header
+    assert "stake=" not in header
+
+
 def test_pack_target_hint_range() -> None:
     card = {
         "key": "c_magician",
@@ -1572,6 +1589,7 @@ def test_print_summary_round_eval_victory_overlay(
         "ante_num": 8,
         "deck": "RED",
         "stake": "WHITE",
+        "seed": "XYZ",
         "round": {"hands_left": 0, "discards_left": 0, "chips": 1000000},
         "jokers": {
             "count": 1,
@@ -1589,6 +1607,7 @@ def test_print_summary_round_eval_victory_overlay(
     }
     print_summary(_envelope(raw))
     out = capsys.readouterr().out
+    assert "  seed: XYZ" in out
     assert "→ endless" in out
     assert "→ menu" in out
     assert "→ cash_out" not in out
@@ -1938,6 +1957,31 @@ def test_print_summary_game_over_endless_loss(
     assert "Victory" not in out
 
 
+def test_print_summary_game_over_challenge(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    raw = {
+        "state": "GAME_OVER",
+        "won": False,
+        "deck": "RED",
+        "stake": "WHITE",
+        "seed": "ABC",
+        "challenge": {"id": "c_omelette_1", "name": "The Omelette"},
+        "ante_num": 3,
+        "round_num": 7,
+        "run_summary": {
+            "best_hand": 1200,
+            "result": "Lost to Big Blind",
+        },
+    }
+    print_summary(_envelope(raw))
+    out = capsys.readouterr().out
+    assert "GAME_OVER: Lost to Big Blind" in out
+    assert "→ menu  then  challenge c_omelette_1" in out
+    assert "start RED WHITE" not in out
+    assert "ABC" not in out  # No seed printed in restart hint
+
+
 def test_print_summary_error_envelope(capsys: pytest.CaptureFixture[str]) -> None:
     print_summary(
         {
@@ -1991,7 +2035,7 @@ def test_act_main_save_prints_success_without_state_refresh(
 ) -> None:
     calls: list[tuple[str, dict]] = []
 
-    from commands import resolve_save_path
+    from commands import resolve_save_path  # type: ignore[unresolved-import]
 
     def fake_rpc(method: str, params: dict) -> dict:
         calls.append((method, params))
@@ -2044,7 +2088,7 @@ def test_act_main_save_json_flag_keeps_play_envelope(
     def fail_rpc(method: str, params: dict) -> dict:
         raise AssertionError("save --json should keep execute path")
 
-    from commands import resolve_save_path
+    from commands import resolve_save_path  # type: ignore[unresolved-import]
 
     def fake_execute(method: str, params: dict) -> dict:
         assert (method, params) == ("save", {"path": resolve_save_path("run.jkr")})

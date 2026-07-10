@@ -65,6 +65,7 @@ def test_challenge_starts_unlocked_native_setup(client: httpx.Client) -> None:
         entry = _catalog(client)[0]
         response = api(client, "challenge", {"id": entry["id"]})
         state = response["result"]
+        print("\nCHALLENGE_STATE:", state)
         assert_gamestate_response(response, state="BLIND_SELECT", stake="WHITE")
         assert state["challenge"] == {"id": entry["id"], "name": entry["name"]}
         assert state["jokers"]["count"] >= len(entry["jokers"])

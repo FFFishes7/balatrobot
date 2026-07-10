@@ -28,6 +28,7 @@ LIBRARIES = {
     "tag": "balatro-tags-verified.json",
     "stake": "balatro-stakes-verified.json",
     "deck": "balatro-decks-verified.json",
+    "challenge": "balatro-challenges-verified.json",
     "planet": "balatro-planets-verified.json",
     "tarot": "balatro-tarots-verified.json",
     "voucher": "balatro-vouchers-verified.json",
@@ -41,6 +42,7 @@ ALIASES = {
     "tags": "tag",
     "stakes": "stake",
     "decks": "deck",
+    "challenges": "challenge",
     "planets": "planet",
     "tarots": "tarot",
     "vouchers": "voucher",
@@ -86,6 +88,15 @@ def resolve_name(
     key = name.strip()
     if key in library:
         return key
+    if kind == "challenge":
+        aliases = {
+            str(value).lower(): challenge_id
+            for challenge_id, entry in library.items()
+            for value in (entry.get("name"), entry.get("name_zh"))
+            if isinstance(value, str) and value
+        }
+        if key.lower() in aliases:
+            return aliases[key.lower()]
     lower_map = {k.lower(): k for k in library}
     if key.lower() in lower_map:
         return lower_map[key.lower()]
@@ -158,6 +169,11 @@ def collect_preflight_checks(
     """Return checks list, aggregate passed, and resolved play phase."""
     phase = preflight_phase(state)
     fields = PREFLIGHT_FIELDS_BY_PHASE.get(phase, frozenset())
+    challenge = state.get("challenge") or {}
+    if challenge.get("id"):
+        fields = fields - {"deck", "stake"}
+        if fields:
+            fields = fields | {"challenge"}
     checks: list[dict[str, Any]] = []
     passed = True
 
@@ -195,6 +211,9 @@ def collect_preflight_checks(
     if "deck" in fields:
         deck = (state.get("deck") or "RED").upper()
         add("deck", deck)
+
+    if "challenge" in fields:
+        add("challenge", challenge["id"])
 
     if "stake" in fields:
         stake = (state.get("stake") or "WHITE").upper()

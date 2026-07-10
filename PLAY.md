@@ -50,6 +50,8 @@ until GAME_OVER → menu → start DECK STAKE SEED   # SEED from summary restart
 | `SELECTING_HAND` / `SHOP` / pack / `ROUND_EVAL` | deck · stake · owned jokers · owned consumables · boss             |
 | `GAME_OVER`                                     | deck · stake only                                                  |
 
+In Challenge Mode, preflight identifies and verifies the active challenge, then omits the normal deck/stake context and rows; at `GAME_OVER` it remains empty because no other facts apply. Use `know challenge ID_OR_NAME` for its full static setup, rules, restrictions, and Wiki link.
+
 ---
 
 ## 3. Scoring essentials

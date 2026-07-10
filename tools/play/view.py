@@ -307,13 +307,14 @@ def _header(state: dict[str, Any]) -> str:
         fields.append(f"money={state['money']}")
     if state.get("state") == "SHOP" and state.get("bankrupt_at", 0) != 0:
         fields.append(f"buy_power={buy_power(state)}")
-    if state.get("deck"):
-        fields.append(f"deck={state['deck']}")
-    if state.get("stake"):
-        fields.append(f"stake={state['stake']}")
     challenge = state.get("challenge") or {}
     if challenge.get("id"):
         fields.append(f"challenge={challenge.get('name') or challenge['id']}")
+    else:
+        if state.get("deck"):
+            fields.append(f"deck={state['deck']}")
+        if state.get("stake"):
+            fields.append(f"stake={state['stake']}")
     return " ".join(fields)
 
 
@@ -391,6 +392,9 @@ def _round_eval_block(state: dict[str, Any]) -> list[str]:
         if pending:
             lines.append("  pending: " + " · ".join(pending))
     if state.get("won") and state.get("victory_overlay"):
+        seed = state.get("seed")
+        if seed:
+            lines.append(f"  seed: {seed}")
         lines.append("→ endless")
         lines.append("→ menu")
     else:
@@ -439,6 +443,9 @@ def _option_ids(envelope: dict[str, Any], key: str, fallback_fn) -> list[str]:
 
 
 def _game_over_hint(state: dict[str, Any]) -> str:
+    challenge = state.get("challenge") or {}
+    if challenge.get("id"):
+        return f"→ menu  then  challenge {challenge['id']}"
     deck = state.get("deck") or "DECK"
     stake = state.get("stake") or "STAKE"
     seed = state.get("seed")

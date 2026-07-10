@@ -4,8 +4,20 @@ This directory contains the local, machine-readable Balatro knowledge used by th
 
 ## Files
 
-- `balatro-*-verified.json`: lookup tables used by `tools/play/know.py` (jokers, bosses, tags, stakes, **decks**, tarots, planets, spectrals, vouchers). Each entry pairs a card effect with a `balatrowiki.org` URL. These are hand-maintained data files.
+- `balatro-*-verified.json`: lookup tables used by `tools/play/know.py` (jokers, bosses, tags, stakes, **decks**, challenges, tarots, planets, spectrals, vouchers). Each entry pairs a card effect with a `balatrowiki.org` URL. These are hand-maintained data files.
 - `balatro-rules-verified.json`: hand-curated universal mechanics rules with source references. Prefer this for scoring/order/capacity rules that are not tied to one card name.
+
+## Challenge catalog
+
+`balatro-challenges-verified.json` contains the 20 native Challenge Decks. Entries
+use the stable native challenge ID as the key and provide English and Simplified
+Chinese names, the White Stake, a compact effect, starting deck/items, custom
+rules, restrictions, and the individual `balatrowiki.org` page. Use
+`bot.ps1 know challenge ID_OR_NAME` (or `know check challenge ...`) to query it.
+
+This static catalog is intentionally separate from `bot.ps1 challenges`: the API
+command returns profile-dependent unlock/completion state and the live game's
+serialized setup, while this file supplies stable Wiki-backed facts and citations.
 
 The play helper defaults to this directory, but it can be overridden with `BALATROBOT_KNOWLEDGE_DIR`.
 
