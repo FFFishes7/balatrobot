@@ -8,7 +8,7 @@ You are the player. Read **§1–§6** top to bottom before your first move, the
 | **Scripting the API** | [docs/api.md](docs/api.md), `bot.ps1 state --json`           |
 | **Changing the mod**  | [AGENTS.md](AGENTS.md), [docs/OVERVIEW.md](docs/OVERVIEW.md) |
 
-Install / launch: [README.md](README.md). Glance field details: [tools/play/README.md](tools/play/README.md#what-glance-shows).
+Install / launch: [README.md](README.md). Recommended: `serve.ps1 --fast --audio` (sound on). Glance field details: [tools/play/README.md](tools/play/README.md#what-glance-shows).
 
 ---
 
@@ -200,7 +200,7 @@ Open only when the play sheet is not enough.
 .\tools\play\bot.ps1 health
 ```
 
-**If health fails:** wait 30–60s after launch; kill zombie `balatrobot` processes; restart `.\tools\play\serve.ps1 --fast --debug`; try `--port 12347` if busy. Do not “fix” game state — restart the server only. Details: [README.md](README.md).
+**If health fails:** wait 30–60s after launch; kill zombie `balatrobot` processes; restart `.\tools\play\serve.ps1 --fast --audio`; try `--port 12347` if busy. Do not “fix” game state — restart the server only. Details: [README.md](README.md).
 
 ### Minimal trace
 

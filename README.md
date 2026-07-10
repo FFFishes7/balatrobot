@@ -80,7 +80,7 @@ From the repository root:
 
 This sets session env vars for Balatro paths, runs `balatrobot serve` to start the game with the mod, and exposes JSON-RPC on `http://127.0.0.1:12346` (default).
 
-Useful flags: `.\tools\play\serve.ps1 --fast --debug`
+Useful flags: `.\tools\play\serve.ps1 --fast --debug` · add `--audio` for sound (off by default)
 
 Leave this terminal open while you play.
 

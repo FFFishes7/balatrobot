@@ -31,7 +31,7 @@ Each `glance`/action output ends with an `actions:` line listing valid next comm
 
 ### Windows play helpers
 
-- Launch with `.\tools\play\serve.ps1 --fast` or `--fast --debug`; there is no `bot.ps1 serve`. Leave it running and health-check `http://127.0.0.1:12346`.
+- Launch with `.\tools\play\serve.ps1 --fast` or `--fast --debug`; add `--audio` for sound (off by default). There is no `bot.ps1 serve`. Leave it running and health-check `http://127.0.0.1:12346`.
 - `tools/play/serve.ps1` is machine-local and gitignored because it contains the correct local Steam/Balatro path.
 - Use the deliberate loop: `glance` → optional `know preflight` → think → one friendly action → read the new summary.
 - Do **not** write or run automated strategy scripts, batch play loops, or bots that pick actions without per-turn reasoning.
