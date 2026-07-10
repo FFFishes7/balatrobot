@@ -75,12 +75,12 @@ For platform-specific paths (macOS / Linux Proton / native Love) and CLI flags, 
 From the repository root:
 
 ```powershell
-.\tools\play\serve.ps1
+.\tools\play\serve.ps1 --fast --audio
 ```
 
 This sets session env vars for Balatro paths, runs `balatrobot serve` to start the game with the mod, and exposes JSON-RPC on `http://127.0.0.1:12346` (default).
 
-Useful flags: `.\tools\play\serve.ps1 --fast --debug` · add `--audio` for sound (off by default)
+For a playable session, use `--audio`; add `--debug` only when debugging: `.\tools\play\serve.ps1 --fast --audio --debug`.
 
 Leave this terminal open while you play.
 

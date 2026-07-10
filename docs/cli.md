@@ -114,14 +114,14 @@ On error, prints `Error: NAME - message` to stderr (exit code 1).
 ### Basic Usage
 
 ```bash
-# Start with default settings
-uvx balatrobot serve
+# Start an interactive session with audio
+uvx balatrobot serve --audio
 
-# Start with fast mode for development
-uvx balatrobot serve --fast
+# Start a fast interactive session with audio
+uvx balatrobot serve --fast --audio
 
 # Start with debug mode (requires DebugPlus mod)
-uvx balatrobot serve --fast --debug
+uvx balatrobot serve --fast --audio --debug
 
 # Start headless for automated testing
 uvx balatrobot serve --headless --fast
@@ -131,10 +131,10 @@ uvx balatrobot serve --headless --fast
 
 ```bash
 # Use a different port
-uvx balatrobot serve --port 8080
+uvx balatrobot serve --port 8080 --audio
 
 # Custom Balatro installation
-uvx balatrobot serve --balatro-path /path/to/Balatro.exe
+uvx balatrobot serve --balatro-path /path/to/Balatro.exe --audio
 ```
 
 ## Examples with Environment Variables
@@ -145,12 +145,13 @@ uvx balatrobot serve --balatro-path /path/to/Balatro.exe
 # Configure via environment variables
 export BALATROBOT_PORT=8080
 export BALATROBOT_FAST=1
+export BALATROBOT_AUDIO=1
 
 # Launch with defaults from env vars
-uvx balatrobot serve
+uvx balatrobot serve --audio
 
 # CLI flags override env vars
-uvx balatrobot serve --port 9000  # Uses port 9000, not 8080
+uvx balatrobot serve --port 9000 --audio  # Uses port 9000, not 8080
 ```
 
 **Windows PowerShell:**
@@ -158,7 +159,8 @@ uvx balatrobot serve --port 9000  # Uses port 9000, not 8080
 ```powershell
 $env:BALATROBOT_PORT = "8080"
 $env:BALATROBOT_FAST = "1"
-uvx balatrobot serve
+$env:BALATROBOT_AUDIO = "1"
+uvx balatrobot serve --audio
 ```
 
 ## Process Management
@@ -190,10 +192,10 @@ The `windows` platform launches Balatro via Steam on Windows. The CLI auto-detec
 
 ```powershell
 # Auto-detects paths
-uvx balatrobot serve --fast
+uvx balatrobot serve --fast --audio
 
 # Or specify custom paths
-uvx balatrobot serve --love-path "C:\Custom\Path\Balatro.exe" --lovely-path "C:\Custom\Path\version.dll"
+uvx balatrobot serve --audio --love-path "C:\Custom\Path\Balatro.exe" --lovely-path "C:\Custom\Path\version.dll"
 ```
 
 ### macOS Platform
@@ -217,10 +219,10 @@ The `darwin` platform launches Balatro via Steam on macOS. The CLI auto-detects 
 
 ```bash
 # Auto-detects paths
-uvx balatrobot serve --fast
+uvx balatrobot serve --fast --audio
 
 # Or specify custom paths
-uvx balatrobot serve --love-path "/path/to/love" --lovely-path "/path/to/liblovely.dylib"
+uvx balatrobot serve --audio --love-path "/path/to/love" --lovely-path "/path/to/liblovely.dylib"
 ```
 
 ### Linux (Proton) Platform
@@ -244,10 +246,10 @@ The `linux` platform launches Balatro via Steam Proton. The CLI auto-detects Ste
 
 ```bash
 # Auto-detects paths
-uvx balatrobot serve --fast
+uvx balatrobot serve --fast --audio
 
 # Or specify custom paths
-uvx balatrobot serve --love-path /path/to/proton --balatro-path /path/to/Balatro
+uvx balatrobot serve --audio --love-path /path/to/proton --balatro-path /path/to/Balatro
 ```
 
 !!! warning "Steam Installation"
@@ -274,7 +276,7 @@ mkdir -p ~/.local/share/love/balatro
 cp -r /path/to/balatro/settings/* ~/.local/share/love/balatro/
 
 # Launch with native platform
-uvx balatrobot serve --platform native --balatro-path /path/to/balatro/source
+uvx balatrobot serve --audio --platform native --balatro-path /path/to/balatro/source
 ```
 
 ??? tip "Hyprland Configuration"

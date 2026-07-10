@@ -92,13 +92,13 @@ if __name__ == "__main__":
     **Windows (recommended):**
 
     ```powershell
-    .\tools\play\serve.ps1 --fast
+    .\tools\play\serve.ps1 --fast --audio
     ```
 
     **Cross-platform:**
 
     ```bash
-    balatrobot serve --fast
+    balatrobot serve --fast --audio
     ```
 
 2. In another terminal, run the bot:

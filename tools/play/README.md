@@ -12,7 +12,7 @@ See [PLAY.md §1–§6](../../PLAY.md#1-what-you-are-doing) for the play loop, s
 ## Workflow
 
 1. **One-time:** install Lovely + Steamodded, link this repo into `%AppData%\Balatro\Mods\balatrobot\`, run `make install`, copy `serve.example.ps1` → `serve.ps1`.
-2. **Launch:** `.\tools\play\serve.ps1` — starts Balatro with the mod and the API on port 12346.
+2. **Launch:** `.\tools\play\serve.ps1 --fast --audio` — starts Balatro with the mod, sound, and the API on port 12346.
 3. **Play:** in another terminal, use `.\tools\play\bot.ps1 ...`.
 
 See the root [README](../../README.md#quick-start-windows) and [PLAY.md](../../PLAY.md#1-what-you-are-doing) for the play guide.
