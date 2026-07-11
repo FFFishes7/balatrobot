@@ -208,20 +208,20 @@ Anything else → `unmodeled` (treat score as lower bound only).
 > as `\"` (as shown above). Prefer the friendly subcommands — they avoid this
 > entirely.
 
-## AI loop
+## Playing workflow
 
-Follow [PLAY.md §2 Loop and hard rules](../../PLAY.md#2-loop-and-hard-rules). Scoring math: [PLAY.md §3 Scoring essentials](../../PLAY.md#3-scoring-essentials) + `query hands` — not `estimate`.
+Use [PLAY.md §1–§6](../../PLAY.md#1-what-you-are-doing) for the deliberate
+play loop, scoring rules, state transitions, and pitfalls. This document is the
+command and output reference.
 
-1. `glance` → compact summary + `actions:` line (valid next commands)
-2. `know preflight` at blind select / skip decision (phase-aware table — see PLAY.md §2)
-3. `query hands` when estimating a play in `SELECTING_HAND`
-4. friendly action subcommand → prints the new compact summary automatically
-5. Repeat until `state == GAME_OVER`, then `menu` + `start DECK STAKE SEED` (seed from summary restart hint)
-
-Every `glance` / action output ends with an `actions:` line listing **command
-names** valid in the current state (deduplicated, e.g. `actions: play discard sort buy reroll next_round`). **`use`** appears only when each owned consumable can actually be used: Tarot/Spectral cards that need hand targets require enough **visible** hand cards (`target_min`, or 2 for Death); random-joker Spectrals (Ankh/Hex/Ectoplasm) and no-target cards (Planet, Fool, …) may still show `use` without a hand. Use `bot.ps1 help` (catalog + descriptions), `bot.ps1 help --now` (valid now), or [PLAY.md §4–§5](../../PLAY.md#4-state--command) for argument syntax.
-
-For full JSON state (`state`, `exec`, or `<action> --json`), the same commands appear in an `actions[]` array with `example` payloads for each.
+- `actions:` lists deduplicated command names valid in the current state.
+- `use` appears only when an owned consumable is currently usable. Targeted
+    cards require enough visible hand cards; random-Joker and no-target cards do
+    not.
+- `bot.ps1 help` shows the full catalog; `help --now` shows valid commands with
+    examples for the current state.
+- JSON output exposes the same commands as `actions[]`, including example
+    payloads.
 
 ## Files
 

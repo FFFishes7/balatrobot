@@ -7,37 +7,30 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 **Play Balatro with your agent — glance, then act.** If the user asks you to **play** (not develop), read [`PLAY.md` §1–§6](./PLAY.md#1-what-you-are-doing) top to bottom before the first move; [Appendix](./PLAY.md#appendix-on-demand) only when stuck.
 
-## Playing Balatro (read this first if asked to play)
+## Playing Balatro
 
-- The game serves JSON-RPC 2.0 on `http://127.0.0.1:12346`. Health-check first.
-- **Loop:** `bot.ps1 glance` → (optional `bot.ps1 know preflight` at blind/skip — see PLAY.md §2) → one friendly action → read printed summary. Repeat until `GAME_OVER`, then `bot.ps1 menu` + `bot.ps1 start DECK STAKE SEED` (seed from summary restart hint; e.g. `start RED WHITE ABC123`). **`estimate` is optional / not recommended** — see `PLAY.md`.
-- **Scoring:** read [PLAY.md §3 Scoring essentials](./PLAY.md#3-scoring-essentials); use `query hands` + §3 for hand math (not `estimate`).
-- **All indices are 0-based.** One request at a time (server is single-client).
-- **Use friendly subcommands, never `exec '{...}'`** — PowerShell strips unescaped double quotes from JSON args.
-- **Command syntax:** `bot.ps1 help` (formatted catalog + descriptions); `bot.ps1 help --now` when the game is running; `state --json` → `actions[].example` for scripting.
-- State → command:
+When the user asks to **play** rather than develop:
 
-| State                  | Command                                                                                                                                        |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MENU`                 | `bot.ps1 start DECK STAKE [SEED]` (e.g. `start RED WHITE`) · `bot.ps1 challenges` then `bot.ps1 challenge ID` for an unlocked native challenge |
-| `BLIND_SELECT`         | `bot.ps1 select` · `bot.ps1 skip` (Small/Big only) · `bot.ps1 reroll_boss` (Boss + Director's Cut / Retcon, $10)                               |
-| `SELECTING_HAND`       | `bot.ps1 play 0 1 2 3 4` (1-5 cards) · `discard 0 1` · `use 0 [1 2]` · `sort rank` · *(optional)* `estimate`                                   |
-| `ROUND_EVAL`           | `bot.ps1 cash_out` · after Ante 8 win with victory overlay: `bot.ps1 endless` first                                                            |
-| `SHOP`                 | `bot.ps1 buy card 0` · `buy pack 0` · `reroll` · `sell joker 0` · `rearrange jokers 1 0` · `next_round`                                        |
-| `SMODS_BOOSTER_OPENED` | `bot.ps1 pack 0 [1 2]` while glance shows **`choices remaining: N`** · `pack skip` only to forfeit picks · `rearrange jokers …` when 2+ jokers |
-| `GAME_OVER`            | `bot.ps1 menu` then `start DECK STAKE SEED` (from summary restart hint)                                                                        |
+1. Read [`PLAY.md` §1–§6](./PLAY.md#1-what-you-are-doing) before the first
+    move.
+2. Launch `.\tools\play\serve.ps1 --fast --audio` (add `--debug` only
+    for debugging), leave it running, and health-check
+    `http://127.0.0.1:12346`.
+3. Repeat `bot.ps1 glance` → think → one friendly action → read the new
+    summary. Follow the returned `actions:` line and the state table in
+    [PLAY.md §4](./PLAY.md#4-state--command).
 
-Each `glance`/action output ends with an `actions:` line listing valid next commands. **Pitfalls and API gotchas:** [PLAY.md §6](./PLAY.md#6-pitfalls). State→command table and glance abbreviations: [PLAY.md §4–§5](./PLAY.md#4-state--command).
+Hard constraints:
 
-### Windows play helpers
-
-- Launch play sessions with `.\tools\play\serve.ps1 --fast --audio` (or `--fast --audio --debug` when debugging). There is no `bot.ps1 serve`. Leave it running and health-check `http://127.0.0.1:12346`.
-- `tools/play/serve.ps1` is machine-local and gitignored because it contains the correct local Steam/Balatro path.
-- Use the deliberate loop: `glance` → optional `know preflight` → think → one friendly action → read the new summary.
-- Do **not** write or run automated strategy scripts, batch play loops, or bots that pick actions without per-turn reasoning.
-- Do **not** use `estimate` as the default play loop step; it is optional and incomplete. Prefer `query hands` plus the scoring rules in `PLAY.md`.
-- If `estimate` is used: `idx` / `indices` means the full `bot.ps1 play` list, including kickers when they matter; `scoring=` / `scoring_indices` means only poker-scoring cards.
-- Never use bare JSON through `bot.ps1 exec` in PowerShell; use friendly subcommands. If raw `exec` is unavoidable, escape quotes as `\"`.
+- Indices are 0-based; the server is single-client, so send one request at a
+    time.
+- Use friendly subcommands. Do not pass bare JSON through `bot.ps1 exec` in
+    PowerShell.
+- Do not automate strategy decisions or batch the play loop.
+- `estimate` is optional development tooling, not the default play method.
+    Use `query hands` plus [PLAY.md §3](./PLAY.md#3-scoring-essentials).
+- `tools/play/serve.ps1` is machine-local and gitignored; there is no
+    `bot.ps1 serve`.
 
 ## Overview
 
@@ -220,6 +213,8 @@ Runs inside the game engine and exposes an API.
     - `debuff.lua`: Set or clear debuff on hand cards (debug / estimate testing).
     - `buy.lua`: Buy a card or booster pack from the shop.
     - `cash_out.lua`: Cash out and collect round rewards.
+    - `challenge.lua`: Start an unlocked native challenge by stable challenge ID.
+    - `challenges.lua`: List native challenges with unlock, completion, and setup details.
     - `endless.lua`: Dismiss victory overlay to continue in endless mode.
     - `discard.lua`: Discard cards from the hand.
     - `gamestate.lua`: Get current game state.
@@ -236,7 +231,7 @@ Runs inside the game engine and exposes an API.
     - `screenshot.lua`: Take a screenshot of the current game state.
     - `select.lua`: Select the current blind.
     - `sell.lua`: Sell a joker or consumable from player inventory.
-    - `set.lua`: Set a in-game value (money, chips, ante, etc.).
+    - `set.lua`: Set an in-game value (money, chips, ante, etc.).
     - `skip.lua`: Skip the current blind (Small or Big only).
     - `sort.lua`: Sort hand cards using Balatro's native rank or suit sort.
     - `start.lua`: Start a new game run with specified deck and stake.
@@ -250,41 +245,35 @@ Runs inside the game engine and exposes an API.
     - `state.lua`: Test endpoint that requires specific game states.
     - `validation.lua`: Comprehensive validation test endpoint.
 
-## Estimate modeling (required workflow)
+## Estimate modeling
 
-`bot.ps1 estimate` models **deterministic** scoring only. Before changing `tools/play/estimate.py` or `estimate_jokers.py`:
+The required workflow, scoring pipeline, Joker registry, and live-validation log
+live in [`tools/play/estimate_registry.md`](tools/play/estimate_registry.md).
+Read its modeling checklist before changing `estimate.py` or
+`estimate_jokers.py`.
 
-1. **Gate** — read the joker in Balatro source (`%APPDATA%\Balatro\Mods\lovely\game-dump\card.lua`). If it uses RNG or unread state → **Never model**; leave `unmodeled`.
-2. **Trace** — find context (`joker_main` / per-card / `repetition`) via `state_events.lua` → `evaluate_play` and `smods/src/utils.lua` (`SMODS.calculate_main_scoring`, `trigger_effects`).
-3. **Implement** — port to `tools/play/estimate_jokers.py`; register in `_modeled()`; pipeline glue stays in `estimate.py`. `indices` = full `bot.ps1 play` args (kickers included when they change held-card effects).
-4. **Test** — unit: `pytest tests/cli/test_play_helpers.py -k estimate`; integration (required for new/changed jokers): `pytest tests/lua/endpoints/test_estimate_live.py` — add a recipe in `estimate_live_recipes.py` or scenario in `estimate_live_scenarios.py`. Manual fallback: `estimate` then `play` same `idx` with `BALATROBOT_ALLOW_CHEATS=1`.
-5. **Document** — update [`tools/play/estimate_registry.md`](tools/play/estimate_registry.md) (checklist + Verified/Never tables + live log); update `docs/api.md` if gamestate fields changed.
+Non-negotiable invariants:
 
-Full checklist and scoring pipeline map: **`tools/play/estimate_registry.md`**. Do not use wiki guesses when source is available.
+- Model deterministic effects only. RNG, probability, and unreadable state stay
+    `unmodeled`.
+- Verify mechanics in the installed Balatro/SMODS source, not from wiki guesses.
+- Prefer structured API fields such as `value.stats`; parse localized effect text
+    only as a fallback.
+- `indices` is the full `play` list, including kickers when held-card effects
+    depend on them.
+- Unit tests are self-referential. Every new or changed modeled Joker requires a
+    real-game recipe or scenario in `test_estimate_live.py`.
+- Dedupe candidates by `(hand_type, sorted scoring_indices)`; keep the highest
+    score and prefer fewer cards on ties.
 
-### Estimate hard rules and invariants
-
-- Deterministic only: no RNG, probability, or expected-value guesses. RNG jokers stay `unmodeled` and belong in the registry's Never table.
-- Prefer structured API fields (`value.stats`, `gamestate.round`, `gamestate.run`); parse `value.effect` only as a fallback.
-- Dusk: API `hands_left == 1` (= game internal `0` after `ease_hands_played(-1)`); +1 retrigger per played scoring card.
-- Blue Joker: +2 chips × `state.cards.count` in global joker phase.
-- Blackboard: all **unplayed** cards (`G.hand.cards`) must be Spades or Clubs.
-- Mystic Summit: only active when `discards_left == 0`.
-- Dedupe estimate candidates by `(hand_type, sorted scoring_indices)`; keep the highest score and prefer fewer cards on tie.
-
-Unit tests prove the Python model matches itself; they do not prove Balatro agrees. For modeled joker changes, add or update live coverage using real gamestate: `load_fixture` → add joker(s) → `estimate(state)` → `play` the same `indices` → assert chip delta equals the estimate score. Run:
-
-```powershell
-python -m pytest tests/cli/test_play_helpers.py -k estimate -v
-python -m pytest tests/lua/endpoints/test_estimate_live.py -v
-```
-
-Manual fallback when a fixture cannot hit the joker: with `$env:BALATROBOT_ALLOW_CHEATS=1`, run `estimate`, then `play` the same indices, compare against actual score, and log it in `tools/play/estimate_registry.md`.
+Run the unit estimate tests and the targeted live suite documented in the
+registry. Update the registry in the same change, and update `docs/api.md` when
+gamestate fields change.
 
 ## Key Files
 
 - **Python**:
-    - `src/balatrobot/cli.py`: Main entry point.
+    - `src/balatrobot/cli/`: `serve` and `api` command entry points.
     - `src/balatrobot/manager.py`: Game process logic.
 - **Play helpers** (`tools/play/`):
     - `know.py` / `know_lib.py`: Knowledge lookups and phase-aware preflight.

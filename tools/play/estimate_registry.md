@@ -39,6 +39,7 @@ If any check fails → add to **Never model** below; leave `unmodeled`; **stop**
 - [ ] Add logic in `tools/play/estimate_jokers.py` (`PER_CARD_JOKERS`, `_global_joker_bonus`, `_retrigger_config`, or `NO_SCORE_JOKERS`).
 - [ ] Register key in `_modeled()` or it stays `unmodeled`.
 - [ ] If kicker choice matters (Blackboard): enumerate play sizes; **`indices`** = full `bot.ps1 play` list.
+- [ ] Dedupe candidates by `(hand_type, sorted scoring_indices)`; keep the highest score and prefer fewer played cards on ties.
 
 ### 3. Test
 
@@ -300,28 +301,29 @@ Integration tests: `tests/lua/endpoints/test_estimate_live.py` — parametrized 
 `estimate(state)` → `play` same `indices` → `round.chips` delta must match.
 
 Multi-joker **interaction scenarios** live in `tests/lua/endpoints/estimate_live_scenarios.py`
-and run via `TestEstimateLiveScenarios` (31 scenarios × 2 lines ≈ 62 plays).
+and run via `TestEstimateLiveScenarios` (33 scenarios, 64 total lines).
 
-**Live coverage (2026-07-04):**
+**Live coverage (2026-07-10):**
 
 | Suite                 |  Count | Notes                                                                                            |
 | --------------------- | -----: | ------------------------------------------------------------------------------------------------ |
 | Scoring jokers        |     99 | One recipe per deterministic scoring key (`NO_SCORE` and `j_misprint` / `j_bloodstone` excluded) |
-| Card buffs            |     12 | Playing-card buffs (9) + joker edition foil/holo/poly live (3)                                   |
-| Interaction scenarios |     31 | Order-sensitive multi-joker combos; each has optimal + suboptimal line                           |
+| Card buffs            |     15 | Playing-card buffs (12) + joker edition foil/holo/poly live (3)                                  |
+| Interaction scenarios |     33 | 31 contrast scenarios plus 2 single-line Wild/debuff classification scenarios                    |
 | Runtime               | ~6 min | Single Balatro instance; do not parallelize with other lua suites (OOM)                          |
 
 `j_loyalty_card` skips when countdown is not active at glance time.
 
-### Live interaction scenarios (31)
+### Live interaction scenarios (33)
 
 **Division of labor:** single-joker matrix = full smoke coverage; scenarios = order / held /
-retrigger / combo regression with **contrast assertions** (optimal line: `estimate == play`;
-suboptimal line: same match **and** score strictly lower).
+retrigger / combo regression. S01–S33 use **contrast assertions** (optimal line:
+`estimate == play`; suboptimal line: same match **and** score strictly lower). S34–S35
+are single-line classification regressions.
 
 Runner: `estimate_live_runner.run_scenario` — each line reloads the fixture independently;
 optional `rearrange` jokers/hand; play order follows **hand slot order** (leftmost scoring card first).
-Scenarios may use [`JokerAdd`](tests/lua/endpoints/estimate_live_recipes.py) for joker editions.
+Scenarios may use [`JokerAdd`](../../tests/lua/endpoints/estimate_live_recipes.py) for joker editions.
 
 | Cat            | ID  | Description                    | Jokers                                | Contrast                              |
 | -------------- | --- | ------------------------------ | ------------------------------------- | ------------------------------------- |
@@ -356,25 +358,29 @@ Scenarios may use [`JokerAdd`](tests/lua/endpoints/estimate_live_recipes.py) for
 | F              | S31 | Mime Holo + held steel         | Baron + Mime **HOLO** + STEEL+RED K   | Holo vs plain Mime                    |
 | F              | S32 | Baseball + Poly Cavendish      | Jolly + Cavendish **POLY** + Baseball | Order vs reversed                     |
 | F              | S33 | **PhotoChad GLASS+RED 顶配**   | Photograph + Chad                     | GLASS+RED J left vs GLASS only        |
+| G wild         | S34 | Five Wild Kings                | —                                     | Classifies as Flush Five              |
+| G              | S35 | Debuffed Wild printed suit     | —                                     | Does not create a diamond flush       |
 
 **PhotoChad + GLASS + RED (S33):** leftmost scoring face with GLASS (×2/trigger) + RED (+1 retrigger)
 
 - Hanging Chad (+2 on `scoring_hand[1]`) + Photograph (×2 on first face each trigger). Live-validated;
     unit tests `test_estimate_photochad_glass_red_*`.
 
-**Buff coverage in scenarios (each ≥ 2 appearances):**
+**Buff coverage in scenarios:**
 
-| Buff         | Scenario IDs                 |
-| ------------ | ---------------------------- |
-| BONUS        | S21, S23                     |
-| MULT         | S20, S26                     |
-| GLASS        | S02, S03, S07, S11, S24      |
-| STONE        | S22                          |
-| STEEL (held) | S04, S13, S14, S15, S16, S17 |
-| FOIL         | S21                          |
-| HOLO         | S26                          |
-| POLYCHROME   | S02, S09, S18, S24           |
-| RED seal     | S04, S07, S13                |
+| Buff         | Scenario IDs                      |
+| ------------ | --------------------------------- |
+| BONUS        | S21, S23                          |
+| MULT         | S20, S26                          |
+| GLASS        | S02, S03, S07, S11, S24, S33      |
+| STONE        | S22                               |
+| STEEL (held) | S04, S13, S14, S15, S16, S17, S31 |
+| WILD         | S34, S35                          |
+| FOIL         | S21, S28                          |
+| HOLO         | S26, S27, S30, S31                |
+| POLYCHROME   | S02, S09, S18, S24, S29, S30, S32 |
+| RED seal     | S04, S07, S13, S31, S33           |
+| Debuffed     | S35                               |
 
 ## Run one scenario: `pytest tests/lua/endpoints/test_estimate_live.py -k S04 -v`
 

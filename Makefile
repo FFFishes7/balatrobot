@@ -21,7 +21,7 @@ MAX_XDIST ?= 6
 XDIST_WORKERS := $(shell MAX_XDIST=$(MAX_XDIST) $(PYTHON) -c "import multiprocessing as mp, os; print(min(mp.cpu_count(), int(os.environ.get('MAX_XDIST', 6))))")
 
 help: ## Show this help message
-	@$(PRINT) "$(BLUE)BalatroBot Development Makefile$(RESET)"
+	@$(PRINT) "$(BLUE)BlindDeck Development Makefile$(RESET)"
 	@$(PRINT) ""
 	@$(PRINT) "$(YELLOW)Available targets:$(RESET)"
 	@printf "  $(GREEN)%-18s$(RESET) %s\n" "help"      "Show this help message"
@@ -40,8 +40,7 @@ install: ## Install balatrobot and all dependencies (including dev)
 
 lint: ## Run ruff linter (check only)
 	@$(PRINT) "$(YELLOW)Running ruff linter...$(RESET)"
-	$(PYTHON) -m ruff check --fix --select I .
-	$(PYTHON) -m ruff check --fix .
+	$(PYTHON) -m ruff check .
 
 format: ## Run formatters (ruff, mdformat, stylua)
 	@$(PRINT) "$(YELLOW)Running ruff formatter...$(RESET)"

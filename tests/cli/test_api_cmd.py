@@ -1,6 +1,7 @@
 """Integration tests for balatrobot api command."""
 
 import json
+from pathlib import Path
 
 from typer.testing import CliRunner
 
@@ -46,13 +47,15 @@ class TestApiCommand:
         assert "invalid_method" in result.output.lower()
 
     def test_api_all_methods_valid(self):
-        """All Method enum values are valid strings."""
+        """The CLI accepts every method declared by OpenRPC."""
         from balatrobot.cli.api import Method
 
-        methods = [m.value for m in Method]
-        assert len(methods) == 22
-        assert "health" in methods
-        assert "gamestate" in methods
+        root = Path(__file__).resolve().parents[2]
+        spec = json.loads((root / "src/lua/utils/openrpc.json").read_text())
+        openrpc_methods = {method["name"] for method in spec["methods"]}
+        cli_methods = {method.value for method in Method}
+
+        assert cli_methods == openrpc_methods
 
     # --- JSON validation tests ---
 

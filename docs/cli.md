@@ -81,7 +81,7 @@ uvx balatrobot api METHOD [PARAMS] [OPTIONS]
 
 ### Available Methods
 
-`add`, `buy`, `cash_out`, `debuff`, `discard`, `endless`, `gamestate`, `health`, `load`, `menu`, `next_round`, `pack`, `play`, `rearrange`, `reroll`, `reroll_boss`, `save`, `screenshot`, `select`, `sell`, `set`, `skip`, `sort`, `start`, `use`
+`add`, `buy`, `cash_out`, `challenge`, `challenges`, `debuff`, `discard`, `endless`, `gamestate`, `health`, `load`, `menu`, `next_round`, `pack`, `play`, `rearrange`, `reroll`, `reroll_boss`, `rpc.discover`, `save`, `screenshot`, `select`, `sell`, `set`, `skip`, `sort`, `start`, `use`
 
 For detailed method documentation including parameters and schemas, see the [OpenRPC specification](../src/lua/utils/openrpc.json).
 
@@ -109,7 +109,7 @@ uvx balatrobot api health --port 8080
 On success, prints JSON result to stdout (exit code 0).
 On error, prints `Error: NAME - message` to stderr (exit code 1).
 
-## Examples
+## Serve Examples
 
 ### Basic Usage
 
@@ -127,17 +127,16 @@ uvx balatrobot serve --fast --audio --debug
 uvx balatrobot serve --headless --fast
 ```
 
-### Custom Configuration
+### Custom Port
 
 ```bash
 # Use a different port
 uvx balatrobot serve --port 8080 --audio
-
-# Custom Balatro installation
-uvx balatrobot serve --balatro-path /path/to/Balatro.exe --audio
 ```
 
-## Examples with Environment Variables
+Platform-specific custom paths are covered below.
+
+## Environment Variable Precedence
 
 **Bash:**
 
@@ -148,10 +147,10 @@ export BALATROBOT_FAST=1
 export BALATROBOT_AUDIO=1
 
 # Launch with defaults from env vars
-uvx balatrobot serve --audio
+uvx balatrobot serve
 
 # CLI flags override env vars
-uvx balatrobot serve --port 9000 --audio  # Uses port 9000, not 8080
+uvx balatrobot serve --port 9000  # Uses port 9000, not 8080
 ```
 
 **Windows PowerShell:**
@@ -160,7 +159,7 @@ uvx balatrobot serve --port 9000 --audio  # Uses port 9000, not 8080
 $env:BALATROBOT_PORT = "8080"
 $env:BALATROBOT_FAST = "1"
 $env:BALATROBOT_AUDIO = "1"
-uvx balatrobot serve --audio
+uvx balatrobot serve
 ```
 
 ## Process Management
@@ -173,134 +172,50 @@ The CLI automatically:
 
 ## Platform-Specific Details
 
-### Windows Platform
+The launcher selects a platform automatically; override it with `--platform` when
+needed.
 
-The `windows` platform launches Balatro via Steam on Windows. The CLI auto-detects the Steam installation paths:
+| Platform       | Game / launcher path                             | Lovely path                                                  | Mods directory                                                                           |
+| -------------- | ------------------------------------------------ | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Windows        | `...\Steam\steamapps\common\Balatro\Balatro.exe` | `...\Balatro\version.dll`                                    | `%AppData%\Balatro\Mods`                                                                 |
+| macOS          | `.../Balatro.app/Contents/MacOS/love`            | `.../Balatro/liblovely.dylib`                                | `~/Library/Application Support/Balatro/Mods`                                             |
+| Linux (Proton) | Balatro directory + detected Proton executable   | `<Balatro>/version.dll`                                      | `~/.local/share/Steam/steamapps/compatdata/2379780/pfx/.../AppData/Roaming/Balatro/Mods` |
+| Linux (native) | Balatro source directory + `love` from `PATH`    | `/usr/local/lib/liblovely.so` or `~/.local/lib/liblovely.so` | `~/.config/love/Mods`                                                                    |
 
-**Auto-Detected Paths:**
+Common requirements are Balatro, Lovely Injector, and the matching injector
+library in the game directory. Additional constraints:
 
-- `BALATROBOT_LOVE_PATH`: `C:\Program Files (x86)\Steam\steamapps\common\Balatro\Balatro.exe`
-- `BALATROBOT_LOVELY_PATH`: `C:\Program Files (x86)\Steam\steamapps\common\Balatro\version.dll`
+- macOS launches the LOVE runtime directly because launching through Steam is
+    unreliable.
+- Linux Proton requires `DISPLAY` or `WAYLAND_DISPLAY`; only Valve's standard
+    Steam package is tested.
+- Native Linux requires a source directory containing `main.lua` and game
+    settings under `~/.local/share/love/balatro`.
 
-**Requirements:**
-
-- Balatro installed via Steam
-- [Lovely Injector](https://github.com/ethangreen-dev/lovely-injector) `version.dll` placed in the Balatro game directory
-- Mods directory: `%AppData%\Balatro\Mods`
-
-**Launch:**
+### Custom path examples
 
 ```powershell
-# Auto-detects paths
-uvx balatrobot serve --fast --audio
-
-# Or specify custom paths
-uvx balatrobot serve --audio --love-path "C:\Custom\Path\Balatro.exe" --lovely-path "C:\Custom\Path\version.dll"
+# Windows
+uvx balatrobot serve --audio `
+  --love-path "C:\Custom\Balatro\Balatro.exe" `
+  --lovely-path "C:\Custom\Balatro\version.dll"
 ```
-
-### macOS Platform
-
-The `darwin` platform launches Balatro via Steam on macOS. The CLI auto-detects the Steam installation paths:
-
-**Auto-Detected Paths:**
-
-- `BALATROBOT_LOVE_PATH`: `~/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.app/Contents/MacOS/love`
-- `BALATROBOT_LOVELY_PATH`: `~/Library/Application Support/Steam/steamapps/common/Balatro/liblovely.dylib`
-
-**Requirements:**
-
-- Balatro installed via Steam
-- [Lovely Injector](https://github.com/ethangreen-dev/lovely-injector) `liblovely.dylib` in the Balatro game directory
-- Mods directory: `~/Library/Application Support/Balatro/Mods`
-
-**Note:** You cannot run the game through Steam on macOS due to a Steam client bug. The CLI handles this by directly executing the LOVE runtime with proper environment variables.
-
-**Launch:**
 
 ```bash
-# Auto-detects paths
-uvx balatrobot serve --fast --audio
+# macOS
+uvx balatrobot serve --audio \
+  --love-path "/path/to/Balatro.app/Contents/MacOS/love" \
+  --lovely-path "/path/to/Balatro/liblovely.dylib"
 
-# Or specify custom paths
-uvx balatrobot serve --audio --love-path "/path/to/love" --lovely-path "/path/to/liblovely.dylib"
+# Linux via Proton
+uvx balatrobot serve --audio \
+  --love-path /path/to/proton \
+  --balatro-path /path/to/Balatro
+
+# Native Linux
+uvx balatrobot serve --audio --platform native \
+  --balatro-path /path/to/balatro/source
 ```
-
-### Linux (Proton) Platform
-
-The `linux` platform launches Balatro via Steam Proton. The CLI auto-detects Steam and Proton installation paths:
-
-**Auto-Detected Paths:**
-
-- `BALATROBOT_BALATRO_PATH`: `~/.local/share/Steam/steamapps/common/Balatro`
-- `BALATROBOT_LOVE_PATH`: Best available Proton executable (scans `steamapps/common/`)
-- `BALATROBOT_LOVELY_PATH`: `~/.local/share/Steam/steamapps/common/Balatro/version.dll`
-
-**Requirements:**
-
-- Balatro installed via Steam with Proton
-- [Lovely Injector](https://github.com/ethangreen-dev/lovely-injector) `version.dll` (Windows version) placed in the Balatro game directory
-- A display server (`DISPLAY` or `WAYLAND_DISPLAY` must be set)
-- Mods directory: `~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods`
-
-**Launch:**
-
-```bash
-# Auto-detects paths
-uvx balatrobot serve --fast --audio
-
-# Or specify custom paths
-uvx balatrobot serve --audio --love-path /path/to/proton --balatro-path /path/to/Balatro
-```
-
-!!! warning "Steam Installation"
-
-    Only the official Steam package from Valve is tested. Flatpak and Snap installations of Steam use different data paths and are not currently supported.
-
-### Native Platform (Linux Only)
-
-The `native` platform runs Balatro from source code using the LÖVE framework installed via package manager. This requires specific directory structure:
-
-**Required Paths:**
-
-- `BALATROBOT_BALATRO_PATH`: Directory containing Balatro source code with `main.lua`
-- `BALATROBOT_LOVE_PATH`: Path to LÖVE executable (find with `which love`), e.g., `/usr/bin/love`
-- `BALATROBOT_LOVELY_PATH`: Must be `/usr/local/lib/liblovely.so`
-- Mods directory: `~/.config/love/Mods` (auto-discovered, used by lovely)
-- Settings directory: `~/.local/share/love/balatro` (must contain game settings)
-
-**Setup:**
-
-```bash
-# Copy game settings to the expected location
-mkdir -p ~/.local/share/love/balatro
-cp -r /path/to/balatro/settings/* ~/.local/share/love/balatro/
-
-# Launch with native platform
-uvx balatrobot serve --audio --platform native --balatro-path /path/to/balatro/source
-```
-
-??? tip "Hyprland Configuration"
-
-    If you are using Hyprland, you can configure the window manager with the following rules to spawn the Balatro window in an organized way:
-
-    ```ini
-    #################################################################################
-    # Balatro window rules
-    ################################################################################
-
-    # Open on Workspace 9 SILENTLY
-    windowrulev2 = workspace 9 silent, class:^(love)$, title:^(Balatro)$
-
-    # Float the window
-    windowrulev2 = float, class:^(love)$, title:^(Balatro)$
-
-    # Center it
-    windowrulev2 = center, class:^(love)$, title:^(Balatro)$
-
-    # Block focus stealing
-    windowrulev2 = noinitialfocus, class:^(love)$, title:^(Balatro)$
-    windowrulev2 = suppressevent activate, class:^(love)$, title:^(Balatro)$
-    ```
 
 ## Troubleshooting
 

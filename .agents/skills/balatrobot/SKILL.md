@@ -1,22 +1,22 @@
 ---
 name: balatrobot
-description: Play, run, and debug BalatroBot locally. If the user asks to play Balatro, read PLAY.md first and use the tools/play/serve.ps1 + tools/play/bot.ps1 friendly command workflow. Use the lower-level balatrobot CLI workflow for API debugging, log inspection, and targeted reproductions.
+description: Play, run, and debug BlindDeck locally. Use PLAY.md and the tools/play helpers for deliberate play; use the balatrobot CLI for API debugging and targeted reproductions.
 allowed-tools: Bash(balatrobot:*) Bash(mkdir:*) Bash(ls:*) Bash(tail:*) Bash(PORT=:*) Bash(echo:*) Bash(jq:*) Bash(sleep:*) Read Grep
 disable-model-invocation: true
 ---
 
-# BalatroBot play/debug runbook
+# BlindDeck play/debug runbook
 
 ## Ground rules
 
 - Run commands from the repo root.
-- If the user asks to **play** Balatro, read `PLAY.md` first and follow its workflow: start with `.\tools\play\serve.ps1 --fast --debug`, then interact with `.\tools\play\bot.ps1` friendly subcommands such as `glance`, `start`, `select`, `play`, `discard`, `cash_out`, `buy`, and `next_round`.
+- If the user asks to **play** Balatro, read `PLAY.md` first and follow its workflow: start with `.\tools\play\serve.ps1 --fast --audio` (add `--debug` only when debugging), then interact with `.\tools\play\bot.ps1` friendly subcommands such as `glance`, `start`, `select`, `play`, `discard`, `cash_out`, `buy`, and `next_round`.
 - For play sessions, do not use raw JSON or `bot.ps1 exec` unless the friendly commands are unavailable; PowerShell quoting can corrupt raw JSON arguments.
 - For lower-level debugging, use `balatrobot ...` only (no `uvx`, no `curl`).
 - Run API requests sequentially (avoid concurrent calls).
 - Prefer minimal, targeted changes while debugging; avoid large refactors.
 
-## Start BalatroBot
+## Start BlindDeck
 
 ### Play profile (when the user asks to play)
 
@@ -24,7 +24,7 @@ Use the repository play helper, which binds to the default play port used by
 `bot.ps1`:
 
 ```powershell
-.\tools\play\serve.ps1 --fast --debug
+.\tools\play\serve.ps1 --fast --audio
 ```
 
 Leave it running in its own terminal. In a second terminal, poll and play with:

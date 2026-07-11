@@ -87,76 +87,61 @@ The `.luarc.json` file should be placed at the root of the balatrobot repository
 
 ## Development Setup
 
-### 1. Clone the Repository
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/FFFishes7/blinddeck.git
-cd balatrobot
-```
-
-### 2. Symlink to Mods Folder
-
-Instead of copying files, create a symlink for easier development:
-
-**macOS:**
-
-```bash
-ln -s "$(pwd)" ~/Library/Application\ Support/Balatro/Mods/balatrobot
-```
-
-**Linux (Proton):**
-
-```bash
-ln -s "$(pwd)" ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/
-```
-
-**Linux (native):**
-
-```bash
-ln -s "$(pwd)" ~/.config/love/Mods/balatrobot/
-```
-
-**Windows (PowerShell as Admin):**
-
-```powershell
-New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Balatro\Mods\balatrobot" -Target (Get-Location)
-```
-
-### 3. Install Dependencies
-
-```bash
+cd blinddeck
 make install
 ```
 
-### 4. Activate Virtual Environment
+Complete the base Lovely Injector and Steamodded setup in the
+[root quick start](../README.md#quick-start-windows). The steps below add the
+development-specific checkout link and debug launch.
 
-Activate the virtual environment to use the `balatrobot` command:
+### 2. Link the checkout into the Mods directory
 
-**macOS/Linux:**
+| Platform       | Mods directory                                                                                      |
+| -------------- | --------------------------------------------------------------------------------------------------- |
+| Windows        | `%AppData%\Balatro\Mods\balatrobot`                                                                 |
+| macOS          | `~/Library/Application Support/Balatro/Mods/balatrobot`                                             |
+| Linux (Proton) | `~/.local/share/Steam/steamapps/compatdata/2379780/pfx/.../AppData/Roaming/Balatro/Mods/balatrobot` |
+| Linux (native) | `~/.config/love/Mods/balatrobot`                                                                    |
+
+```powershell
+# Windows (Administrator PowerShell if Developer Mode is disabled)
+New-Item -ItemType SymbolicLink `
+  -Path "$env:APPDATA\Balatro\Mods\balatrobot" `
+  -Target (Get-Location)
+```
+
+```bash
+# macOS; adjust the destination for Linux using the table above
+ln -s "$(pwd)" "$HOME/Library/Application Support/Balatro/Mods/balatrobot"
+```
+
+### 3. Activate the environment when direnv is not used
 
 ```bash
 source .venv/bin/activate
 ```
 
-**Windows (PowerShell):**
-
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-### 5. Launch Balatro
-
-Start with debug and fast mode for development:
+### 4. Launch a development session
 
 ```bash
-balatrobot serve --debug --fast
+balatrobot serve --fast --debug
 ```
 
-For detailed CLI options, see the [CLI Reference](cli.md).
+For all launcher flags and platform paths, see the [CLI Reference](cli.md).
 
-### 6. Running Tests
+### 5. Run tests
 
-Tests use Python + pytest to communicate with the Lua API. You don't need to have balatrobot running—the tests automatically start the required Balatro instances.
+Tests use Python and pytest. Lua tests and integration-marked CLI tests start
+their own Balatro instances; pure CLI tests do not require the game.
 
 !!! info "Separate Lua and CLI test suites"
 
@@ -182,8 +167,8 @@ pytest -n 6 tests/lua -m dev
 # Run only integration tests (starts Balatro)
 pytest tests/lua -m integration
 
-# Run tests that do not require Balatro instance
-pytest tests/lua -m "not integration"
+# Run tests that do not require a Balatro instance
+pytest tests/cli -m "not integration"
 ```
 
 **Estimate live tests** (`tests/lua/endpoints/test_estimate_live.py`) start a single Balatro instance and run ~147 parametrized plays (99 scoring jokers + 15 card buffs + 33 multi-joker scenarios; ~6 min). Do not run in parallel with other Lua suites (OOM risk). When changing `tools/play/estimate_jokers.py`, run:
@@ -221,7 +206,7 @@ The project includes a Makefile with convenient targets for common development t
 ```bash
 make help      # Show all available commands with descriptions
 make install   # Install all dependencies (dev + test groups)
-make lint      # Run ruff linter with auto-fix
+make lint      # Run ruff linter (check only)
 make format    # Format code (Python, Markdown, Lua); mdformat covers `.` like CI
 make typecheck # Run type checker (ty)
 make quality   # Run all code quality checks
@@ -341,7 +326,7 @@ make quality  # Runs lint, typecheck, and format
 1. **One feature per PR** - Keep changes focused
 2. **Add tests** - New endpoints need test coverage
 3. **Update docs** - Update api.md and openrpc.json for API changes
-4. **Run code quality checks** - Execute `make quality` before committing (see [Code Quality Tools](#code-quality-tools))
+4. **Run code quality checks** - Execute `make quality` before committing (see [Code Quality](#code-quality))
 5. **Test locally** - Ensure both `pytest -n 6 tests/lua` and `pytest tests/cli` pass
 6. **Use Conventional Commits** - Follow [Conventional Commits](https://www.conventionalcommits.org/)
 

@@ -107,6 +107,7 @@ if __name__ == "__main__":
     uv run bot.py
     ```
 
-The bot will automatically start a new game and play until it wins or loses.
+The bot will automatically start a new game, enter endless mode after the Ante 8
+victory overlay, and continue until `GAME_OVER`.
 
 For local manual or LLM-assisted play, see [Play Helpers](../tools/play/README.md) and [PLAY.md](../PLAY.md).

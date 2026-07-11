@@ -114,21 +114,25 @@ The primary command for each state. Full syntax and index rules below.
 
 ### Per-state details
 
-**`MENU`** — `start DECK STAKE [SEED]` (deck/stake lists in `glance`); or run `challenges` to list native challenge IDs, unlock/completion status, and setup details, then `challenge ID` to start an unlocked challenge. Challenges use their native deck, rules, and White Stake; they do not accept a seed, deck, or stake override. `load PATH` is available when `actions:` offers it.
-
-**`BLIND_SELECT`** — `select` · `skip` (Small/Big only) · `reroll_boss` (Boss + Director's Cut / Retcon, $10). Inventory: `sell` and `use` only. `save PATH` allowed.
-
-**`SELECTING_HAND`** — `play N…` (1–5 cards from `hand:`) · `discard N…` · `sort rank` · `use 0 [1 2]`. Repeat until **`beaten`**, then `glance`. Scoring: `query hands` + §3. `estimate` is optional dev only.
-
-**`ROUND_EVAL`** — `cash_out` (default; read `pending:` / `total +$N` first). No inventory mutation here: `sell` and `use` are disabled until the next state. If **`victory_overlay`**: **only** `endless` (continue) or `menu` (end run) — no `cash_out`, `sell`, `use`, or `save` until the overlay is dismissed.
-
-**`SHOP`** — `buy card N` / `buy voucher N` / `buy pack N` · `reroll` · `next_round` (leave shop). Full inventory (`sell`/`use`/`rearrange jokers`); `save PATH` allowed.
-
-**`SMODS_BOOSTER_OPENED`** — `pack N [hand…]` while glance shows **`choices remaining: N > 0`** (free pick); `pack skip` only to forfeit remaining picks. Targets = `hand:` `[N]` (Tarot/Spectral/Death; not ranks). Ankh/Hex/Ectoplasm: random joker, targets ignored. Inventory: `sell`/`use`/`rearrange jokers`; `save PATH` allowed.
-
-**`GAME_OVER`** — `menu`, then at `MENU`: `start DECK STAKE SEED` (seed from summary restart hint). `save PATH` allowed.
-
-**Transient** (`HAND_PLAYED` / `DRAW_TO_HAND` / `NEW_ROUND` / …) — no play commands; **`glance`** until a stable state above.
+- **`MENU`** — start a normal run with `start DECK STAKE [SEED]`. For Challenge
+    Mode, run `challenges`, then `challenge ID`; its deck, rules, and White Stake
+    are fixed. Use `load PATH` only when offered in `actions:`.
+- **`BLIND_SELECT`** — `select`, `skip` (Small/Big only), or `reroll_boss`
+    (eligible Boss, $10). Inventory permits `sell` and `use`; saving is allowed.
+- **`SELECTING_HAND`** — `play N…`, `discard N…`, `sort rank`, or
+    `use 0 [targets…]`. Use `query hands` plus §3 for scoring; `estimate` is
+    development-only.
+- **`ROUND_EVAL`** — normally `cash_out` after reading `pending:`. With
+    `victory_overlay`, only `endless` or `menu` is allowed.
+- **`SHOP`** — buy, reroll, manage inventory, or `next_round`; saving is
+    allowed.
+- **`SMODS_BOOSTER_OPENED`** — use `pack N [targets…]` while
+    `choices remaining > 0`; `pack skip` forfeits all remaining picks. Targets
+    are `hand:` indices. Ankh, Hex, and Ectoplasm ignore targets.
+- **`GAME_OVER`** — `menu`, then restart from the summary hint. Saving is
+    allowed.
+- **Transient states** (`HAND_PLAYED`, `DRAW_TO_HAND`, `NEW_ROUND`, …) — no
+    play commands; `glance` until stable.
 
 ### Save / load / screenshot (not in `actions:`)
 
@@ -142,7 +146,9 @@ The primary command for each state. Full syntax and index rules below.
 
 ## 5. Read glance
 
-Every summary ends with **`actions:`** — command **names only** (e.g. `sell`, `use`), not full args like `sell joker 0`. Use **§4** for syntax; run **`bot.ps1 help`** for a formatted catalog, **`bot.ps1 help --now`** for valid-now examples, or [tools/play/README.md § Friendly action subcommands](tools/play/README.md#friendly-action-subcommands). **`state --json`** → `actions[].example` for scripting.
+Every summary ends with **`actions:`** containing command names, not complete
+arguments. Use §4 or `bot.ps1 help --now` for valid examples; scripting clients
+can read `state --json` → `actions[].example`.
 
 Per-state line meanings: [tools/play/README.md § What glance shows](tools/play/README.md#what-glance-shows).
 

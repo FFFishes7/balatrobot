@@ -43,49 +43,24 @@ The Python CLI launches Balatro with the mod loaded; after that all control goes
 
 ---
 
-## 3. Directory Structure
+## 3. Where to Read What
 
-```
-balatrobot/
-├── balatrobot.lua / balatrobot.json   # Mod entry point + metadata
-├── src/
-│   ├── balatrobot/        # Python package (CLI, manager, platforms)
-│   │   ├── cli/           # serve + api commands
-│   │   ├── platforms/     # windows / macos / linux / native launchers
-│   │   ├── manager.py     # BalatroInstance — starts/stops the game process
-│   │   └── config.py      # Config dataclass + env var mapping
-│   └── lua/
-│       ├── core/          # server.lua, dispatcher.lua, validator.lua
-│       ├── endpoints/     # one file per API method
-│       ├── utils/         # gamestate.lua, logger.lua, enums.lua, openrpc.json
-│       └── settings.lua   # reads BALATROBOT_* env vars inside the game
-├── tools/play/            # bot.ps1 + helper scripts for playing
-├── knowledge/balatro/     # verified fact tables for know.py
-├── docs/                  # this folder
-├── tests/                 # Python + Lua test suites
-├── pyproject.toml         # deps + tool config
-└── Makefile               # make install / test / lint / format / typecheck
-```
+| Topic                                                                                   | Document                                                                                                          |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Playing a run** (loop, scoring, state→command, pitfalls)                              | [`PLAY.md` §1–§6](../PLAY.md#1-what-you-are-doing); commands in [`tools/play/README.md`](../tools/play/README.md) |
+| **Installing / launching** (one-time setup, `serve.ps1`)                                | [`README.md`](../README.md)                                                                                       |
+| **AI dev guidance** (make rules, architecture summary, play quick-start inline)         | [`AGENTS.md`](../AGENTS.md)                                                                                       |
+| **API reference** (every method, params, schemas, enums, errors)                        | [`api.md`](api.md)                                                                                                |
+| **Card keys** (formats, examples, canonical machine-readable sources)                   | [`card-keys.md`](card-keys.md)                                                                                    |
+| **CLI reference** (all `serve` flags, env vars, platform paths, troubleshooting)        | [`cli.md`](cli.md)                                                                                                |
+| **Contributing / dev setup** (direnv, Lua LSP, adding an endpoint, tests, CI, PR rules) | [`contributing.md`](contributing.md)                                                                              |
+| **Play helpers** (`bot.ps1` commands, compact summary vs detail queries vs JSON)        | [`../tools/play/README.md`](../tools/play/README.md)                                                              |
+| **Estimate scoring model** (joker registry, live-test checklist)                        | [`../tools/play/estimate_registry.md`](../tools/play/estimate_registry.md)                                        |
+| **Knowledge library** (verified lookup tables, including **deck** and challenge)        | [`../knowledge/balatro/README.md`](../knowledge/balatro/README.md)                                                |
 
 ---
 
-## 4. Where to Read What
-
-| Topic                                                                                                    | Document                                                                                                          |
-| -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Playing a run** (loop, scoring, state→command, pitfalls)                                               | [`PLAY.md` §1–§6](../PLAY.md#1-what-you-are-doing); commands in [`tools/play/README.md`](../tools/play/README.md) |
-| **Installing / launching** (one-time setup, `serve.ps1`)                                                 | [`README.md`](../README.md)                                                                                       |
-| **AI dev guidance** (make rules, architecture summary, play quick-start inline)                          | [`AGENTS.md`](../AGENTS.md)                                                                                       |
-| **API reference** (every method, params, schemas, enums, errors)                                         | [`api.md`](api.md)                                                                                                |
-| **CLI reference** (all `serve` flags, env vars, platform paths, troubleshooting)                         | [`cli.md`](cli.md)                                                                                                |
-| **Contributing / dev setup** (direnv, Lua LSP, adding an endpoint, tests, CI, PR rules)                  | [`contributing.md`](contributing.md)                                                                              |
-| **Play helpers** (`bot.ps1` commands, compact summary vs detail queries vs JSON)                         | [`../tools/play/README.md`](../tools/play/README.md)                                                              |
-| **Estimate scoring model** (joker registry, live-test checklist)                                         | [`../tools/play/estimate_registry.md`](../tools/play/estimate_registry.md)                                        |
-| **Knowledge library** (verified joker/boss/tag/stake/**deck**/tarot/planet/voucher/spectral/rule tables) | [`../knowledge/balatro/README.md`](../knowledge/balatro/README.md)                                                |
-
----
-
-## 5. Component Snapshot
+## 4. Component Snapshot
 
 These one-line descriptions are enough to orient you; read the linked doc for behavior details.
 
@@ -116,16 +91,6 @@ Primary loop states: `MENU`, `BLIND_SELECT`, `SELECTING_HAND`, `ROUND_EVAL`, `SH
 
 ---
 
-## 6. Testing & Quality
-
-Tests require Balatro installed; Lua integration tests auto-start instances on random ports.
-
-```bash
-make test              # all tests
-pytest -n 6 tests/lua  # Lua integration (parallel)
-pytest tests/cli       # CLI tests
-make quality           # lint + typecheck + format
-make all               # quality + test
-```
-
-Full dev setup (direnv, Lua LSP, adding endpoints, CI, PR rules) is in [`contributing.md`](contributing.md). AI dev rules (make-only, never bare ruff/ty) are in [`AGENTS.md`](../AGENTS.md).
+Development setup, test commands, and quality checks live in
+[contributing.md](contributing.md); agent-specific enforcement rules live in
+[AGENTS.md](../AGENTS.md).
