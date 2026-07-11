@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify all locally generated test fixtures exist on disk."""
+"""Verify all committed test fixtures exist on disk."""
 
 from __future__ import annotations
 

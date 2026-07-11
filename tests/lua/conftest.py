@@ -365,7 +365,7 @@ def load_fixture(
     2. Asserting the load succeeded
     3. Getting the current gamestate
 
-    By default fixtures must exist on disk (generated locally under tests/fixtures/).
+    By default fixtures must exist on disk (committed under tests/fixtures/).
     Use pytest --generate-fixtures or --no-caches to regenerate from fixtures.json.
     """
     global _USE_CACHE_DEFAULT, _ALLOW_FIXTURE_GENERATION
