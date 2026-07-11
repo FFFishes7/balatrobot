@@ -63,6 +63,18 @@ Final score = **Chips × Mult**, built **left to right**:
 3. **Per scoring card** — rank chips (**A=11**, **2–10 face**, **J/Q/K=10**) + enhancement / edition / seal when that card scores.
 4. **Jokers left → right** — each adds +Chips, +Mult, or **×Mult** to the running totals.
 
+**Played-card order:** the indices in `play I J K …` are both the selected
+cards and their left-to-right scoring order. For example, `play 4 1 3` scores
+hand cards `[4]` → `[1]` → `[3]`. Put an earlier trigger first by ordering the
+arguments; `rearrange` cannot rearrange hand cards. Kickers do not score, so
+their position normally has no scoring effect (except with Splash or another
+effect that makes them score).
+
+Played-card order matters for effects such as Photograph (the first scoring
+face card), Hanging Chad (the first scoring card), and each scoring card's
+enhancement, edition, and seal. With base Mult 4, a Mult Card before a Glass
+Card gives `(4+4)×2=16` Mult; Glass before Mult gives `4×2+4=12`.
+
 **Order rule:** stack **+Mult before ×Mult** — put +Mult jokers (and +Mult cards/editions) **left** of ×Mult jokers and ×Mult editions (Ramen, Polychrome, …). Joker slot order matters (`rearrange jokers`).
 
 Example (40 chips, base mult 4, +4 Mult joker + ×2 Ramen): joker **left** of Ramen → 40×((4+4)×2)=**640**; reversed → 40×((4×2)+4)=**480**.
@@ -97,10 +109,11 @@ The primary command for each state. Full syntax and index rules below.
 
 | Action    | Syntax                               | Notes                                                                                                                                                                              |
 | --------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Play      | `play I J K …`                       | Hand indices are also the left-to-right scoring order: `play 4 1 3` scores `[4]` → `[1]` → `[3]`.                                                                                  |
 | Sell      | `sell joker N` / `sell consumable N` | Type keyword required (not `sell 0` alone).                                                                                                                                        |
 | Use       | `use 0 1 2`                          | Consumable `[0]` from `consumables:` + hand targets `[1]` `[2]` from `hand:`. Death same form (2 targets; first target = source (transformed), second target = template (copied)). |
-| Rearrange | `rearrange jokers I J K …`           | **Full** new left-to-right order, every index once. e.g. `rearrange jokers 1 0` puts former `[1]` left of former `[0]`. Needs ≥2 jokers.                                           |
-| Sort      | `sort rank`                          | Modes: `rank` / `rank-desc` / `rank-asc` / `suit` / `suit-desc` / `suit-asc` (aliases `r`/`rd`/`ra`/`s`/`sd`/`sa`).                                                                |
+| Rearrange | `rearrange jokers I J K …`           | Jokers only: **full** new left-to-right order, every index once. e.g. `rearrange jokers 1 0` puts former `[1]` left of former `[0]`. Cannot rearrange hand cards. Needs ≥2 jokers. |
+| Sort      | `sort rank`                          | Changes hand display order for reading/selecting indices; it does not set play order. Modes: `rank` / `rank-desc` / `rank-asc` / `suit` / `suit-desc` / `suit-asc`.                |
 | Save      | `save PATH`                          | Any in-run state (not `MENU`). e.g. `save run.jkr`. Prints `save success: PATH`; relative paths are automatically resolved into this project's `saves/` folder.                    |
 
 **Where each inventory action is allowed:**
@@ -227,6 +240,9 @@ their printed suit. Source-backed lifecycle warnings such as Mr. Bones
 
 ## 6. Pitfalls
 
+- **Played-card order comes from `play` arguments:** `play 4 1 3` scores
+    `[4]` → `[1]` → `[3]`. `rearrange` is jokers-only, and `sort` only changes
+    the displayed hand order; neither is an arbitrary hand-rearrangement command.
 - Boss blinds hide card faces (`??`).
 - **Tags on blind lines** = reward for **`skip`** only (not defeating the blind). **`held tags (pending):`** = already earned, not yet triggered.
 - **`pack skip`** is not “advance to next blind”.
