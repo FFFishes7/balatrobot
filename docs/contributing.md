@@ -217,10 +217,11 @@ make all       # Run quality checks + tests
 
 !!! note "Test Fixtures"
 
-    Pre-generated `.jkr` files under `tests/fixtures/` are committed to the repository.
-    Tests load them read-only by default; they are **not** regenerated during `pytest`.
+    Generated `.jkr` files under `tests/fixtures/` are local artifacts and are ignored by Git.
+    Generate them before running fixture-backed tests; tests load them read-only by default and
+    do **not** regenerate them unless requested.
 
-    To regenerate after changing `fixtures.json` or game-state Lua:
+    To generate or regenerate them after cloning, or after changing `fixtures.json` or game-state Lua:
 
     ```bash
     # Terminal 1

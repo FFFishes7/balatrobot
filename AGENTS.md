@@ -110,7 +110,7 @@ Available make targets:
 
 **Important rules:**
 
-1. **Only run make commands when explicitly asked.** Do not proactively run `make test`, `make quality`, etc.
+1. **Only run make commands when explicitly asked.** Do not proactively run `make test`, `make quality`, etc. Always run `make` commands outside the sandbox; request escalation before the first attempt.
 2. **Never run bare linting/formatting/typechecking tools.** Always use make targets instead:
     - Use `make lint` instead of `ruff check`
     - Use `make format` instead of `ruff format`
@@ -148,7 +148,7 @@ Do not mark todos complete while a required live scenario fails or docs are stal
     - `.cursor/` — local Cursor rules
     - `CLAUDE.md` — local Claude copy; repo uses `AGENTS.md`
     - `tools/play/serve.ps1` — machine-specific Balatro path
-    - `saves/`, `*.jkr` outside fixtures — runtime saves
+    - `saves/`, `*.jkr` — runtime and locally generated test saves
 - `AGENTS.md` is the tracked canonical agent guidance for this repo.
 
 When the user explicitly asks to commit or push, first run pre-push checks: `make quality`, relevant tests, docs review, `git status` / `git diff`, and confirm no secrets or ignored/local files are staged. Commit messages should follow conventional commits (`feat:`, `fix:`, `docs:`, ...).
