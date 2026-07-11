@@ -164,7 +164,51 @@ Per-state line meanings: [tools/play/README.md § What glance shows](tools/play/
 | `d:`   | Edition — `Foil` `Holo` `Poly` `Neg`                                       |
 | `s:`   | Seal — `Red` `Blue` `Gold` `Purple`                                        |
 
-`e:Wild` = all **suits**, rank unchanged (not all ranks). Debuffed cards: `(7♣)`. Joker stickers `(rental …)` / `(perishable …)` / `(eternal)` / `(pinned leftmost)` are on joker lines, not hand cards. Source-backed lifecycle warnings such as Mr. Bones `(self-destructs on save)` appear in the same prefix block.
+**Enhancements:**
+
+| Tag       | Effect                                 | Trigger / decision rule                        |
+| --------- | -------------------------------------- | ---------------------------------------------- |
+| `e:Mult`  | +4 Mult                                | When this card scores                          |
+| `e:Bonus` | +30 Chips                              | When this card scores                          |
+| `e:Glass` | ×2 Mult; 1 in 4 chance to be destroyed | When this card scores                          |
+| `e:Stone` | +50 Chips; no rank or suit             | Always scores when played                      |
+| `e:Wild`  | Counts as every suit                   | Rank is unchanged                              |
+| `e:Lucky` | 1 in 5: +20 Mult; 1 in 15: +$20        | Independent random rolls when this card scores |
+| `e:Gold`  | +$3                                    | Keep in hand through the end of the round      |
+| `e:Steel` | ×1.5 Mult                              | Keep in hand while another card/hand scores    |
+
+**Editions:** playing-card editions apply when that card scores; Joker editions
+apply during the Joker phase.
+
+| Tag      | Effect    | Note                                       |
+| -------- | --------- | ------------------------------------------ |
+| `d:Foil` | +50 Chips | Additive Chips                             |
+| `d:Holo` | +10 Mult  | Additive Mult                              |
+| `d:Poly` | ×1.5 Mult | Multiplicative; order matters              |
+| `d:Neg`  | +1 slot   | Passive capacity, not a scoring multiplier |
+
+**Seals:**
+
+| Tag        | Effect                                       | Trigger / requirement                     |
+| ---------- | -------------------------------------------- | ----------------------------------------- |
+| `s:Red`    | Retriggers the card once                     | When its scoring or held effect triggers  |
+| `s:Blue`   | Creates the Planet for the final played hand | Held at round end; needs consumable space |
+| `s:Gold`   | +$3                                          | When this card scores                     |
+| `s:Purple` | Creates a Tarot                              | When discarded; needs consumable space    |
+
+**Joker stickers / state:**
+
+| Glance text        | Meaning                                               |
+| ------------------ | ----------------------------------------------------- |
+| `rental -$N/round` | Pay the displayed fee at the end of every round       |
+| `perishable Nr`    | Becomes debuffed after the displayed number of rounds |
+| `eternal`          | Cannot be sold or destroyed                           |
+| `pinned leftmost`  | Forced to remain in the leftmost Joker position       |
+
+Debuffed cards are shown in parentheses, such as `(7♣)`: their enhancement,
+edition, seal, and most other abilities do not trigger; debuffed Wild cards use
+their printed suit. Source-backed lifecycle warnings such as Mr. Bones
+`(self-destructs on save)` appear with the Joker stickers.
 
 **Shop / buy:** rows show `[ok]` / `[need $N]` / `[slots full]` from `money - bankrupt_at`.
 
