@@ -110,7 +110,7 @@ See the root [README](../../README.md#quick-start-windows) and [PLAY.md](../../P
 
 - **Card modifier tags** on hand cards and pack rows — abbreviations in [PLAY.md §5](../../PLAY.md#5-read-glance) (`e:`/`d:`/`s:`). Example: `4♦[e:Mult,s:Red]`. Debuffed cards: `(7♣)`. Cerulean Bell forced hand cards show `[forced]`; ordinary highlighted cards show `[selected]`.
 
-- **Joker / consumable stickers** inline: `[0] (+$3 sell) (perishable 3r) (rental -$1/round) (+10 mult) Holographic Jolly Joker — ...`. Eternal and pinned-left Jokers show `(eternal) (pinned leftmost)`. Source-backed lifecycle behavior such as Mr. Bones shows `(self-destructs on save)` in the same prefix block. **`(+$N sell)`** is sell value when you **`sell joker|consumable`** (omitted for **eternal**). Shop rows use the same sticker
+- **Joker / consumable stickers** inline: `[0] (+$3 sell) (perishable 3r) (rental -$3/round) (+10 mult) Holographic Jolly Joker — ...`. The rental amount comes from the API's live `modifier.rental_cost`; legacy responses without it show `(rental)` without guessing a fee. Eternal and pinned-left Jokers show `(eternal) (pinned leftmost)`. Source-backed lifecycle behavior such as Mr. Bones shows `(self-destructs on save)` in the same prefix block. **`(+$N sell)`** is sell value when you **`sell joker|consumable`** (omitted for **eternal**). Shop rows use the same sticker
     prefix when a card has edition/perishable/rental (shop buy price stays **`$N`** on the row).
 
 - **Joker editions** are decoded inline: `[0] (+$2 sell) (+10 mult) Holographic Joker — ...`.

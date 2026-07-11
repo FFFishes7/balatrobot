@@ -95,7 +95,7 @@
         },
         {
           "name": "rental",
-          "description": "If true, card costs $1 per round (jokers only)",
+          "description": "If true, card has the rental sticker; the runtime fee is exposed as modifier.rental_cost (jokers only)",
           "required": false,
           "schema": {
             "type": "boolean"
@@ -1839,6 +1839,10 @@
           "rental": {
             "type": "boolean",
             "description": "If true, card costs money at end of round (jokers only)"
+          },
+          "rental_cost": {
+            "type": "integer",
+            "description": "Runtime end-of-round cost in dollars when rental is true (jokers only)"
           },
           "pinned": {
             "type": "boolean",

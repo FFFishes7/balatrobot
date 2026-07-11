@@ -42,6 +42,7 @@ from view import (  # noqa: E402  # type: ignore[unresolved-import]
     _blind_line,
     _blinds_block,
     _consumable_line,
+    _economy_line,
     _header,
     _joker_line,
     _round_line,
@@ -858,13 +859,14 @@ def test_joker_line_perishable_rental() -> None:
                 "edition": "HOLO",
                 "perishable": 3,
                 "rental": True,
+                "rental_cost": 3,
                 "eternal": True,
             },
         },
     )
     assert "(+$99 sell)" not in line
     assert "(perishable 3r)" in line
-    assert "(rental -$1/round)" in line
+    assert "(rental -$3/round)" in line
     assert "(+10 mult)" in line
     assert "(eternal)" in line
     assert "Jolly Joker" in line
@@ -896,10 +898,40 @@ def test_joker_line_sell_price_before_stickers() -> None:
             "label": "Jolly Joker",
             "value": {"effect": "+8 Mult"},
             "cost": {"sell": 3, "buy": 5},
-            "modifier": {"edition": "HOLO", "rental": True},
+            "modifier": {
+                "edition": "HOLO",
+                "rental": True,
+                "rental_cost": 3,
+            },
         },
     )
-    assert line.startswith("[0] (+$3 sell) (rental -$1/round) (+10 mult) Jolly Joker")
+    assert line.startswith("[0] (+$3 sell) (rental -$3/round) (+10 mult) Jolly Joker")
+
+
+def test_joker_line_rental_without_cost_does_not_guess() -> None:
+    line = _joker_line(
+        0,
+        {"label": "Joker", "modifier": {"rental": True}},
+    )
+    assert "(rental)" in line
+    assert "/round" not in line
+
+
+def test_economy_line_sums_dynamic_rental_costs() -> None:
+    state = {
+        "jokers": {
+            "cards": [
+                {"modifier": {"rental": True, "rental_cost": 2}},
+                {"modifier": {"rental": True, "rental_cost": 5}},
+            ]
+        }
+    }
+    assert _economy_line(state) == "economy: rental_due=-$7/round"
+
+
+def test_economy_line_omits_unknown_rental_cost() -> None:
+    state = {"jokers": {"cards": [{"modifier": {"rental": True}}]}}
+    assert _economy_line(state) is None
 
 
 def test_joker_line_sell_price_omitted_when_zero() -> None:
@@ -1832,7 +1864,12 @@ def test_print_summary_shop(capsys: pytest.CaptureFixture[str]) -> None:
                     "key": "j_jolly",
                     "cost": {"buy": 6},
                     "value": {"effect": "+8 Mult if played hand contains a Pair"},
-                    "modifier": {"edition": "FOIL", "perishable": 5, "rental": True},
+                    "modifier": {
+                        "edition": "FOIL",
+                        "perishable": 5,
+                        "rental": True,
+                        "rental_cost": 3,
+                    },
                 }
             ],
         },
@@ -1843,7 +1880,7 @@ def test_print_summary_shop(capsys: pytest.CaptureFixture[str]) -> None:
     out = capsys.readouterr().out
     assert "(+50 chips)" in out
     assert "(perishable 5r)" in out
-    assert "(rental -$1/round)" in out
+    assert "(rental -$3/round)" in out
     assert "Jolly Joker" in out
 
 

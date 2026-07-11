@@ -28,7 +28,7 @@
     "wiki": "https://balatrowiki.org/w/Stakes#Orange_Stake"
   },
   "GOLD": {
-    "effect": "Rental Jokers can appear in the shop (costs $1 per round).",
+    "effect": "Rental Jokers can appear in the shop (costs the run's rental rate per round; $3 by default).",
     "wiki": "https://balatrowiki.org/w/Stakes#Gold_Stake"
   }
 }

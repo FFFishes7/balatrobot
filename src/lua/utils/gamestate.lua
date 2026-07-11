@@ -671,6 +671,8 @@ local function extract_card_modifier(card)
   -- Rental (boolean from ability)
   if card.ability and card.ability.rental then
     modifier.rental = true
+    -- Match Balatro's Card:calculate_rental() and rental tooltip source.
+    modifier.rental_cost = (G.GAME and G.GAME.rental_rate) or 1
   end
 
   -- Pinned-left badge (direct Card property, like Balatro's UI badge list)

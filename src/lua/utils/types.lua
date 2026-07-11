@@ -160,6 +160,7 @@
 ---@field eternal boolean? If true, card cannot be sold or destroyed (jokers only)
 ---@field perishable integer? Number of rounds remaining (only if > 0) (jokers only)
 ---@field rental boolean? If true, card costs money at end of round (jokers only)
+---@field rental_cost integer? Runtime end-of-round cost when rental is true (jokers only)
 ---@field pinned boolean? If true, card is pinned to the leftmost Joker position
 
 ---@class Card.State

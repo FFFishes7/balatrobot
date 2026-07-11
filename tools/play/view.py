@@ -144,7 +144,11 @@ def _sticker_prefix(mod: dict[str, Any]) -> str:
     if isinstance(perishable, int) and perishable > 0:
         parts.append(f"(perishable {perishable}r)")
     if mod.get("rental"):
-        parts.append("(rental -$1/round)")
+        rental_cost = mod.get("rental_cost")
+        if type(rental_cost) is int and rental_cost >= 0:
+            parts.append(f"(rental -${rental_cost}/round)")
+        else:
+            parts.append("(rental)")
     ed = mod.get("edition")
     if isinstance(ed, str):
         parts.append(f"({JOKER_EDITION_LABEL.get(ed, ed)})")
@@ -385,14 +389,15 @@ def _economy_line(state: dict[str, Any]) -> str | None:
         discards_used_total = r.get("discards_used", 0)
         if discards_used_total == 0 and discards_left > 0:
             parts.append(f"delayed_grat=+${2 * discards_left} if 0 discards used")
-    rental_count = sum(
-        1
+    rental_mods = [
+        j.get("modifier") or {}
         for j in jokers
         if isinstance((j.get("modifier") or {}), dict)
         and (j.get("modifier") or {}).get("rental")
-    )
-    if rental_count > 0:
-        parts.append(f"rental_due=-${rental_count}/round")
+    ]
+    rental_costs = [mod.get("rental_cost") for mod in rental_mods]
+    if rental_costs and all(type(cost) is int and cost >= 0 for cost in rental_costs):
+        parts.append(f"rental_due=-${sum(rental_costs)}/round")
     return "economy: " + " ".join(parts) if parts else None
 
 

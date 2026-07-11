@@ -157,7 +157,7 @@ return {
     rental = {
       type = "boolean",
       required = false,
-      description = "If true, the card will be rental (costs $1 per round) - only valid for jokers",
+      description = "If true, the card will be rental (runtime cost exposed as modifier.rental_cost) - only valid for jokers",
     },
   },
 

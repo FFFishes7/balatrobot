@@ -664,6 +664,7 @@ class TestAddEndpointStickers:
         assert after["jokers"]["count"] == 1
         assert after["jokers"]["cards"][0]["key"] == "j_joker"
         assert after["jokers"]["cards"][0]["modifier"]["rental"] is True
+        assert after["jokers"]["cards"][0]["modifier"]["rental_cost"] == 3
 
     @pytest.mark.parametrize("key", ["c_fool", "v_overstock_norm", "p_arcana_normal_1"])
     def test_add_non_joker_with_rental_fails(
@@ -698,6 +699,7 @@ class TestAddEndpointStickers:
         assert after["jokers"]["count"] == 1
         assert after["jokers"]["cards"][0]["key"] == "j_joker"
         assert after["jokers"]["cards"][0]["modifier"]["rental"] is True
+        assert after["jokers"]["cards"][0]["modifier"]["rental_cost"] == 3
         assert after["jokers"]["cards"][0]["modifier"]["eternal"] is True
 
     def test_add_playing_card_with_rental_fails(self, client: httpx.Client) -> None:

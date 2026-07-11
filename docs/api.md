@@ -751,7 +751,7 @@ Add a card to the game (debug/testing). Supports jokers, consumables, vouchers, 
 | `enhancement` | string  | No       | [Enhancement](#card-modifier-enhancement) type (playing cards only)            |
 | `eternal`     | boolean | No       | Cannot be sold/destroyed (jokers only)                                         |
 | `perishable`  | integer | No       | Rounds until perish (jokers only)                                              |
-| `rental`      | boolean | No       | Costs $1/round (jokers only)                                                   |
+| `rental`      | boolean | No       | Adds the rental sticker; runtime fee is returned as `modifier.rental_cost`     |
 
 **Returns:** [GameState](#gamestate-schema)
 
@@ -1047,6 +1047,11 @@ All other fields use placeholder values: empty `key`/`label`, `set: "DEFAULT"`, 
 `value.stats` fields vary by joker (e.g. `x_mult`, `chips`, `loyalty_remaining`, `caino_xmult`). See [JokerStats](#jokerstats). `value.rarity` is one of `COMMON`, `UNCOMMON`, `RARE`, `LEGENDARY`.
 
 `value.effect` is the card's **mechanism** description (main UI text). For **Jokers**, only `main` ability text is included — edition, perishable, rental, eternal, pinned-left, and profile stake win sticker lines (e.g. “Used this Joker to win on White Stake difficulty”) live in the in-game `info` panel and are **not** appended to `value.effect` (use `modifier` and glance prefix tags for those buffs). **Consumables** still merge `main` + `info`, excluding stake win sticker lines from `info`.
+
+Rental Jokers expose both `modifier.rental: true` and `modifier.rental_cost`.
+The latter is the live per-round dollar charge read from Balatro's current run,
+so clients must use it instead of assuming a fixed fee. Non-rental cards omit
+`rental_cost`.
 
 Jokers with a source-verified deterministic self-destruction event may include `value.self_destructs_on`. Its initial enum value is `SAVES_FROM_GAME_OVER` (Mr. Bones destroys itself after it prevents game over). This machine-readable lifecycle field is intentionally separate from localized `value.effect`. A pinned Joker instead exposes `modifier.pinned: true`, meaning Balatro keeps it in the leftmost Joker position.
 
